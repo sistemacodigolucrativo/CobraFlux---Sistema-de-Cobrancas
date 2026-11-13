@@ -9,6 +9,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import { AdminView } from './pages/admin/AdminView';
 import { AuthPages } from './pages/institutional/AuthPages';
 import { LandingPage } from './pages/institutional/LandingPage';
+import { StatusPage } from './pages/institutional/StatusPages';
 import { ProfessionalShell } from './pages/professional/ProfessionalShell';
 import { PublicPaymentPage } from './pages/public/PublicPaymentPage';
 
@@ -46,6 +47,8 @@ const AppRouter: React.FC = () => {
       {environment === 'professional' && <ProfessionalShell />}
       {environment === 'admin' && <AdminView />}
       {environment === 'public_payment' && <PublicPaymentPage />}
+      {environment === 'confirmation' && <StatusPage mode="confirmation" />}
+      {environment === 'error' && <StatusPage mode="error" />}
       <ToastContainer />
       <OfflineIndicator />
     </>

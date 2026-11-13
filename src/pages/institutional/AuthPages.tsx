@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, CheckCircle2, ShieldAlert, UserCheck } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Shield, ShieldAlert, UserCheck, Users } from 'lucide-react';
 import { Button, Card, GoldenLogo, Input, Select } from '../../components/ui/Primitives';
 import { useApp } from '../../context/AppContext';
 import { demoBillingService } from '../../services/demoService';
@@ -21,17 +21,22 @@ export const AuthPages: React.FC = () => {
   const [password, setPassword] = useState('demo1234');
   const [authFeedback, setAuthFeedback] = useState<'none' | 'recover_ok' | 'error'>('none');
 
-  // Register state
-  const [regName, setRegName] = useState('');
-  const [regBusiness, setRegBusiness] = useState('');
+  // Register state (pre-filled for fast testing, fully editable)
+  const [regName, setRegName] = useState('Bruno Oliveira');
+  const [regBusiness, setRegBusiness] = useState('Studio Bruno Pilates');
   const [regCategory, setRegCategory] = useState('Personal Trainer');
-  const [regEmail, setRegEmail] = useState('');
+  const [regEmail, setRegEmail] = useState('bruno@studiopilates.com.br');
   const [regPhone, setRegPhone] = useState('+5511999990000');
   const [regPlan, setRegPlan] = useState<PlanTier>('essencial');
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const match = snapshot?.users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
+    const normalized = email.trim().toLowerCase();
+    const match = snapshot?.users.find(
+      (u) =>
+        u.email.toLowerCase() === normalized ||
+        (normalized === 'admin@cobraflux.com.br' && u.id === 'usr_admin')
+    );
     if (!match || password.length < 4) {
       setAuthFeedback('error');
       playSound('error');
@@ -40,6 +45,17 @@ export const AuthPages: React.FC = () => {
     setAuthFeedback('none');
     await switchUser(match.id);
     playSound('signup_success');
+  };
+
+  const prefillRoleCredentials = (role: 'member' | 'admin') => {
+    setAuthFeedback('none');
+    if (role === 'admin') {
+      setEmail('admin@goldenbilling.com.br');
+    } else {
+      setEmail('rafael@studioforce.com.br');
+    }
+    setPassword('demo1234');
+    playSound('tap');
   };
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
@@ -155,10 +171,41 @@ export const AuthPages: React.FC = () => {
                 <div>
                   <h1 className="text-xl font-display font-bold text-[#F6F1E8]">Acesso demonstrativo</h1>
                   <p className="text-xs text-[#9EA7BA] mt-1">
-                    Esta autenticação local simula sessões por organização e não substitui autenticação de
-                    produção.
+                    Os campos já iniciam preenchidos para teste imediato. Escolha preencher ou acessar como
+                    Membro (Profissional) ou Administrador Geral.
                   </p>
                 </div>
+
+                {/* Preset credentials selector */}
+                <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-[#0B0D12] border border-white/8">
+                  <button
+                    type="button"
+                    onClick={() => prefillRoleCredentials('member')}
+                    className={`py-2 px-3 rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                      email.trim().toLowerCase() !== 'admin@goldenbilling.com.br' &&
+                      email.trim().toLowerCase() !== 'admin@cobraflux.com.br'
+                        ? 'bg-[#1F2531] text-[#E2BE72] border border-[#A78952]/40'
+                        : 'text-[#9EA7BA] hover:text-[#F6F1E8]'
+                    }`}
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    Preencher Membro
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => prefillRoleCredentials('admin')}
+                    className={`py-2 px-3 rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                      email.trim().toLowerCase() === 'admin@goldenbilling.com.br' ||
+                      email.trim().toLowerCase() === 'admin@cobraflux.com.br'
+                        ? 'bg-[#1F2531] text-[#E2BE72] border border-[#A78952]/40'
+                        : 'text-[#9EA7BA] hover:text-[#F6F1E8]'
+                    }`}
+                  >
+                    <Shield className="w-3.5 h-3.5" />
+                    Preencher Admin
+                  </button>
+                </div>
+
                 <Input
                   label="E-mail da conta demonstrativa"
                   type="email"
@@ -171,12 +218,45 @@ export const AuthPages: React.FC = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  hint="Qualquer senha com 4+ caracteres funciona para os perfis listados ao lado."
+                  hint="Pré-preenchida com demo1234 (qualquer senha com 4+ caracteres funciona)."
                   required
                 />
                 <Button type="submit" className="w-full" size="lg">
-                  Entrar na conta selecionada
+                  Entrar com os dados acima
                 </Button>
+
+                {/* Direct 1-click dual access */}
+                <div className="pt-3 border-t border-white/8 space-y-2">
+                  <p className="text-[11px] text-[#9EA7BA] text-center">
+                    Ou acesse diretamente em 1 clique por perfil:
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={async () => {
+                        prefillRoleCredentials('member');
+                        await switchUser('usr_rafael');
+                        playSound('signup_success');
+                      }}
+                    >
+                      <Users className="w-4 h-4 text-[#33C994]" />
+                      Acessar como Membro
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={async () => {
+                        prefillRoleCredentials('admin');
+                        await switchUser('usr_admin');
+                        playSound('signup_success');
+                      }}
+                    >
+                      <Shield className="w-4 h-4 text-[#E2BE72]" />
+                      Acessar como Admin
+                    </Button>
+                  </div>
+                </div>
               </form>
             )}
 

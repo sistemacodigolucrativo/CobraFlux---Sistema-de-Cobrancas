@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { GoldenLogo, PWAInstallButton } from '../../components/ui/Primitives';
 import { useApp, type ProfessionalTab } from '../../context/AppContext';
+import { resolveAvatarUrl } from '../../utils/media';
 import { NotificationsView, SettingsView, SubscriptionView } from './AccountSections';
 import { ChargesView } from './ChargesView';
 import { ClientsView } from './ClientsView';
@@ -52,6 +53,12 @@ export const ProfessionalShell: React.FC = () => {
   } = useApp();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);
+
+  const resolvedAvatar = resolveAvatarUrl(activeUser?.avatarUrl, activeUser?.id);
+  React.useEffect(() => {
+    setAvatarFailed(false);
+  }, [activeUser?.id, resolvedAvatar]);
 
   const renderTab = () => {
     switch (profTab) {
@@ -203,14 +210,27 @@ export const ProfessionalShell: React.FC = () => {
                 </span>
               )}
             </button>
-            {activeUser?.avatarUrl && (
+            {resolvedAvatar && !avatarFailed ? (
               <img
-                src={activeUser.avatarUrl}
-                alt={activeUser.name}
+                src={resolvedAvatar}
+                alt={activeUser?.name ?? 'Profissional'}
                 referrerPolicy="no-referrer"
+                onError={() => setAvatarFailed(true)}
                 className="w-9 h-9 rounded-full object-cover border border-[#A78952]/50"
               />
-            )}
+            ) : activeUser ? (
+              <span
+                aria-label={activeUser.name}
+                className="w-9 h-9 rounded-full bg-[#1F2531] border border-[#A78952]/50 text-[#E2BE72] text-xs font-bold flex items-center justify-center shrink-0"
+              >
+                {activeUser.name
+                  .split(' ')
+                  .slice(0, 2)
+                  .map((p) => p[0])
+                  .join('')
+                  .toUpperCase()}
+              </span>
+            ) : null}
           </div>
         </header>
 

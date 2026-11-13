@@ -15,8 +15,7 @@ import { Button, Card, GoldenLogo, Input, Modal, PWAInstallButton, Textarea } fr
 import { useApp } from '../../context/AppContext';
 import { formatBRL } from '../../domain/money';
 import { demoBillingService } from '../../services/demoService';
-
-const HERO_IMG = '/src/assets/images/hero_golden_studio_1794580690028.jpg';
+import { HERO_STUDIO_IMG } from '../../utils/media';
 
 const FAQS = [
   {
@@ -59,6 +58,7 @@ export const LandingPage: React.FC = () => {
   const [contactMessage, setContactMessage] = useState('');
   const [contactState, setContactState] = useState<'idle' | 'sent' | 'error'>('idle');
   const [legalModal, setLegalModal] = useState<'terms' | 'privacy' | null>(null);
+  const [heroImgFailed, setHeroImgFailed] = useState(false);
 
   const plans = snapshot?.subscriptionPlans ?? [];
   const sampleCharge = snapshot?.charges.find((c) => c.status === 'aguardando_pagamento') ?? snapshot?.charges[0];
@@ -190,13 +190,23 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div className="lg:col-span-6 flex">
-            <div className="relative w-full rounded-2xl overflow-hidden border border-[#A78952]/30 bg-[#151922] min-h-[300px] lg:min-h-[420px]">
-              <img
-                src={HERO_IMG}
-                alt="Consultório e estúdio executivo contemporâneo com iluminação dourada"
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover"
-              />
+            <div className="relative w-full rounded-2xl overflow-hidden border border-[#A78952]/30 bg-gradient-to-br from-[#1F2531] via-[#151922] to-[#0B0D12] min-h-[300px] lg:min-h-[420px]">
+              {!heroImgFailed ? (
+                <img
+                  src={HERO_STUDIO_IMG}
+                  alt="Consultório e estúdio executivo contemporâneo com iluminação dourada"
+                  referrerPolicy="no-referrer"
+                  onError={() => setHeroImgFailed(true)}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div
+                  className="w-full h-full min-h-[300px] lg:min-h-[420px] flex items-center justify-center bg-[radial-gradient(circle_at_30%_25%,rgba(226,190,114,0.22),transparent_55%),radial-gradient(circle_at_75%_70%,rgba(51,201,148,0.14),transparent_55%)]"
+                  aria-hidden="true"
+                >
+                  <Sparkles className="w-12 h-12 text-[#E2BE72]/50" />
+                </div>
+              )}
               <div
                 className="absolute inset-0 bg-gradient-to-t from-[#0B0D12] via-[#0B0D12]/35 to-transparent"
                 aria-hidden="true"
@@ -533,7 +543,7 @@ export const LandingPage: React.FC = () => {
               Administrativo Geral para demonstração ponta a ponta.
             </p>
             <div className="space-y-1.5 text-sm text-[#B8BFCD] pt-2">
-              <p>E-mail: {snapshot?.globalSettings.supportEmail ?? 'suporte@goldenbilling.com.br'}</p>
+              <p>E-mail: {snapshot?.globalSettings.supportEmail ?? 'suporte@cobraflux.com.br'}</p>
               <p>Atendimento: {snapshot?.globalSettings.supportPhone ?? '+55 11 3000-4000'}</p>
             </div>
           </div>

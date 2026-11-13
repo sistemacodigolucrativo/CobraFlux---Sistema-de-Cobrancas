@@ -10,7 +10,14 @@ import type {
 } from '../types/domain';
 import { soundEngine, type SoundEffectType } from '../utils/sound';
 
-export type AppEnvironment = 'site' | 'auth' | 'professional' | 'admin' | 'public_payment';
+export type AppEnvironment =
+  | 'site'
+  | 'auth'
+  | 'professional'
+  | 'admin'
+  | 'public_payment'
+  | 'confirmation'
+  | 'error';
 
 export type ProfessionalTab =
   | 'inicio'
@@ -201,6 +208,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       if (hash.startsWith('#/entrar')) {
         setEnvironmentState('auth');
+        return;
+      }
+      if (hash.startsWith('#/confirmacao')) {
+        setEnvironmentState('confirmation');
+        return;
+      }
+      if (hash.startsWith('#/erro')) {
+        setEnvironmentState('error');
+        return;
+      }
+      if (
+        hash &&
+        hash !== '#' &&
+        !['#topo', '#funcionalidades', '#demonstracao', '#planos', '#faq', '#contato'].includes(hash)
+      ) {
+        setEnvironmentState('error');
       }
     };
     applyLocation();
@@ -220,6 +243,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         window.location.hash = '#/admin';
       } else if (env === 'auth') {
         window.location.hash = '#/entrar';
+      } else if (env === 'confirmation') {
+        window.location.hash = '#/confirmacao';
+      } else if (env === 'error') {
+        window.location.hash = '#/erro';
       }
       window.scrollTo({ top: 0, behavior: uiPrefs.reduceMotion ? 'auto' : 'smooth' });
     },
