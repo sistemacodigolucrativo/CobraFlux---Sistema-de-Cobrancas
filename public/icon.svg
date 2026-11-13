@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="cfGold" x1="80" y1="80" x2="420" y2="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF2B8"/>
+      <stop offset="35%" stop-color="#E8C36A"/>
+      <stop offset="70%" stop-color="#C89B3C"/>
+      <stop offset="100%" stop-color="#F5D491"/>
+    </linearGradient>
+    <linearGradient id="cfGoldBright" x1="120" y1="90" x2="360" y2="410" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF7D6"/>
+      <stop offset="50%" stop-color="#E2BE72"/>
+      <stop offset="100%" stop-color="#9C7832"/>
+    </linearGradient>
+    <linearGradient id="cfSwoosh" x1="64" y1="380" x2="450" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E86FAE"/>
+      <stop offset="45%" stop-color="#E2BE72"/>
+      <stop offset="100%" stop-color="#33C994"/>
+    </linearGradient>
+    <linearGradient id="cfGreen" x1="160" y1="330" x2="290" y2="150" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#16A34A"/>
+      <stop offset="55%" stop-color="#33C994"/>
+      <stop offset="100%" stop-color="#A7F3D0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#0B0D12"/>
+  <rect x="20" y="20" width="472" height="472" rx="82" stroke="#A78952" stroke-opacity="0.32" stroke-width="4"/>
+
+  <g transform="translate(22, 42) scale(3.9)">
+    <path d="M16 58C10 47 22 28 48 16C74 4 102 6 108 18C113 28 101 46 80 58" stroke="url(#cfSwoosh)" stroke-width="3.2" stroke-linecap="round"/>
+    <path d="M90 54C74 66 42 75 22 68C14 65 11 60 13 54" stroke="#E86FAE" stroke-width="3.4" stroke-linecap="round"/>
+    <path d="M72 22H90L98 15H105" stroke="url(#cfGold)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="108" cy="15" r="3" stroke="#E86FAE" stroke-width="2.2" fill="#0B0D12"/>
+    <path d="M70 28H92L99 22H106" stroke="url(#cfGold)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="109" cy="22" r="2.7" stroke="#F5D491" stroke-width="2" fill="#0B0D12"/>
+    <rect x="41" y="51" width="5.5" height="9" rx="1.2" fill="url(#cfGreen)"/>
+    <rect x="49" y="46" width="5.5" height="14" rx="1.2" fill="url(#cfGreen)"/>
+    <rect x="57" y="40" width="5.5" height="20" rx="1.2" fill="url(#cfGreen)"/>
+    <path d="M37 49C45 45 53 38 60 28" stroke="#6EE7B7" stroke-width="2.8" stroke-linecap="round"/>
+    <path d="M54 29L62 25L62.5 34L58.5 31.5L54 29Z" fill="#6EE7B7"/>
+    <path d="M73 16H47C34 16 24 26 21 42C18 58 26 68 41 68H54L58 58H43C34 58 30 52 32 42C34 31 41 26 50 26H67L73 16Z" fill="url(#cfGold)" stroke="#FFF5CC" stroke-opacity="0.45" stroke-width="1" stroke-linejoin="round"/>
+    <path d="M66 32H94L89 41H73L70 49H86L81 58H67L57 78H46L66 32Z" fill="url(#cfGoldBright)" stroke="#FFF5CC" stroke-opacity="0.5" stroke-width="1" stroke-linejoin="round"/>
+  </g>
+</svg>
