@@ -1,0 +1,46 @@
+name: Android CobraFlux - APK de testes
+on:
+  pull_request:
+    paths:
+      - 'mobile/android/**'
+      - '.github/workflows/android-cobraflux-demo.yml'
+  push:
+    branches:
+      - android-webview-demo-debug
+    paths:
+      - 'mobile/android/**'
+      - '.github/workflows/android-cobraflux-demo.yml'
+  workflow_dispatch:
+jobs:
+  android-debug:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      # O runner Ubuntu ja possui Android SDK e sdkmanager atualizados.
+      - name: Instalar Android SDK
+        run: |
+          SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "$SDK/platform-tools" >> "$GITHUB_PATH"
+          echo "$SDK/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$SDK/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-36' 'build-tools;36.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Gerar APK debug
+        working-directory: mobile/android
+        run: gradle --no-daemon :app:assembleDebug
+      - name: Publicar APK para baixar
+        uses: actions/upload-artifact@v4
+        with:
+          name: CobraFlux-WebView-Android9-MIUI10
+          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
