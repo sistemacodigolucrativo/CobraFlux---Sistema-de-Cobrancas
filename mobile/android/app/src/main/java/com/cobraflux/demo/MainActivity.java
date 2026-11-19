@@ -13,6 +13,7 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
+import android.os.Message;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.Gravity;
@@ -93,7 +94,7 @@ public final class MainActivity extends Activity {
       lastUrl=state.getString("url",URL);
       showWeb(lastUrl,pageTitle);
     }else if(state!=null && "accounts".equals(state.getString("screen")))showAccounts();
-    else showHome();
+    else showWeb(URL,"CobraFlux");
   }
   @Override public void onSaveInstanceState(Bundle out){
     out.putString("screen",screen);out.putString("title",pageTitle);
@@ -151,7 +152,7 @@ public final class MainActivity extends Activity {
   }
   private void showAccounts(){
     screen="accounts";reset();LinearLayout c=body();
-    c.addView(button("← Voltar",GOLD,this::showHome));space(c,15);
+    c.addView(button("← Voltar ao site",GOLD,()->open(URL,"CobraFlux")));space(c,15);
     header(c,"Contas demonstrativas","Copie as credenciais para testar os perfis.");
     account(c,"Rafael Mendes","Plano Premium — principal","rafael@studioforce.com.br");
     account(c,"Dra. Camila Duarte","Gratuito — 4 de 5 clientes","camila@nutrivida.com.br");
@@ -163,29 +164,55 @@ public final class MainActivity extends Activity {
     c.addView(text("A plataforma demo aceita senhas de 4 ou mais caracteres. Para alternar, use ‘Trocar conta demo’ no menu inferior esquerdo. Para uma nova conta, use ‘Cadastrar profissional’.",12,MUTED,false));
     scroll(c);
   }
-  private boolean trusted(String u){
-    if(u==null)return false;Uri uri=Uri.parse(u);
-    return "https".equalsIgnoreCase(uri.getScheme())&&HOST.equalsIgnoreCase(uri.getHost());
+  private boolean isWebUrl(String address) {
+    if(address==null)return false;
+    try {
+      Uri uri=Uri.parse(address);
+      String scheme=uri.getScheme();
+      return scheme!=null
+        && ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))
+        && uri.getHost()!=null;
+    }catch(Exception e){return false;}
   }
-  private void open(String address,String title){if(!trusted(address))return;lastUrl=address;pageTitle=title;showWeb(address,title);}
-  private void external(String address){
+  private void open(String address,String title) {
+    if(!isWebUrl(address))return;
+    lastUrl=address;pageTitle=title;showWeb(address,title);
+  }
+  /** Links de sites permanecem dentro da WebView; apenas esquemas de apps externos saem dela. */
+  private void routeLink(String address) {
+    if(isWebUrl(address)) {
+      if(browser!=null)browser.loadUrl(address);
+      else open(address,"CobraFlux");
+    } else external(address);
+  }
+  private void external(String address) {
     try {
       if(address==null)return;
-      if(address.startsWith("intent:")){
-        Intent i=Intent.parseUri(address,Intent.URI_INTENT_SCHEME);
-        i.setComponent(null);i.setSelector(null);i.addCategory(Intent.CATEGORY_BROWSABLE);
-        try{startActivity(i);}catch(ActivityNotFoundException e){
-          String fallback=i.getStringExtra("browser_fallback_url");
-          if(fallback!=null&&fallback.startsWith("https://"))startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(fallback)));
-        }return;
+      if(address.startsWith("intent:")) {
+        Intent intent=Intent.parseUri(address,Intent.URI_INTENT_SCHEME);
+        String fallback=intent.getStringExtra("browser_fallback_url");
+        if(isWebUrl(fallback)){routeLink(fallback);return;}
+        intent.setComponent(null);intent.setSelector(null);
+        intent.addCategory(Intent.CATEGORY_BROWSABLE);
+        try{startActivity(intent);}
+        catch(ActivityNotFoundException e){Toast.makeText(this,"Nenhum aplicativo compatível instalado",Toast.LENGTH_SHORT).show();}
+        return;
       }
-      Uri uri=Uri.parse(address);String s=uri.getScheme();
-      if(s==null)return;
-      s=s.toLowerCase(Locale.ROOT);
-      if(s.equals("https")||s.equals("http")||s.equals("mailto")||s.equals("tel")||s.equals("sms")||s.equals("market")||s.equals("pix")){
-        Intent i=new Intent(Intent.ACTION_VIEW,uri);i.addCategory(Intent.CATEGORY_BROWSABLE);startActivity(i);
-      }else Toast.makeText(this,"Link não suportado",Toast.LENGTH_SHORT).show();
-    }catch(Exception e){Toast.makeText(this,"Não foi possível abrir este link",Toast.LENGTH_LONG).show();}
+      Uri uri=Uri.parse(address);
+      String scheme=uri.getScheme();
+      if(scheme==null)return;
+      switch(scheme.toLowerCase(Locale.ROOT)) {
+        case "mailto":case "tel":case "sms":case "smsto":
+        case "whatsapp":case "market":case "pix":
+          Intent intent=new Intent(Intent.ACTION_VIEW,uri);
+          intent.addCategory(Intent.CATEGORY_BROWSABLE);
+          startActivity(intent);break;
+        default:
+          Toast.makeText(this,"Este tipo de link não é suportado",Toast.LENGTH_SHORT).show();
+      }
+    }catch(Exception e) {
+      Toast.makeText(this,"Não foi possível abrir este link",Toast.LENGTH_LONG).show();
+    }
   }
   private TextView nav(String label,Runnable run){
     TextView t=text(label,22,WHITE,true);t.setGravity(Gravity.CENTER);
@@ -197,7 +224,7 @@ public final class MainActivity extends Activity {
     WebSettings s=browser.getSettings();
     s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setDatabaseEnabled(true);
     s.setAllowFileAccess(false);s.setAllowContentAccess(true);
-    s.setJavaScriptCanOpenWindowsAutomatically(false);s.setSupportMultipleWindows(false);
+    s.setJavaScriptCanOpenWindowsAutomatically(true);s.setSupportMultipleWindows(true);
     s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
     s.setUseWideViewPort(true);s.setLoadWithOverviewMode(true);
     CookieManager.getInstance().setAcceptCookie(true);
@@ -205,16 +232,37 @@ public final class MainActivity extends Activity {
     browser.setWebViewClient(new WebViewClient(){
       @Override public boolean shouldOverrideUrlLoading(WebView v,WebResourceRequest r){
         String link=r.getUrl().toString();
-        if(trusted(link))return false;external(link);return true;
+        if(isWebUrl(link))return false;
+        if(link.startsWith("about:")||link.startsWith("blob:")||link.startsWith("data:")||link.startsWith("javascript:"))return false;
+        external(link);return true;
       }
       @Override public boolean shouldOverrideUrlLoading(WebView v,String link){
-        if(trusted(link))return false;external(link);return true;
+        if(isWebUrl(link))return false;
+        if(link.startsWith("about:")||link.startsWith("blob:")||link.startsWith("data:")||link.startsWith("javascript:"))return false;
+        external(link);return true;
       }
       @Override public void onReceivedError(WebView v,WebResourceRequest r,WebResourceError e){
         if(r.isForMainFrame())Toast.makeText(MainActivity.this,"Falha ao carregar. Verifique a internet ou o servidor.",Toast.LENGTH_LONG).show();
       }
     });
     browser.setWebChromeClient(new WebChromeClient(){
+      @Override public boolean onCreateWindow(WebView view,boolean isDialog,boolean isUserGesture,Message resultMsg) {
+        if(!isUserGesture)return false;
+        final WebView popup=new WebView(MainActivity.this);
+        popup.setWebViewClient(new WebViewClient(){
+          @Override public boolean shouldOverrideUrlLoading(WebView v,WebResourceRequest r){
+            routeLink(r.getUrl().toString());
+            v.post(()->v.destroy());return true;
+          }
+          @Override public boolean shouldOverrideUrlLoading(WebView v,String u){
+            routeLink(u);v.post(()->v.destroy());return true;
+          }
+        });
+        WebView.WebViewTransport transport=(WebView.WebViewTransport)resultMsg.obj;
+        transport.setWebView(popup);
+        resultMsg.sendToTarget();
+        return true;
+      }
       @Override public void onProgressChanged(WebView v,int n){
         if(progress!=null){progress.setProgress(n);progress.setVisibility(n>=100?View.GONE:View.VISIBLE);}
       }
@@ -237,30 +285,48 @@ public final class MainActivity extends Activity {
     });
     return browser;
   }
-  private void showWeb(String address,String title){
+  /** Inicializa diretamente o site em uma WebView sem barra de endereços. */
+  private void showWeb(String address,String title) {
     screen="web";reset();
-    LinearLayout bar=new LinearLayout(this);bar.setGravity(Gravity.CENTER_VERTICAL);
-    bar.setBackgroundColor(CARD);bar.setPadding(dp(6),dp(3),dp(6),dp(3));
-    bar.addView(nav("‹",this::onBackPressed));
-    TextView label=text(title,15,WHITE,true);label.setSingleLine(true);
-    label.setEllipsize(android.text.TextUtils.TruncateAt.END);
-    bar.addView(label,new LinearLayout.LayoutParams(0,dp(48),1));
-    bar.addView(nav("⌂",this::showHome));
-    bar.addView(nav("↻",()->{if(browser!=null)browser.reload();}));
-    bar.addView(nav("⋮",()->new AlertDialog.Builder(this)
-      .setItems(new String[]{"Site institucional","Página de pagamento","Painel Premium","Login","Admin","Credenciais demo","Abrir no navegador"},
-        (dialog,n)->{switch(n){
-          case 0:open(URL,"Site");break;case 1:open(PAGAR,"Pagamento");break;
-          case 2:open(PREMIUM,"Premium");break;case 3:open(LOGIN,"Login");break;
-          case 4:open(ADMIN,"Admin");break;case 5:showAccounts();break;
-          case 6:external(browser==null?address:browser.getUrl());break;
-        }}).show()));
-    root.addView(bar);
-    progress=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);
-    progress.setMax(100);progress.setProgressTintList(ColorStateList.valueOf(GREEN));
-    root.addView(progress,new LinearLayout.LayoutParams(-1,dp(3)));
-    FrameLayout frame=new FrameLayout(this);root.addView(frame,new LinearLayout.LayoutParams(-1,0,1));
+    FrameLayout frame=new FrameLayout(this);
+    root.addView(frame,new LinearLayout.LayoutParams(-1,-1));
     frame.addView(web(),new FrameLayout.LayoutParams(-1,-1));
+    progress=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);
+    progress.setMax(100);
+    progress.setProgressTintList(ColorStateList.valueOf(GREEN));
+    FrameLayout.LayoutParams loading=new FrameLayout.LayoutParams(-1,dp(3),Gravity.TOP);
+    frame.addView(progress,loading);
+    TextView menu=text("☰",24,GOLD,true);
+    menu.setGravity(Gravity.CENTER);
+    menu.setContentDescription("Abrir menu CobraFlux");
+    menu.setFocusable(true);menu.setElevation(dp(6));
+    GradientDrawable rounded=new GradientDrawable();
+    rounded.setColor(Color.argb(230,9,12,19));
+    rounded.setCornerRadius(dp(24));
+    rounded.setStroke(dp(1),GOLD);
+    menu.setBackground(rounded);
+    FrameLayout.LayoutParams pos=new FrameLayout.LayoutParams(dp(45),dp(45),Gravity.TOP|Gravity.END);
+    pos.setMargins(0,dp(10),dp(10),0);
+    frame.addView(menu,pos);
+    menu.setOnClickListener(v->new AlertDialog.Builder(this)
+      .setTitle("🐍 CobraFlux")
+      .setItems(new String[]{
+        "Site institucional","Página de pagamento","Painel profissional (Premium)",
+        "Login profissional","Painel administrativo","Contas demonstrativas",
+        "Central de acessos","Atualizar esta página","Voltar uma página"
+      },(dialog,n)->{
+        switch(n) {
+          case 0:open(URL,"Site institucional");break;
+          case 1:open(PAGAR,"Pagamento");break;
+          case 2:open(PREMIUM,"Painel profissional");break;
+          case 3:open(LOGIN,"Login profissional");break;
+          case 4:open(ADMIN,"Administração");break;
+          case 5:showAccounts();break;
+          case 6:showHome();break;
+          case 7:if(browser!=null)browser.reload();break;
+          case 8:if(browser!=null&&browser.canGoBack())browser.goBack();break;
+        }
+      }).show());
     if(address!=null && !address.equals(browser.getUrl()))browser.loadUrl(address);
   }
   @Override protected void onActivityResult(int req,int result,Intent data) {
@@ -277,10 +343,10 @@ public final class MainActivity extends Activity {
     }
   }
   @Override public void onBackPressed(){
-    if("web".equals(screen)){
-      if(browser!=null&&browser.canGoBack())browser.goBack();else showHome();
-    }else if("accounts".equals(screen))showHome();
-    else new AlertDialog.Builder(this).setTitle("Sair do CobraFlux?")
+    if("web".equals(screen)&&browser!=null&&browser.canGoBack()){
+      browser.goBack();return;
+    }else if("accounts".equals(screen)){open(URL,"CobraFlux");return;}
+    new AlertDialog.Builder(this).setTitle("Sair do CobraFlux?")
       .setNegativeButton("Cancelar",null).setPositiveButton("Sair",(d,w)->finish()).show();
   }
   @Override protected void onDestroy(){
