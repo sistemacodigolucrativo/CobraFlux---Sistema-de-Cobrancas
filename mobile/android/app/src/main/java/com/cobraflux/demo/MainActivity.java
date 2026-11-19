@@ -156,7 +156,7 @@ public final class MainActivity extends Activity {
     account(c,"Rafael Mendes","Plano Premium — principal","rafael@studioforce.com.br");
     account(c,"Dra. Camila Duarte","Gratuito — 4 de 5 clientes","camila@nutrivida.com.br");
     account(c,"Lucas Ferreira","Assinatura vencida","lucas@ferreiraconsult.com.br");
-    account(c,"Clínica BellafO rma","Clientes inadimplentes","contato@bellaforma.com.br");
+    account(c,"Clínica BellaForma","Clientes inadimplentes","contato@bellaforma.com.br");
     account(c,"Administrador","Proprietário da plataforma","admin@goldenbilling.com.br");
     c.addView(button("Abrir tela de login",GREEN,()->open(LOGIN,"Login profissional")));space(c,9);
     c.addView(button("Abrir painel administrativo",GOLD,()->open(ADMIN,"Administração")));space(c,14);
