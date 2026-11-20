@@ -6,6 +6,8 @@ on:
       - 'src/pages/production/**'
       - 'src/services/productionApi.ts'
       - 'src/App.tsx'
+      - 'src/context/AppContext.tsx'
+      - 'src/components/ui/Primitives.tsx'
       - 'package.json'
       - '.github/workflows/production-foundation.yml'
   push:
@@ -15,6 +17,26 @@ on:
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cobraflux
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: cobraflux_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cobraflux -d cobraflux_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://cobraflux:testpass@127.0.0.1:5432/cobraflux_test
+      SESSION_SECRET: ci-test-secret-change-me-not-production-123456789
+      APP_ORIGIN: http://localhost:3000
+      CF_NO_LISTEN: 'true'
+      NODE_ENV: test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -28,5 +50,11 @@ jobs:
         run: npm run test:domain
       - name: Security tests
         run: npm run test:server
-      - name: Frontend build
+      - name: Run migrations
+        run: npm run migrate
+      - name: Multi-tenant integration
+        run: npm run test:integration
+      - name: Frontend build (demo)
         run: npm run build
+      - name: Frontend build (production)
+        run: VITE_APP_MODE=production npm run build

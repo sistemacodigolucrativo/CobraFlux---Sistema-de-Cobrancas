@@ -341,4 +341,7 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({error:'server_error'});
 });
 const port=Number(process.env.PORT ?? 8080);
-app.listen(port, '0.0.0.0', () => console.log('CobraFlux API ready on port ' + port));
+if (process.env.CF_NO_LISTEN !== 'true') {
+  app.listen(port, '0.0.0.0', () => console.log('CobraFlux API ready on port ' + port));
+}
+export { app };

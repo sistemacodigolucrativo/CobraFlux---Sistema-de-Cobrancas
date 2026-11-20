@@ -12,7 +12,8 @@
     "server": "tsx server/index.ts",
     "migrate": "tsx server/migrate.ts",
     "test:server": "tsx --test server/security.test.ts",
-    "test:domain": "tsx --test src/domain/finance.test.ts"
+    "test:domain": "tsx --test src/domain/finance.test.ts",
+    "test:integration": "tsx --test server/integration.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
