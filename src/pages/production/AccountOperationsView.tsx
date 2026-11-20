@@ -1,6 +1,7 @@
 import React,{useEffect,useState} from 'react';
 import {Button,Card,Input} from '../../components/ui/Primitives';
 import {productionApi,type Session,type Profile,type SupportTicket} from '../../services/productionApi';
+import {SandboxConnectionView} from './SandboxConnectionView';
 
 export function AccountOperationsView({session,onSessionChange}:{session:Session;onSessionChange:(s:Session)=>void}){
  const [profile,setProfile]=useState<Profile|null>(null);
@@ -91,5 +92,6 @@ export function AccountOperationsView({session,onSessionChange}:{session:Session
        </div>
      </Card>
    </div>
+   <SandboxConnectionView session={session}/>
  </div>;
 }
