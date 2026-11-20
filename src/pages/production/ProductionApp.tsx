@@ -15,9 +15,17 @@ function CardForm({children}: {children:React.ReactNode}){
 }
 function PublicPayment({token}:{token:string}){
   const [charge,setCharge]=useState<PublicCharge|null>(null);
+  const [qr,setQr]=useState<{payload:string;encodedImage?:string;sandboxOnly:true}|null>(null);
+  const [qrError,setQrError]=useState('');
   const [error,setError]=useState('');
   useEffect(()=>{
-    productionApi.publicCharge(token).then(setCharge).catch((e)=>setError(e.message));
+    productionApi.publicCharge(token).then(async details=>{
+      setCharge(details);
+      if(details.paymentEnabled&&details.sandboxOnly){
+        try{setQr(await productionApi.sandboxQr(token));}
+        catch(e){setQrError(e instanceof Error?e.message:'Não foi possível carregar QR Code Sandbox.');}
+      }
+    }).catch((e)=>setError(e.message));
   },[token]);
   return <div className="min-h-screen bg-[#0B0D12] text-[#F6F1E8] p-4 sm:p-8">
     <header className="max-w-2xl mx-auto py-3"><GoldenLogo /></header>
@@ -31,10 +39,20 @@ function PublicPayment({token}:{token:string}){
           <p className="text-3xl font-bold text-[#E2BE72]">{money(charge.amountCents)}</p>
           <p>Vencimento: {String(charge.dueDate).slice(0,10)}</p>
           <p>Status: {charge.status}</p>
+          {charge.sandboxOnly&&<div className="border border-[#F5D491]/50 p-4 rounded-xl text-[#F5D491] text-sm" role="note">
+            <strong>AMBIENTE SANDBOX — TESTES APENAS.</strong> Não tente transferir dinheiro real para este QR Code. Os estados são provenientes do provedor de testes.
+          </div>}
           {charge.paymentEnabled&&charge.pixPayload
-          ? <><p>Código Pix emitido pelo provedor:</p><textarea readOnly className="w-full bg-[#0B0D12] p-3" value={charge.pixPayload}/>
-              <Button onClick={()=>navigator.clipboard.writeText(charge.pixPayload!)}>Copiar Pix</Button></>
-          : <p className="text-[#F5D491]">Pagamento online indisponível. Esta cobrança ainda não foi emitida por um provedor financeiro. Nenhum valor será transferido.</p>}
+          ? <div className="space-y-3">
+              {qr?.encodedImage&&<img className="w-56 h-56 bg-white rounded-xl p-2 mx-auto" width={224} height={224}
+                src={'data:image/png;base64,'+qr.encodedImage} alt="QR Code Pix somente de testes em sandbox"/>}
+              <p>Pix Copia e Cola · Somente SANDBOX</p>
+              <textarea aria-label="Código Pix sandbox" readOnly className="w-full bg-[#0B0D12] p-3 rounded-lg border border-white/20 text-xs"
+                rows={4} value={qr?.payload??charge.pixPayload}/>
+              {qrError&&<p className="text-xs text-[#F5D491]">QR atualizado indisponível: {qrError}. O código da cobrança permanece disponível.</p>}
+              <Button onClick={()=>void navigator.clipboard.writeText(qr?.payload??charge.pixPayload!)}>Copiar código de teste</Button>
+            </div>
+          : <p className="text-[#F5D491]">Pagamento online indisponível nesta cobrança. Nenhum valor será transferido.</p>}
         </>}
         <a href="/#" className="text-[#E2BE72] underline">Voltar</a>
       </CardForm>
@@ -133,7 +151,7 @@ export function ProductionApp(){
           </Card>}
           {tab==='clientes'&&<ClientsOperationsView key={session.organizationId} onChanged={refresh}/>}
           {tab==='servicos'&&<ServicesOperationsView key={session.organizationId} onChanged={refresh}/>}
-          {tab==='cobrancas'&&<ChargesOperationsView key={session.organizationId} onChanged={refresh}/>}
+          {tab==='cobrancas'&&<ChargesOperationsView key={session.organizationId} onChanged={refresh} canIssue={session.user.role!=='operator'}/>}
           {tab==='equipe'&&<TeamOperationsView key={session.organizationId} session={session}/>}
           {tab==='configuracoes'&&<AccountOperationsView key={session.organizationId} session={session} onSessionChange={setSession}/>}
   </ProductionShell>;
