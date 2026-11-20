@@ -80,6 +80,9 @@ export function registerSandboxRefunds(app:Express,{sessions,csrf,who,route}:Dep
       const expected=Number(charge.amount_cents)-Number(charge.discount_cents);
       const available=expected-Number(charge.refunded_cents);
       if(body.amountCents>available)return 'refund_exceeds_remaining';
+      const today=await db.query("SELECT count(*)::int AS total FROM sandbox_refund_requests "+
+        "WHERE organization_id=$1 AND created_at>now()-interval '24 hours'",[p.orgId]);
+      if(today.rows[0].total>=50)return 'refund_rate_limited';
       const active=await db.query("SELECT 1 FROM sandbox_refund_requests WHERE charge_id=$1 "+
         "AND state IN ('reserved','submitted','reconcile_required') LIMIT 1",[id]);
       if(active.rowCount)return 'refund_requires_reconciliation';
@@ -92,9 +95,12 @@ export function registerSandboxRefunds(app:Express,{sessions,csrf,who,route}:Dep
       await db.query("INSERT INTO charge_history(id,organization_id,charge_id,actor_id,action,details) "+
         "VALUES($1,$2,$3,$4,'SANDBOX_REFUND_REQUESTED',$5::jsonb)",
         [randomUUID(),p.orgId,id,p.userId,JSON.stringify({refundId,amountCents:body.amountCents})]);
+      await db.query("INSERT INTO audit_logs(id,organization_id,actor_id,action,entity_type,entity_id,metadata) "+
+        "VALUES($1,$2,$3,'SANDBOX_REFUND_REQUESTED','charge',$4,$5::jsonb)",
+        [randomUUID(),p.orgId,p.userId,id,JSON.stringify({refundId,amountCents:body.amountCents})]);
       return 'claimed';
     });
-    if(claim!=='claimed'){res.status(claim==='not_found'?404:409).json({error:claim});return;}
+    if(claim!=='claimed'){res.status(claim==='not_found'?404:claim==='refund_rate_limited'?429:409).json({error:claim});return;}
     try{
       await apiFor(row).requestRefund(row.provider_charge_id,body.amountCents,description);
       await pool.query("UPDATE sandbox_refund_requests SET state='submitted',updated_at=now() "+
@@ -178,6 +184,9 @@ export function registerSandboxRefunds(app:Express,{sessions,csrf,who,route}:Dep
         [randomUUID(),p.orgId,id,p.userId,JSON.stringify({
           status,refundedCents:summary.doneCents,pendingRefundCents:summary.pendingCents,needsReview
         })]);
+      await db.query("INSERT INTO audit_logs(id,organization_id,actor_id,action,entity_type,entity_id,metadata) "+
+        "VALUES($1,$2,$3,'SANDBOX_REFUNDS_RECONCILED','charge',$4,$5::jsonb)",
+        [randomUUID(),p.orgId,p.userId,id,JSON.stringify({status,refundedCents:summary.doneCents,needsReview})]);
       return {status,refundedCents:summary.doneCents,paidCents,pendingRefundCents:summary.pendingCents,
         needsReview,sandboxOnly:true};
     });
