@@ -2,7 +2,7 @@ import React,{useEffect,useState} from 'react';
 import {Button,Card,Input} from '../../components/ui/Primitives';
 import {productionApi,type Charge} from '../../services/productionApi';
 
-type RefundRequest={id:string;requested_cents:string;state:string;created_at:string};
+type RefundRequest={id:string;requested_cents:string;state:string;receipt_url:string|null;created_at:string};
 const real=(c:number|string)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(c)/100);
 function parseAmount(value:string){
  const raw=value.trim().replace(/^R\$\s*/,'').replace(/\s/g,'');
@@ -89,6 +89,9 @@ export function SandboxRefundPanel({charge,onChanged,onClose}:{charge:Charge;onC
      {items.map(item=><div key={item.id} className="flex flex-wrap justify-between gap-2 py-2 border-b border-white/10 text-xs">
        <span>{real(item.requested_cents)} · {labels[item.state]??item.state}</span>
        <span className="text-[#B8BFCD]">{new Date(item.created_at).toLocaleString('pt-BR')}</span>
+       {item.state==='completed'&&item.receipt_url&&
+         <a href={item.receipt_url} rel="noopener noreferrer" target="_blank"
+           className="text-xs text-[#E2BE72] underline">Comprovante oficial Asaas Sandbox</a>}
      </div>)}
    </div>
  </Card>;
