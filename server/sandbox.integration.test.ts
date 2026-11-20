@@ -7,7 +7,7 @@ process.env.CF_NO_LISTEN='true';
 process.env.PAYMENT_CREDENTIAL_ENCRYPTION_KEY=randomBytes(32).toString('hex');
 const realFetch=globalThis.fetch.bind(globalThis);
 const customers=new Map<string,string>(),
-  payments=new Map<string,{id:string;value:number;status:string;externalReference:string;billingType:'PIX'}>();
+  payments=new Map<string,{id:string;value:number;status:string;externalReference:string;billingType:'PIX';transactionReceiptUrl?:string}>();
 const refunds=new Map<string,Array<{value:number;description:string;status:'PENDING'|'DONE'|'CANCELLED';transactionReceiptUrl?:string}>>();
 let paymentPostCount=0,customerPostCount=0,lostResponse=false,refundPostCount=0,lostRefundResponse=false;
 globalThis.fetch=(async(input:URL|Request|string,init?:RequestInit):Promise<Response>=>{
@@ -148,6 +148,7 @@ test('Asaas sandbox: encrypted tenant config, safe issuance, webhook replay, ref
   assert.equal((await call('/public/charges/'+draftA.public_token)).body.status,'paid');
   // Refund event alone cannot change money: only DONE records reconciled from the provider can.
   payment.status='RECEIVED';
+  payment.transactionReceiptUrl='https://www.asaas.com/comprovantes/9988776655?tracking=ignored';
   const refundHint=await call(webhookPath,'POST',event('evt_refund_1','PAYMENT_REFUNDED'),undefined,undefined,webhookToken);
   assert.equal(refundHint.body.result,'refund_reconciliation_required');
   let after=await pool.query('SELECT status,paid_cents,refunded_cents FROM charges WHERE id=$1',[draftA.id]);
@@ -159,6 +160,11 @@ test('Asaas sandbox: encrypted tenant config, safe issuance, webhook replay, ref
   const initialSync=await call('/sandbox/charges/'+draftA.id+'/reconcile-financial','POST',{},a.cookie,a.csrf);
   assert.equal(initialSync.status,200,JSON.stringify(initialSync.body));
   assert.equal(initialSync.body.refundedCents,0);
+  const paidReceipt=await call('/sandbox/charges/'+draftA.id+'/payment-receipt','GET',undefined,a.cookie);
+  assert.equal(paidReceipt.status,200);
+  assert.equal(paidReceipt.body.receiptUrl,'https://www.asaas.com/comprovantes/9988776655');
+  assert.equal((await call('/sandbox/charges/'+draftA.id+'/payment-receipt','GET',undefined,b.cookie)).status,404);
+
 
   const partial=await call('/sandbox/charges/'+draftA.id+'/refunds','POST',
     {amountCents:15000,reason:'Ajuste parcial de teste'},a.cookie,a.csrf);
