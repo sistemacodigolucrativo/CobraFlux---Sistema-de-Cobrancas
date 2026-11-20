@@ -177,7 +177,7 @@ export function registerOperations(app:Express,deps:Deps):void{
 
  // Draft-only charge operations. No provider events/settlement endpoints at this phase.
  app.get('/api/charges',sessions,route(async(req,res)=>{
-   const q=z.object({search:z.string().trim().max(80).optional(),status:z.enum(['draft','cancelled','pending','paid','partial','overdue','refunded']).optional(),
+   const q=z.object({search:z.string().trim().max(80).optional(),status:z.enum(['draft','pending_provider','cancelled','pending','paid','partial','partially_refunded','overdue','refunded']).optional(),
        limit:z.coerce.number().int().min(1).max(200).default(100),offset:z.coerce.number().int().min(0).max(100000).default(0)}).parse(req.query);
    const p=who(req);
    const predicate="ch.organization_id=$1 AND ($2::text IS NULL OR (cl.name ILIKE $2 OR ch.description ILIKE $2 OR ch.public_token ILIKE $2)) AND ($3::text IS NULL OR ch.status=$3)";
