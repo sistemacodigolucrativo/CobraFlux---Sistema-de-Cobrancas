@@ -22,8 +22,8 @@
 
 - Nenhuma integração Pix real ou acesso bancário está configurada: **não enviar dinheiro para os links criados nesta fase**.
 - Nenhum evento financeiro pode ser validado por botões simuladores na API de produção.
-- Acesso de superadministrador está bloqueado até implantar MFA.
-- Verificação de e-mail ainda não está implantada; cadastro existe, mas verificação da identidade não é comprovada.
+- Acesso de superadministrador exige **TOTP** configurado por operador e sessão MFA; sem provisionamento ou chave de criptografia, o login permanece bloqueado.
+- Verificação de e-mail está implementada no backend com token de uso único; envio depende de configurar Resend e remetente verificado em staging/produção.
 - A interface de produção é um recorte reduzido para validação de backend; os painéis antigos permanecem no modo demo e ainda precisam ser migrados por módulo.
 - Mensageria WhatsApp, recorrências server-side, faturamento de assinaturas SaaS, conciliação Pix, suporte admin, backups automatizados, LGPD operacional e release Android ainda **não estão concluídos**.
 - As cobranças criadas têm estado 'draft' e permanecem assim até uma integração PSP homologada. Nunca as marque 'paid' manualmente no banco para simular liquidação.
@@ -38,7 +38,7 @@
 5. Compilar frontend no modo real: VITE_APP_MODE=production npm run build.
 6. Subir a API e o frontend na mesma origem: npm run server.
 7. Conferir GET /api/health, criar duas organizações e verificar isolamento usando os testes.
-8. Definir RESEND_API_KEY e RESET_EMAIL_FROM para habilitar envio real de e-mails de recuperação.
+8. Definir RESEND_API_KEY e RESET_EMAIL_FROM para habilitar envio real de confirmação e recuperação de senha; gerar MFA_ENCRYPTION_KEY (32 bytes hex) e provisionar superadmin via npm run admin:enroll em terminal seguro.
 9. Ativar HTTPS, backup PITR do PostgreSQL, monitoramento e alertas na infraestrutura escolhida.
 
 O Dockerfile compila o frontend em modo produção e publica na porta 8080. **Não executa migrations automaticamente** para evitar alterações indevidas no banco durante reinicializações.
@@ -51,18 +51,22 @@ O usuário pode editar via GitHub/Termux e deixar o GitHub Actions executar npm 
 
 - Demo legado: build sem VITE_APP_MODE=production, não usar com dados reais.
 - Produção: build com VITE_APP_MODE=production.
-- Login: /#/entrar; recuperação /#/recuperar?token=<token>.
+- Login: /#/entrar; confirmação /#/verificar?token=<token>; recuperação /#/recuperar?token=<token>.
 - Publicar rascunho informativo: /#/pagar/<public_token>. Sem transação bancária.
 - Healthcheck: /api/health.
 
 ## Próximas etapas obrigatórias do roadmap
 
-1. E-mail verificado e MFA real do admin; política de senha e gestão de sessões/dispositivos.
+1. Verificar envio real de e-mail e login MFA em staging; concluir política de sessões e exercício de restauração (implementações no código já disponíveis).
 2. Migrar os módulos completos de cliente, cobrança, relatório e configuração para API, preservando UX.
 3. Integração com PSP **sandbox** e webhooks autenticados, idempotência e reconciliação; liberação de Pix real somente após homologação e aprovação.
 4. Recorrências com scheduler/worker; WhatsApp oficial e opt-in; assinaturas SaaS; relatórios contábeis e administração.
 5. Backups/restauração, testes de segurança e carga, LGPD, monitoramento e piloto.
 6. APK/AAB Android assinado e Android API 36+ quando o web app real estiver estabilizado.
+
+## Gate da Fase 1
+
+Consultar `docs/FASE_1_SEGURANCA_OPERACAO.md`. Scripts `scripts/backup-db.sh` e `scripts/restore-drill.sh` foram adicionados; **a restauração real ainda não foi executada**. O acesso via GitHub Actions com PostgreSQL temporário não substitui staging protegido por HTTPS nem backup restaurável.
 
 ## Comprovação
 
