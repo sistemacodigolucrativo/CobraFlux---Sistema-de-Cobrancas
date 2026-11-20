@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Button, Card, GoldenLogo, Input } from '../../components/ui/Primitives';
-import { productionApi, type Session, type PublicCharge } from '../../services/productionApi';
+import { ApiFailure,productionApi, type Session, type PublicCharge, type OrganizationChoice } from '../../services/productionApi';
+import { TeamOperationsView } from './TeamOperationsView';
+import { TeamInvitationPage } from './TeamInvitationPage';
 import { ClientsOperationsView } from './ClientsOperationsView';
 import { ChargesOperationsView } from './ChargesOperationsView';
 import { ServicesOperationsView } from './ServicesOperationsView';
@@ -46,16 +48,20 @@ export function ProductionApp(){
   const [error,setError]=useState('');
   const [notice,setNotice]=useState('');
   const [mode,setMode]=useState<'login'|'register'|'recover'|'reset'|'verify'|'resend'>('login');
-  const [tab,setTab]=useState<'inicio'|'clientes'|'servicos'|'cobrancas'|'sessoes'|'configuracoes'>('inicio');
+  const [tab,setTab]=useState<'inicio'|'clientes'|'servicos'|'cobrancas'|'sessoes'|'configuracoes'|'equipe'>('inicio');
   const [email,setEmail]=useState('');
   const [password,setPassword]=useState('');
   const [totp,setTotp]=useState('');
   const [adminAccess,setAdminAccess]=useState(false);
+  const [loginOrganizations,setLoginOrganizations]=useState<OrganizationChoice[]>([]);
+  const [loginOrganizationId,setLoginOrganizationId]=useState('');
+  const [myOrganizations,setMyOrganizations]=useState<OrganizationChoice[]>([]);
   const [fullName,setFullName]=useState('');
   const [business,setBusiness]=useState('');
   const [overview,setOverview]=useState<{total_charges:number;paid_charges:number;total_paid_cents:string}|null>(null);
   const [activeSessions,setActiveSessions]=useState<Array<{id:string;current:boolean;created_at:string;expires_at:string}>>([]);
   const token=hash.startsWith('#/pagar/')?hash.split('#/pagar/')[1].split('?')[0]:null;
+  const inviteToken=hash.startsWith('#/convite/')?hash.split('#/convite/')[1].split('?')[0]:null;
   useEffect(()=>{
     const fn=()=>setHash(window.location.hash);
     window.addEventListener('hashchange',fn);
@@ -71,22 +77,44 @@ export function ProductionApp(){
     setOverview(result);
   },[]);
   useEffect(()=>{if(session)refresh().catch((e)=>setError(e.message));},[session,refresh]);
+  useEffect(()=>{
+    if(!session){setMyOrganizations([]);return;}
+    void productionApi.organizations().then(r=>setMyOrganizations(r.items)).catch(e=>setError(e instanceof Error?e.message:'Não foi possível consultar suas organizações.'));
+  },[session?.organizationId,session?.user.id]);
   useEffect(()=>{if(session&&tab==='sessoes')productionApi.sessions().then(v=>setActiveSessions(v.items)).catch(e=>setError(e.message));},[session,tab]);
   async function submitAction(fn:()=>Promise<unknown>){
     setBusy(true);setError('');setNotice('');
     try{await fn();}catch(e){
       const message=e instanceof Error?e.message:'Falha na operação.';
       if(message.includes('MFA')||message==='admin_mfa_required')setAdminAccess(true);
+      if(e instanceof ApiFailure&&e.code==='organization_selection_required'){
+        setLoginOrganizations(e.organizations);
+        setNotice('Selecione uma organização para entrar.');
+      }
       if(message==='email_unverified')setMode('resend');
       setError(message);
     }
     finally{setBusy(false);}
   }
   if(token)return <PublicPayment token={token}/>;
+  if(inviteToken)return booting?<p>Carregando convite...</p>:
+    <TeamInvitationPage token={inviteToken} session={session} onJoined={setSession} onLogout={()=>setSession(null)} onClose={()=>{window.location.hash='#/';}}/>;
   return <div className="min-h-screen bg-[#0B0D12] text-[#F6F1E8]">
     <header className="border-b border-white/10 px-4 py-4 flex justify-between items-center max-w-6xl mx-auto">
       <GoldenLogo compact/>
-      {session&&<Button variant="secondary" size="sm" onClick={()=>submitAction(async()=>{await productionApi.logout();setSession(null);})}>Sair</Button>}
+      {session&&<div className="flex flex-wrap items-center gap-2">
+        {myOrganizations.length>1&&<label className="text-xs text-[#B8BFCD]">
+          Organização
+          <select aria-label="Trocar organização" className="ml-2 bg-[#151922] border border-white/20 rounded-lg px-2 py-2 text-sm text-[#F6F1E8]"
+            value={session.organizationId} onChange={e=>void submitAction(async()=>{
+              const updated=await productionApi.switchOrganization(e.target.value);
+              setSession(updated);setTab('inicio');setNotice('Organização alterada com segurança.');
+            })}>
+            {myOrganizations.map(o=><option value={o.id} key={o.id}>{o.name}</option>)}
+          </select>
+        </label>}
+        <Button variant="secondary" size="sm" onClick={()=>void submitAction(async()=>{await productionApi.logout();setSession(null);})}>Sair</Button>
+      </div>}
     </header>
     <main className="max-w-6xl mx-auto p-4 sm:p-8 space-y-6">
       {error&&<p role="alert" className="p-3 border border-[#F16C79]/50 rounded-xl text-[#F16C79]">{error}</p>}
@@ -96,7 +124,7 @@ export function ProductionApp(){
           <p className="text-sm text-[#E2BE72]">Ambiente operacional · dados persistidos no servidor</p>
           <h1 className="text-2xl font-bold">{mode==='login'?'Acessar CobraFlux':mode==='register'?'Criar minha conta':mode==='recover'?'Recuperar senha':mode==='reset'?'Definir nova senha':mode==='resend'?'Reenviar verificação':'Confirmar e-mail'}</h1>
           <form className="space-y-4" onSubmit={(e)=>{e.preventDefault();submitAction(async()=>{
-            if(mode==='login'){const result=await productionApi.login(email,password,adminAccess?totp:undefined);if(!result)throw new Error('Falha na autenticação.');setSession(result);}
+            if(mode==='login'){const result=await productionApi.login(email,password,adminAccess?totp:undefined,loginOrganizationId||undefined);if(!result)throw new Error('Falha na autenticação.');setSession(result);setLoginOrganizations([]);setLoginOrganizationId('');}
             if(mode==='register'){await productionApi.register({name:fullName,businessName:business,email,password});setMode('login');setNotice('Conta criada. Confirme seu e-mail antes de entrar.');}
             if(mode==='verify'){const code=new URLSearchParams(hash.split('?')[1]??'').get('token')??'';await productionApi.verifyEmail(code);window.location.hash='#/entrar';setMode('login');setNotice('E-mail confirmado. Faça login.');}
             if(mode==='resend'){await productionApi.resendVerification(email);setNotice('Se houver uma conta pendente, enviaremos instruções.');}
@@ -107,6 +135,14 @@ export function ProductionApp(){
             {mode!=='reset'&&mode!=='verify'&&<Input label="E-mail" type="email" required value={email} onChange={e=>setEmail(e.target.value)}/>}
             {!['recover','resend','verify'].includes(mode)&&<Input label="Senha" type="password" minLength={mode==='login'?8:12} required value={password} onChange={e=>setPassword(e.target.value)}/>} 
             {mode==='login'&&adminAccess&&<Input label="Código MFA do autenticador" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required value={totp} onChange={e=>setTotp(e.target.value)}/>}
+            {mode==='login'&&loginOrganizations.length>0&&<label className="text-sm">
+              Organização de acesso
+              <select className="block w-full mt-2 bg-[#151922] p-3 rounded-lg border border-white/20" required
+                value={loginOrganizationId} onChange={e=>setLoginOrganizationId(e.target.value)}>
+                <option value="">Selecione</option>
+                {loginOrganizations.map(o=><option key={o.id} value={o.id}>{o.name} ({o.role})</option>)}
+              </select>
+            </label>}
             <Button type="submit" disabled={busy}>{busy?'Enviando...':mode==='login'?'Entrar':mode==='register'?'Criar conta':mode==='recover'?'Solicitar link':mode==='resend'?'Reenviar link':mode==='verify'?'Confirmar e-mail':'Redefinir senha'}</Button>
           </form>
           <div className="flex flex-wrap gap-4 text-sm text-[#E2BE72]">
@@ -120,8 +156,11 @@ export function ProductionApp(){
         : <>
           <div><p className="text-[#E2BE72] text-sm">Painel operacional</p><h1 className="text-2xl font-bold">Olá, {session.user.name}</h1></div>
           <div className="flex flex-wrap gap-2">
-            {(['inicio','clientes','servicos','cobrancas','sessoes','configuracoes'] as const).map(t=>
-              <Button key={t} size="sm" variant={tab===t?'primary':'secondary'} onClick={()=>{setTab(t);setError('');}}>{t==='inicio'?'Início':t==='clientes'?'Clientes':t==='servicos'?'Serviços':t==='cobrancas'?'Cobranças':t==='sessoes'?'Sessões':'Configurações'}</Button>
+            {(['inicio','clientes','servicos','cobrancas','equipe','sessoes','configuracoes'] as const)
+              .filter(t=>t!=='equipe'||session.user.role!=='operator').map(t=>
+              <Button key={t} size="sm" variant={tab===t?'primary':'secondary'} onClick={()=>{setTab(t);setError('');}}>
+                {t==='inicio'?'Início':t==='clientes'?'Clientes':t==='servicos'?'Serviços':t==='cobrancas'?'Cobranças':t==='equipe'?'Equipe':t==='sessoes'?'Sessões':'Configurações'}
+              </Button>
             )}
           </div>
           {tab==='inicio'&&<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -138,10 +177,12 @@ export function ProductionApp(){
             {activeSessions.map(s=><p key={s.id} className="text-sm border-b border-white/10 py-2">{s.current?'Este dispositivo':'Outra sessão'} · Criada: {new Date(s.created_at).toLocaleString('pt-BR')}</p>)}
             <Button variant="danger" disabled={busy} onClick={()=>submitAction(async()=>{await productionApi.revokeAllSessions();setSession(null);setNotice('Todas as sessões foram revogadas.');})}>Desconectar todos os dispositivos</Button>
           </Card>}
-          {tab==='clientes'&&<ClientsOperationsView onChanged={refresh}/>}
-          {tab==='servicos'&&<ServicesOperationsView onChanged={refresh}/>}
-          {tab==='cobrancas'&&<ChargesOperationsView onChanged={refresh}/>}
-          {tab==='configuracoes'&&<AccountOperationsView session={session} onSessionChange={setSession}/>}
+          {tab==='clientes'&&<ClientsOperationsView key={session.organizationId} onChanged={refresh}/>}
+          {tab==='servicos'&&<ServicesOperationsView key={session.organizationId} onChanged={refresh}/>}
+          {tab==='cobrancas'&&<ChargesOperationsView key={session.organizationId} onChanged={refresh}/>}
+          {tab==='equipe'&&<TeamOperationsView key={session.organizationId} session={session}/>}
+          {tab==='configuracoes'&&<AccountOperationsView key={session.organizationId} session={session} onSessionChange={setSession}/>}
+
 
         </>}
     </main>
