@@ -119,6 +119,12 @@ test('Asaas sandbox: encrypted tenant config, safe issuance, webhook replay, ref
   assert.equal(received.status,200,JSON.stringify(received.body));
   assert.equal(received.body.result,'received');
   assert.equal((await call('/public/charges/'+draftA.public_token)).body.status,'paid');
+  const finance=await call('/reports/overview','GET',undefined,a.cookie);
+  assert.equal(finance.status,200);
+  assert.equal(Number(finance.body.total_paid_cents),0,'sandbox cannot inflate real revenue');
+  assert.equal(finance.body.paid_charges,0);
+  assert.equal(finance.body.sandbox_paid_charges,1);
+  assert.equal(Number(finance.body.sandbox_paid_cents),40000);
   assert.equal((await call('/public/charges/'+draftA.public_token+'/sandbox-qr')).status,404);
   assert.equal((await call(webhookPath,'POST',event('evt_received_1','PAYMENT_RECEIVED'),undefined,undefined,webhookToken)).body.result,'duplicate');
   const late=await call(webhookPath,'POST',event('evt_late_overdue','PAYMENT_OVERDUE'),undefined,undefined,webhookToken);
