@@ -38,13 +38,18 @@ export const productionApi={
   },
   register:(input:{name:string;businessName:string;email:string;password:string})=>
     request<{ok:boolean}>('/auth/register','POST',input),
-  login:async(email:string,password:string)=>{
-    await request('/auth/login','POST',{email,password});
+  login:async(email:string,password:string,totpCode?:string)=>{
+    await request('/auth/login','POST',{email,password,...(totpCode?{totpCode}:{})});
     return productionApi.me();
   },
   logout:async()=>{await request('/auth/logout','POST',{});csrfToken='';},
   resetRequest:(email:string)=>request('/auth/request-reset','POST',{email}),
   resetPassword:(token:string,password:string)=>request('/auth/reset-password','POST',{token,password}),
+  verifyEmail:(token:string)=>request<{ok:boolean}>('/auth/verify-email','POST',{token}),
+  resendVerification:(email:string)=>request('/auth/resend-verification','POST',{email}),
+  sessions:()=>request<{items:Array<{id:string;current:boolean;created_at:string;expires_at:string}>}>('/auth/sessions'),
+  revokeAllSessions:async()=>{await request('/auth/sessions/revoke-all','POST',{});csrfToken='';},
+  adminOverview:()=>request<{organizations:number;users:number}>('/admin/overview'),
   clients:()=>request<{items:Client[]}>('/clients'),
   createClient:(data:{name:string;phone:string;email?:string;notes?:string;whatsappOptIn:boolean})=>
     request<Client>('/clients','POST',data),
