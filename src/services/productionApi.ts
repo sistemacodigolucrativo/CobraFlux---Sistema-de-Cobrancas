@@ -111,8 +111,11 @@ export const productionApi={
   issueSandboxPix:(id:string)=>request<{id:string;status:string;sandboxOnly:true}>('/sandbox/charges/'+encode(id)+'/issue','POST',{}),
   reconcileSandboxPix:(id:string)=>request<{id:string;status:string;sandboxOnly:true}>('/sandbox/charges/'+encode(id)+'/reconcile','POST',{}),
   sandboxQr:(token:string)=>request<{payload:string;encodedImage?:string;sandboxOnly:true}>('/public/charges/'+encode(token)+'/sandbox-qr'),
-  sandboxRefunds:(id:string)=>request<{items:Array<{id:string;requested_cents:string;state:string;created_at:string}>;
-    chargeStatus:string;refundedCents:string;sandboxOnly:true}>('/sandbox/charges/'+encode(id)+'/refunds'),
+  sandboxReconciliationOverview:()=>request<{sandboxOnly:true;automated:false;schedulerRequired:true;
+    summary:{total:number;due:number;flagged:number;repeated_failures:number};
+    incidents:Array<{charge_id:string;code:string;first_seen_at:string;last_seen_at:string}>}>('/sandbox/reconciliation/overview'),
+  sandboxRefunds:(id:string)=>request<{items:Array<{id:string;requested_cents:string;state:string;receipt_url:string|null;created_at:string}>;
+    chargeStatus:string;refundedCents:string;reconciliationRequired:boolean;sandboxOnly:true}>('/sandbox/charges/'+encode(id)+'/refunds'),
   requestSandboxRefund:(id:string,amountCents:number,reason:string)=>request<{id:string;state:string;sandboxOnly:true}>('/sandbox/charges/'+encode(id)+'/refunds','POST',{amountCents,reason}),
   reconcileSandboxFinancial:(id:string)=>request<{status:string;refundedCents:number;paidCents:number;
     pendingRefundCents:number;needsReview:boolean;sandboxOnly:true}>('/sandbox/charges/'+encode(id)+'/reconcile-financial','POST',{}),
