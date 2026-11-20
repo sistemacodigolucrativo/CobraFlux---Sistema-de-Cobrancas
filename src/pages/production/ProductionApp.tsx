@@ -1,13 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Button, Card, GoldenLogo, Input } from '../../components/ui/Primitives';
-import { productionApi, type Session, type Client, type Service, type Charge, type PublicCharge } from '../../services/productionApi';
+import { productionApi, type Session, type PublicCharge } from '../../services/productionApi';
+import { ClientsOperationsView } from './ClientsOperationsView';
+import { ChargesOperationsView } from './ChargesOperationsView';
+import { ServicesOperationsView } from './ServicesOperationsView';
+import { AccountOperationsView } from './AccountOperationsView';
 
 const money=(cents:number|string)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(cents)/100);
-function centsOf(value:string):number{
-  const n=Number(value.replace(/\s/g,'').replace('R$','').replace(/\./g,'').replace(',','.'));
-  if(!Number.isFinite(n)||n<=0) throw new Error('Informe um valor maior que zero.');
-  return Math.round(n*100);
-}
 function CardForm({children}: {children:React.ReactNode}){
   return <Card className="p-5 sm:p-7 space-y-4 max-w-2xl">{children}</Card>;
 }
@@ -47,7 +46,7 @@ export function ProductionApp(){
   const [error,setError]=useState('');
   const [notice,setNotice]=useState('');
   const [mode,setMode]=useState<'login'|'register'|'recover'|'reset'|'verify'|'resend'>('login');
-  const [tab,setTab]=useState<'inicio'|'clientes'|'servicos'|'cobrancas'|'sessoes'>('inicio');
+  const [tab,setTab]=useState<'inicio'|'clientes'|'servicos'|'cobrancas'|'sessoes'|'configuracoes'>('inicio');
   const [email,setEmail]=useState('');
   const [password,setPassword]=useState('');
   const [totp,setTotp]=useState('');
@@ -55,19 +54,8 @@ export function ProductionApp(){
   const [activeSessions,setActiveSessions]=useState<Array<{id:string;current:boolean;created_at:string;expires_at:string}>>([]);
   const [fullName,setFullName]=useState('');
   const [business,setBusiness]=useState('');
-  const [clients,setClients]=useState<Client[]>([]);
-  const [services,setServices]=useState<Service[]>([]);
-  const [charges,setCharges]=useState<Charge[]>([]);
   const [overview,setOverview]=useState<{total_charges:number;paid_charges:number;total_paid_cents:string}|null>(null);
-  const [clientName,setClientName]=useState('');
-  const [phone,setPhone]=useState('');
-  const [clientEmail,setClientEmail]=useState('');
-  const [serviceName,setServiceName]=useState('');
-  const [servicePrice,setServicePrice]=useState('150,00');
-  const [chargeClient,setChargeClient]=useState('');
-  const [chargeDescription,setChargeDescription]=useState('');
-  const [chargeAmount,setChargeAmount]=useState('150,00');
-  const [chargeDue,setChargeDue]=useState(new Date().toISOString().slice(0,10));
+  const [activeSessions,setActiveSessions]=useState<Array<{id:string;current:boolean;created_at:string;expires_at:string}>>([]);
   const token=hash.startsWith('#/pagar/')?hash.split('#/pagar/')[1].split('?')[0]:null;
   useEffect(()=>{
     const fn=()=>setHash(window.location.hash);
@@ -80,10 +68,8 @@ export function ProductionApp(){
     if(hash.startsWith('#/verificar?token='))setMode('verify');
   },[hash]);
   const refresh=useCallback(async()=>{
-    const [a,b,c,d]=await Promise.all([
-      productionApi.clients(),productionApi.services(),productionApi.charges(),productionApi.overview()
-    ]);
-    setClients(a.items);setServices(b.items);setCharges(c.items);setOverview(d);
+    const result=await productionApi.overview();
+    setOverview(result);
   },[]);
   useEffect(()=>{if(session)refresh().catch((e)=>setError(e.message));},[session,refresh]);
   useEffect(()=>{if(session&&tab==='sessoes')productionApi.sessions().then(v=>setActiveSessions(v.items)).catch(e=>setError(e.message));},[session,tab]);
@@ -135,8 +121,8 @@ export function ProductionApp(){
         : <>
           <div><p className="text-[#E2BE72] text-sm">Painel operacional</p><h1 className="text-2xl font-bold">Olá, {session.user.name}</h1></div>
           <div className="flex flex-wrap gap-2">
-            {(['inicio','clientes','servicos','cobrancas','sessoes'] as const).map(t=>
-              <Button key={t} size="sm" variant={tab===t?'primary':'secondary'} onClick={()=>{setTab(t);setError('');}}>{t==='inicio'?'Início':t==='clientes'?'Clientes':t==='servicos'?'Serviços':t==='cobrancas'?'Cobranças':'Sessões'}</Button>
+            {(['inicio','clientes','servicos','cobrancas','sessoes','configuracoes'] as const).map(t=>
+              <Button key={t} size="sm" variant={tab===t?'primary':'secondary'} onClick={()=>{setTab(t);setError('');}}>{t==='inicio'?'Início':t==='clientes'?'Clientes':t==='servicos'?'Serviços':t==='cobrancas'?'Cobranças':t==='sessoes'?'Sessões':'Configurações'}</Button>
             )}
           </div>
           {tab==='inicio'&&<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -153,63 +139,11 @@ export function ProductionApp(){
             {activeSessions.map(s=><p key={s.id} className="text-sm border-b border-white/10 py-2">{s.current?'Este dispositivo':'Outra sessão'} · Criada: {new Date(s.created_at).toLocaleString('pt-BR')}</p>)}
             <Button variant="danger" disabled={busy} onClick={()=>submitAction(async()=>{await productionApi.revokeAllSessions();setSession(null);setNotice('Todas as sessões foram revogadas.');})}>Desconectar todos os dispositivos</Button>
           </Card>}
-          {tab==='clientes'&&<>
-            <CardForm><h2 className="text-xl font-semibold">Cadastrar cliente</h2>
-              <form className="space-y-3" onSubmit={e=>{e.preventDefault();submitAction(async()=>{
-                await productionApi.createClient({name:clientName,phone,email:clientEmail,whatsappOptIn:false});
-                setClientName('');setPhone('');setClientEmail('');await refresh();setNotice('Cliente salvo no servidor.');
-              });}}>
-                <Input label="Nome" required value={clientName} onChange={e=>setClientName(e.target.value)}/>
-                <Input label="Telefone" required value={phone} onChange={e=>setPhone(e.target.value)}/>
-                <Input label="E-mail (opcional)" type="email" value={clientEmail} onChange={e=>setClientEmail(e.target.value)}/>
-                <Button type="submit" disabled={busy}>Salvar cliente</Button>
-              </form>
-            </CardForm>
-            <div className="grid gap-3">{clients.map(c=><Card key={c.id} className="p-4 flex justify-between items-center gap-3">
-              <div><p className="font-semibold">{c.name}</p><p className="text-sm text-[#B8BFCD]">{c.phone} · {c.status==='archived'?'Arquivado':'Ativo'}</p></div>
-              <Button size="sm" variant="secondary" onClick={()=>submitAction(async()=>{
-                await productionApi.setClientStatus(c.id,c.status==='archived'?'active':'archived');await refresh();
-              })}>{c.status==='archived'?'Restaurar':'Arquivar'}</Button>
-            </Card>)}</div>
-          </>}
-          {tab==='servicos'&&<>
-            <CardForm><h2 className="text-xl font-semibold">Cadastrar serviço</h2>
-              <form className="space-y-3" onSubmit={e=>{e.preventDefault();submitAction(async()=>{
-                await productionApi.createService({name:serviceName,description:'',priceCents:centsOf(servicePrice)});
-                setServiceName('');await refresh();setNotice('Serviço salvo.');
-              });}}>
-                <Input label="Nome do serviço" required value={serviceName} onChange={e=>setServiceName(e.target.value)}/>
-                <Input label="Preço (R$)" required value={servicePrice} onChange={e=>setServicePrice(e.target.value)}/>
-                <Button type="submit" disabled={busy}>Salvar serviço</Button>
-              </form>
-            </CardForm>
-            {services.map(s=><Card key={s.id} className="p-4"><b>{s.name}</b><p>{money(s.price_cents)}</p></Card>)}
-          </>}
-          {tab==='cobrancas'&&<>
-            <CardForm><h2 className="text-xl font-semibold">Criar rascunho de cobrança</h2>
-              <p className="text-sm text-[#F5D491]">Rascunhos não geram Pix e não podem ser confirmados pelo navegador.</p>
-              <form className="space-y-3" onSubmit={e=>{e.preventDefault();submitAction(async()=>{
-                await productionApi.createCharge({clientId:chargeClient,description:chargeDescription,amountCents:centsOf(chargeAmount),dueDate:chargeDue});
-                setChargeDescription('');await refresh();setNotice('Rascunho criado no servidor.');
-              });}}>
-                <label className="block text-sm">Cliente
-                  <select required className="block w-full mt-2 bg-[#151922] p-3 rounded-lg border border-white/20" value={chargeClient} onChange={e=>setChargeClient(e.target.value)}>
-                    <option value="">Selecione um cliente</option>{clients.filter(c=>c.status==='active').map(c=><option value={c.id} key={c.id}>{c.name}</option>)}
-                  </select>
-                </label>
-                <Input label="Descrição" required value={chargeDescription} onChange={e=>setChargeDescription(e.target.value)}/>
-                <Input label="Valor (R$)" required value={chargeAmount} onChange={e=>setChargeAmount(e.target.value)}/>
-                <Input label="Vencimento" type="date" required value={chargeDue} onChange={e=>setChargeDue(e.target.value)}/>
-                <Button type="submit" disabled={busy}>Salvar rascunho</Button>
-              </form>
-            </CardForm>
-            {charges.map(c=><Card key={c.id} className="p-4 space-y-2">
-              <div className="flex gap-4 justify-between"><div><b>{c.client_name}</b><p>{c.description}</p></div><b>{money(Number(c.amount_cents)-Number(c.discount_cents))}</b></div>
-              <p className="text-sm text-[#B8BFCD]">Status: {c.status} · Vencimento: {String(c.due_date).slice(0,10)}</p>
-              <a href={'/#/pagar/'+c.public_token} target="_blank" rel="noopener noreferrer" className="text-[#E2BE72] underline">Abrir página pública</a>
-              {c.status==='draft'&&<div><Button variant="secondary" size="sm" onClick={()=>submitAction(async()=>{await productionApi.cancelCharge(c.id);await refresh();})}>Cancelar rascunho</Button></div>}
-            </Card>)}
-          </>}
+          {tab==='clientes'&&<ClientsOperationsView onChanged={refresh}/>}
+          {tab==='servicos'&&<ServicesOperationsView onChanged={refresh}/>}
+          {tab==='cobrancas'&&<ChargesOperationsView onChanged={refresh}/>}
+          {tab==='configuracoes'&&<AccountOperationsView session={session} onSessionChange={setSession}/>}
+
         </>}
     </main>
   </div>;
