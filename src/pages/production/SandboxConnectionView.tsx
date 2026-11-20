@@ -3,6 +3,11 @@ import {Button,Card,Input} from '../../components/ui/Primitives';
 import {productionApi,type Session} from '../../services/productionApi';
 
 type Connection={configured:boolean;provider:string;sandboxOnly:true;webhookPath:string|null};
+type ReconcileHealth={
+  summary:{total:number;due:number;flagged:number;repeated_failures:number};
+  incidents:Array<{charge_id:string;code:string;last_seen_at:string}>;
+  schedulerRequired:true;
+};
 function makeToken(){
  const bytes=new Uint8Array(48);
  crypto.getRandomValues(bytes);
@@ -15,8 +20,14 @@ export function SandboxConnectionView({session}:{session:Session}){
  const [newToken,setNewToken]=useState('');
  const [error,setError]=useState('');
  const [notice,setNotice]=useState('');
+ const [health,setHealth]=useState<ReconcileHealth|null>(null);
  const [busy,setBusy]=useState(false);
  const owner=session.user.role==='owner'||session.user.role==='super_admin';
+ useEffect(()=>{
+   if(!owner){setHealth(null);return;}
+   void productionApi.sandboxReconciliationOverview().then(setHealth)
+     .catch(()=>setHealth(null));
+ },[session.organizationId,owner]);
  useEffect(()=>{
   void productionApi.sandboxConnection().then(setConnection)
     .catch(e=>setError(e instanceof Error?e.message:'Integração indisponível.'));
@@ -65,6 +76,24 @@ export function SandboxConnectionView({session}:{session:Session}){
     <p className="text-xs text-[#B8BFCD]">A chave fica criptografada no PostgreSQL e é utilizada apenas no servidor para chamadas ao Asaas Sandbox. O token é guardado como hash e deve ser configurado no webhook Asaas. Sem chave-mestra do servidor, a integração permanece indisponível.</p>
     <Button type="submit" disabled={busy}>Vincular sandbox</Button>
   </form>}
+  {owner&&health&&<div className="space-y-3 border-t border-white/10 pt-4">
+    <h4 className="font-semibold text-sm">Monitoramento de conciliação</h4>
+    <p className="text-xs text-[#B8BFCD]">Execução automática preparada, mas depende de um agendador externo configurado na hospedagem. Nenhum processo persistente está ativo sem infraestrutura.</p>
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+      <p>Emissões monitoradas: <strong>{health.summary.total}</strong></p>
+      <p>Consultas pendentes: <strong>{health.summary.due}</strong></p>
+      <p>Revisão manual: <strong>{health.summary.flagged}</strong></p>
+      <p>Falhas repetidas: <strong>{health.summary.repeated_failures}</strong></p>
+    </div>
+    {health.incidents.length>0&&<div className="space-y-1">
+      <p className="text-xs text-[#F5D491]">Ocorrências que exigem verificação:</p>
+      {health.incidents.map(item=><p className="text-xs text-[#B8BFCD]" key={item.charge_id+'-'+item.code}>
+        Cobrança {item.charge_id.slice(0,8)} · {item.code} · {new Date(item.last_seen_at).toLocaleString('pt-BR')}
+      </p>)}
+    </div>}
+    <Button size="sm" variant="secondary" onClick={()=>void productionApi.sandboxReconciliationOverview().then(setHealth)
+      .catch(()=>setNotice('Monitoramento temporariamente indisponível.'))}>Atualizar monitoramento</Button>
+  </div>}
   {!owner&&<p className="text-sm text-[#B8BFCD]">Apenas o titular pode configurar credenciais de pagamento.</p>}
   {error&&<p role="alert" className="text-xs text-[#F16C79]">{error}</p>}
   {notice&&<p role="status" className="text-xs text-[#33C994]">{notice}</p>}
