@@ -181,7 +181,9 @@ export function registerSandboxPayments(app:Express,{sessions,csrf,route,who}:De
       if(created.value!==undefined&&providerMoneyCents(created.value)!==selection.expectedCents)
         throw new Error('provider_amount_mismatch');
       paymentId=created.id;
-      await pool.query('UPDATE sandbox_issuances SET provider_payment_id=$2 WHERE charge_id=$1',[id,paymentId]);
+      const linked=await pool.query('UPDATE sandbox_issuances SET provider_payment_id=$2 WHERE charge_id=$1 '+
+        'AND (provider_payment_id IS NULL OR provider_payment_id=$2) RETURNING id',[id,paymentId]);
+      if(!linked.rowCount)throw new Error('conflicting_provider_payment_id');
       const result=await finishIssue(p,id,account,api,paymentId,selection.expectedCents);
       res.status(201).json(result);
     }catch(e){
