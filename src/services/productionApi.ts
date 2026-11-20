@@ -46,6 +46,23 @@ export type ServiceInput={
 export type ChargeInput={
   clientId:string;serviceId?:string;description:string;amountCents:number;discountCents?:number;dueDate:string;
 };
+export type OrganizationChoice={id:string;name:string;role:'owner'|'operator'|'super_admin'};
+export type TeamMember={id:string;name:string;email:string;role:'owner'|'operator'|'super_admin';organization_id:string};
+export type TeamInvitation={
+  id:string;email:string;role:'operator';created_at:string;expires_at:string;
+  accepted_at:string|null;revoked_at:string|null;
+};
+export type TeamInfo={members:TeamMember[];invitations:TeamInvitation[]};
+export type InvitePreview={email:string;organizationName:string;expiresAt:string};
+export class ApiFailure extends Error{
+  readonly code:string;
+  readonly organizations:OrganizationChoice[];
+  constructor(payload:{error?:string;message?:string;organizations?:OrganizationChoice[]},status:number){
+    super(payload.message??payload.error??'Erro HTTP '+status);
+    this.code=payload.error??'http_error';
+    this.organizations=Array.isArray(payload.organizations)?payload.organizations:[];
+  }
+}
 let csrfToken='';
 async function request<T>(path:string,method='GET',body?:object):Promise<T>{
   const response=await fetch('/api'+path,{
@@ -56,8 +73,8 @@ async function request<T>(path:string,method='GET',body?:object):Promise<T>{
   let payload:unknown;
   try{payload=await response.json();}catch{throw new Error('Resposta inválida do servidor.');}
   if(!response.ok){
-    const result=payload as {error?:string;message?:string};
-    throw new Error(result.message||result.error||'Erro HTTP '+response.status);
+    const result=payload as {error?:string;message?:string;organizations?:OrganizationChoice[]};
+    throw new ApiFailure(result,response.status);
   }
   return payload as T;
 }
@@ -76,8 +93,9 @@ export const productionApi={
   },
   register:(input:{name:string;businessName:string;email:string;password:string})=>
     request<{ok:boolean}>('/auth/register','POST',input),
-  login:async(email:string,password:string,totpCode?:string)=>{
-    await request('/auth/login','POST',{email,password,...(totpCode?{totpCode}:{})});
+  login:async(email:string,password:string,totpCode?:string,organizationId?:string)=>{
+    await request('/auth/login','POST',{email,password,...(totpCode?{totpCode}:{}),
+      ...(organizationId?{organizationId}:{})});
     return productionApi.me();
   },
   logout:async()=>{await request('/auth/logout','POST',{});csrfToken='';},
@@ -88,6 +106,21 @@ export const productionApi={
   sessions:()=>request<{items:Array<{id:string;current:boolean;created_at:string;expires_at:string}>}>('/auth/sessions'),
   revokeAllSessions:async()=>{await request('/auth/sessions/revoke-all','POST',{});csrfToken='';},
   adminOverview:()=>request<{organizations:number;users:number}>('/admin/overview'),
+  organizations:()=>request<{items:OrganizationChoice[];currentOrganizationId:string}>('/auth/organizations'),
+  switchOrganization:async(organizationId:string)=>{
+    await request('/auth/switch-organization','POST',{organizationId});
+    const session=await productionApi.me();
+    if(!session)throw new Error('Sessão não disponível após a troca de organização.');
+    return session;
+  },
+  team:()=>request<TeamInfo>('/team'),
+  inviteOperator:(email:string)=>request<{id:string;email:string;role:string;expiresAt:string}>('/team/invitations','POST',{email}),
+  revokeInvite:(id:string)=>request<{ok:boolean}>('/team/invitations/'+encode(id)+'/revoke','POST',{}),
+  removeOperator:(id:string)=>request<{ok:boolean}>('/team/members/'+encode(id),'DELETE',{}),
+  previewInvite:(token:string)=>request<InvitePreview>('/team/invitation/'+encode(token)),
+  activateInvite:(token:string,name:string,password:string)=>
+    request<{ok:boolean;organizationId:string;organizationName:string;email:string}>('/team/activate','POST',{token,name,password}),
+  acceptInvite:(token:string)=>request<{ok:boolean;organizationId:string;organizationName:string}>('/team/accept','POST',{token}),
 
   clients:(filter:{search?:string;status?:'active'|'archived';limit?:number;offset?:number}={})=>
     request<{items:Client[];total:number}>('/clients'+qs(filter)),
