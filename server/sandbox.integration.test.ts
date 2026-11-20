@@ -146,12 +146,75 @@ test('Asaas sandbox: encrypted tenant config, safe issuance, webhook replay, ref
   const late=await call(webhookPath,'POST',event('evt_late_overdue','PAYMENT_OVERDUE'),undefined,undefined,webhookToken);
   assert.equal(late.body.result,'ignored_after_receipt');
   assert.equal((await call('/public/charges/'+draftA.public_token)).body.status,'paid');
-  const refund=await call(webhookPath,'POST',event('evt_refund_1','PAYMENT_REFUNDED'),undefined,undefined,webhookToken);
-  assert.equal(refund.body.result,'refund_recorded');
-  const after=await pool.query('SELECT status,paid_cents FROM charges WHERE id=$1',[draftA.id]);
+  // Refund event alone cannot change money: only DONE records reconciled from the provider can.
+  payment.status='RECEIVED';
+  const refundHint=await call(webhookPath,'POST',event('evt_refund_1','PAYMENT_REFUNDED'),undefined,undefined,webhookToken);
+  assert.equal(refundHint.body.result,'refund_reconciliation_required');
+  let after=await pool.query('SELECT status,paid_cents,refunded_cents FROM charges WHERE id=$1',[draftA.id]);
+  assert.equal(after.rows[0].status,'paid');
+  assert.equal(Number(after.rows[0].paid_cents),40000);
+  assert.equal(Number(after.rows[0].refunded_cents),0);
+  assert.equal((await call('/sandbox/charges/'+draftA.id+'/refunds','POST',
+    {amountCents:15000,reason:'Ajuste parcial de teste'},a.cookie,a.csrf)).status,409);
+  const initialSync=await call('/sandbox/charges/'+draftA.id+'/reconcile-financial','POST',{},a.cookie,a.csrf);
+  assert.equal(initialSync.status,200,JSON.stringify(initialSync.body));
+  assert.equal(initialSync.body.refundedCents,0);
+
+  const partial=await call('/sandbox/charges/'+draftA.id+'/refunds','POST',
+    {amountCents:15000,reason:'Ajuste parcial de teste'},a.cookie,a.csrf);
+  assert.equal(partial.status,202,JSON.stringify(partial.body));
+  assert.equal(partial.body.state,'submitted');
+  assert.equal(refundPostCount,1);
+  assert.equal((await call('/sandbox/charges/'+draftA.id+'/refunds','POST',
+    {amountCents:15000,reason:'Ajuste parcial duplicado'},a.cookie,a.csrf)).status,409);
+  const waiting=await call('/sandbox/charges/'+draftA.id+'/reconcile-financial','POST',{},a.cookie,a.csrf);
+  assert.equal(waiting.status,200);
+  assert.equal(waiting.body.pendingRefundCents,15000);
+  assert.equal(waiting.body.refundedCents,0);
+  assert.equal((await call('/reports/overview','GET',undefined,a.cookie)).body.sandbox_paid_cents,'40000');
+
+  refunds.get(payment.id)![0].status='DONE';
+  payment.status='PARTIALLY_REFUNDED';
+  const reconciledPartial=await call('/sandbox/charges/'+draftA.id+'/reconcile-financial','POST',{},a.cookie,a.csrf);
+  assert.equal(reconciledPartial.status,200,JSON.stringify(reconciledPartial.body));
+  assert.equal(reconciledPartial.body.status,'partially_refunded');
+  assert.equal(reconciledPartial.body.refundedCents,15000);
+  assert.equal(reconciledPartial.body.paidCents,25000);
+  const listPartial=await call('/sandbox/charges/'+draftA.id+'/refunds','GET',undefined,a.cookie);
+  assert.equal(listPartial.body.items[0].state,'completed');
+  assert.equal(Number(listPartial.body.refundedCents),15000);
+  assert.equal((await call('/reports/overview','GET',undefined,a.cookie)).body.sandbox_paid_cents,'25000');
+  assert.equal((await call('/reports/overview','GET',undefined,a.cookie)).body.total_paid_cents,'0');
+  assert.equal((await call('/sandbox/charges/'+draftA.id+'/refunds','POST',
+    {amountCents:26000,reason:'Maior que saldo'},a.cookie,a.csrf)).status,409);
+  assert.equal((await call('/sandbox/charges/'+draftA.id+'/refunds','POST',
+    {amountCents:1000,reason:'Tenant B nao pode'},b.cookie,b.csrf)).status,404);
+
+  lostRefundResponse=true;
+  const finalRequest=await call('/sandbox/charges/'+draftA.id+'/refunds','POST',
+    {amountCents:25000,reason:'Estorno integral do restante'},a.cookie,a.csrf);
+  assert.equal(finalRequest.status,502,JSON.stringify(finalRequest.body));
+  assert.equal(refundPostCount,2);
+  assert.equal((await call('/sandbox/charges/'+draftA.id+'/refunds','POST',
+    {amountCents:25000,reason:'Nao repetir'},a.cookie,a.csrf)).status,409);
+  assert.equal(refundPostCount,2,'no second POST after inconclusive refund');
+  const beforeDone=await call('/sandbox/charges/'+draftA.id+'/reconcile-financial','POST',{},a.cookie,a.csrf);
+  assert.equal(beforeDone.status,200);
+  assert.equal(beforeDone.body.pendingRefundCents,25000);
+  refunds.get(payment.id)![1].status='DONE';
+  payment.status='REFUNDED';
+  const reconciledFull=await call('/sandbox/charges/'+draftA.id+'/reconcile-financial','POST',{},a.cookie,a.csrf);
+  assert.equal(reconciledFull.status,200,JSON.stringify(reconciledFull.body));
+  assert.equal(reconciledFull.body.status,'refunded');
+  assert.equal(reconciledFull.body.refundedCents,40000);
+  assert.equal(reconciledFull.body.paidCents,0);
+  const latePaid=await call(webhookPath,'POST',event('evt_late_paid','PAYMENT_RECEIVED'),undefined,undefined,webhookToken);
+  assert.equal(latePaid.body.result,'ignored_after_refund');
+  after=await pool.query('SELECT status,paid_cents,refunded_cents FROM charges WHERE id=$1',[draftA.id]);
   assert.equal(after.rows[0].status,'refunded');
   assert.equal(Number(after.rows[0].paid_cents),0);
-  assert.equal((await call(webhookPath,'POST',event('evt_late_paid','PAYMENT_RECEIVED'),undefined,undefined,webhookToken)).body.result,'ignored_after_refund');
+  assert.equal(Number(after.rows[0].refunded_cents),40000);
+  assert.equal((await call('/reports/overview','GET',undefined,a.cookie)).body.sandbox_paid_cents,'0');
   const events=await pool.query('SELECT processing_result,event_payload FROM payment_events WHERE charge_id=$1',[draftA.id]);
   assert.equal(events.rowCount,6);
   assert.ok(events.rows.every((r:{event_payload:object})=>!('cpfCnpj' in r.event_payload)));
