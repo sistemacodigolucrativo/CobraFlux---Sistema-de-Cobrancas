@@ -51,7 +51,6 @@ export function ProductionApp(){
   const [password,setPassword]=useState('');
   const [totp,setTotp]=useState('');
   const [adminAccess,setAdminAccess]=useState(false);
-  const [activeSessions,setActiveSessions]=useState<Array<{id:string;current:boolean;created_at:string;expires_at:string}>>([]);
   const [fullName,setFullName]=useState('');
   const [business,setBusiness]=useState('');
   const [overview,setOverview]=useState<{total_charges:number;paid_charges:number;total_paid_cents:string}|null>(null);
