@@ -17,7 +17,7 @@ export const providerMoneyCents=(value:number):number=>{
   if(!Number.isSafeInteger(result)||Math.abs(value*100-result)>0.000001)throw new Error('provider_invalid_money_precision');
   return result;
 };
-export type ChargeStatus='pending_provider'|'pending'|'paid'|'partial'|'overdue'|'cancelled'|'refunded'|'draft';
+export type ChargeStatus='pending_provider'|'pending'|'paid'|'partial'|'partially_refunded'|'overdue'|'cancelled'|'refunded'|'draft';
 export type EventDecision={status:ChargeStatus;paidCents:number;result:string};
 /** Confirmed in the provider is not necessarily received; never credit just from a CREATED/CONFIRMED event. */
 export function applySandboxEvent(current:ChargeStatus,paidCents:number,
@@ -28,11 +28,12 @@ export function applySandboxEvent(current:ChargeStatus,paidCents:number,
   }
   const kind=event.event;
   if(current==='draft')return {status:current,paidCents,result:'not_issued'};
-  if(kind==='PAYMENT_REFUNDED'){
-    if(current==='paid'||current==='refunded')return {status:'refunded',paidCents:0,result:'refund_recorded'};
-    return {status:current,paidCents,result:'refund_requires_manual_review'};
-  }
-  if(current==='refunded')return {status:current,paidCents,result:'ignored_after_refund'};
+  // Refund events are only a signal to query the provider's refund ledger.
+  // The event can precede settlement: NEVER deduct until a refund is verified DONE.
+  if(['PAYMENT_REFUNDED','PAYMENT_PARTIALLY_REFUNDED','PAYMENT_REFUND_IN_PROGRESS','PAYMENT_REFUND_DENIED'].includes(kind))
+    return {status:current,paidCents,result:'refund_reconciliation_required'};
+  if(current==='refunded'||current==='partially_refunded')
+    return {status:current,paidCents,result:'ignored_after_refund'};
   if(kind==='PAYMENT_RECEIVED'){
     if(current==='cancelled')return {status:current,paidCents,result:'received_after_cancellation_review'};
     return {status:'paid',paidCents:expectedCents,result:'received'};
