@@ -46,7 +46,7 @@ test('desktop: login, client records, service catalog, charge draft and team acc
   await nav.getByRole('button',{name:'Cobranças'}).click();
   await expect(page.getByRole('button',{name:'Nova cobrança'})).toBeEnabled();
   await page.getByRole('button',{name:'Nova cobrança'}).click();
-  await page.getByLabel('Descrição').fill('Sessão Playwright');
+  await page.getByRole('textbox',{name:'Descrição',exact:true}).fill('Sessão Playwright');
   await page.getByRole('button',{name:'Salvar rascunho'}).click();
   await expect(page.getByText('Sessão Playwright')).toBeVisible();
   await expect(page.getByText(/Pix, confirmação de pagamento/)).toBeVisible();
