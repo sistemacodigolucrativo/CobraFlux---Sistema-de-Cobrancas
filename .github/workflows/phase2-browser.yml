@@ -1,0 +1,67 @@
+name: CobraFlux Phase 2 browser E2E
+on:
+  push:
+    branches: [feat/production-foundation]
+    paths:
+      - 'e2e/**'
+      - 'playwright.config.ts'
+      - 'src/pages/production/**'
+      - 'src/services/productionApi.ts'
+      - 'server/**'
+      - 'package.json'
+      - '.github/workflows/phase2-browser.yml'
+  pull_request:
+    paths:
+      - 'e2e/**'
+      - 'playwright.config.ts'
+      - 'src/pages/production/**'
+      - 'src/services/productionApi.ts'
+      - 'server/**'
+      - 'package.json'
+      - '.github/workflows/phase2-browser.yml'
+  workflow_dispatch:
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cobraflux
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: cobraflux_browser_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U cobraflux -d cobraflux_browser_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      CI: 'true'
+      NODE_ENV: test
+      DATABASE_URL: postgresql://cobraflux:testpass@127.0.0.1:5432/cobraflux_browser_test
+      SESSION_SECRET: test-only-ci-secret-application-never-use-in-production
+      APP_ORIGIN: http://127.0.0.1:8080
+      PORT: '8080'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --no-package-lock --no-audit
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Apply PostgreSQL migrations
+        run: npm run migrate
+      - name: Build operational mode
+        run: VITE_APP_MODE=production npm run build
+      - name: Browser E2E — desktop and mobile
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cobraflux-e2e-failures
+          path: test-results/
+          if-no-files-found: ignore
