@@ -13,7 +13,7 @@
     "migrate": "tsx server/migrate.ts",
     "test:server": "tsx --test server/security.test.ts server/totp.test.ts server/csv.test.ts",
     "test:domain": "tsx --test src/domain/finance.test.ts",
-    "test:integration": "tsx --test server/integration.test.ts",
+    "test:integration": "tsx --test server/integration.test.ts server/team.integration.test.ts",
     "admin:enroll": "tsx server/enroll-admin.ts"
   },
   "dependencies": {
