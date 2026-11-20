@@ -50,8 +50,12 @@ jobs:
         run: npm run test:domain
       - name: Security tests
         run: npm run test:server
-      - name: Run migrations
-        run: npm run migrate
+      - name: Validate database maintenance scripts
+        run: bash -n scripts/backup-db.sh scripts/restore-drill.sh
+      - name: Run migrations twice (idempotency)
+        run: |
+          npm run migrate
+          npm run migrate
       - name: Multi-tenant integration
         run: npm run test:integration
       - name: Frontend build (demo)
