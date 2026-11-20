@@ -14,7 +14,8 @@
     "test:server": "tsx --test server/security.test.ts server/totp.test.ts server/csv.test.ts",
     "test:domain": "tsx --test src/domain/finance.test.ts",
     "test:integration": "tsx --test server/integration.test.ts server/team.integration.test.ts",
-    "admin:enroll": "tsx server/enroll-admin.ts"
+    "admin:enroll": "tsx server/enroll-admin.ts",
+    "test:ui": "tsx --test src/pages/production/ProductionShell.test.tsx"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

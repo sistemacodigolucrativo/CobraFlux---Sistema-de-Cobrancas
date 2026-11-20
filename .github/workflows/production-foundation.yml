@@ -52,6 +52,8 @@ jobs:
         run: npm run test:server
       - name: Validate database maintenance scripts
         run: bash -n scripts/backup-db.sh scripts/restore-drill.sh
+      - name: UI parity and authorization smoke tests
+        run: npm run test:ui
       - name: Run migrations twice (idempotency)
         run: |
           npm run migrate
