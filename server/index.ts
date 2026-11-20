@@ -7,6 +7,7 @@ import { z, ZodError } from 'zod';
 import { pool, transaction } from './db';
 import { canSendTransactionalEmail, publicLink, sendTransactionalEmail } from './email';
 import { decryptTotpSecret, matchTotpStep } from './totp';
+import { registerOperations } from './operations';
 import { csrfForSession, getCookie, normalizeEmail, passwordHash, passwordMatches, randomSecret, secureEquals, sha256 } from './security';
 
 const app = express();
@@ -17,7 +18,7 @@ if (appSecret.length < 32) throw new Error('SESSION_SECRET must have at least 32
 const prod = process.env.NODE_ENV === 'production';
 const origin = process.env.APP_ORIGIN;
 if (prod && (!origin || !origin.startsWith('https://'))) throw new Error('APP_ORIGIN must be an HTTPS origin in production.');
-app.use(express.json({ limit: '64kb' }));
+app.use(express.json({ limit: '256kb' }));
 app.use('/api', (_req, res, next) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -283,103 +284,9 @@ app.delete('/api/auth/sessions/:id',sessions,csrf,route(async(req,res)=>{
   res.json({ok:true});
 }));
 
-app.get('/api/clients', sessions, route(async (req, res) => {
-  const q = z.object({ search: z.string().max(80).optional(), status: z.enum(['active','archived']).optional() }).parse(req.query);
-  const rows = await pool.query(
-    'SELECT id,name,phone,email,notes,status,whatsapp_opt_in,created_at,updated_at FROM clients ' +
-    'WHERE organization_id=$1 AND ($2::text IS NULL OR name ILIKE $2) AND ($3::text IS NULL OR status=$3) ' +
-    'ORDER BY created_at DESC LIMIT 200',
-    [who(req).orgId, q.search ? '%' + q.search + '%' : null, q.status ?? null]
-  );
-  res.json({ items: rows.rows });
-}));
-app.post('/api/clients', sessions, csrf, route(async (req, res) => {
-  const body = z.object({
-    name, phone:z.string().trim().min(7).max(24), email:z.union([z.email(),z.literal('')]).optional(),
-    notes:z.string().max(2000).default(''), whatsappOptIn:z.boolean().default(false)
-  }).strict().parse(req.body);
-  const p=who(req); const id=randomUUID();
-  const row=await pool.query(
-    'INSERT INTO clients(id,organization_id,name,phone,email,notes,whatsapp_opt_in) VALUES($1,$2,$3,$4,$5,$6,$7) ' +
-    'RETURNING id,name,phone,email,notes,status,whatsapp_opt_in',
-    [id,p.orgId,body.name,body.phone,body.email || null,body.notes,body.whatsappOptIn]
-  );
-  await audit(p.orgId,p.userId,'CLIENT_CREATED','client',id);
-  res.status(201).json(row.rows[0]);
-}));
-app.patch('/api/clients/:id', sessions, csrf, route(async (req, res) => {
-  const body = z.object({
-    name:name.optional(), phone:z.string().trim().min(7).max(24).optional(),
-    email:z.union([z.email(),z.literal('')]).optional(),
-    notes:z.string().max(2000).optional(), status:z.enum(['active','archived']).optional(),
-    whatsappOptIn:z.boolean().optional()
-  }).strict().parse(req.body);
-  if (!Object.keys(body).length) { res.status(400).json({ error: 'empty_patch' }); return; }
-  const p=who(req);
-  const row=await pool.query(
-    'UPDATE clients SET name=coalesce($3,name),phone=coalesce($4,phone),' +
-    "email=CASE WHEN $5::boolean THEN NULLIF($6::text,'') ELSE email END," +
-    'notes=coalesce($7,notes),status=coalesce($8,status),whatsapp_opt_in=coalesce($9,whatsapp_opt_in),updated_at=now() ' +
-    'WHERE organization_id=$1 AND id=$2 RETURNING id,name,phone,email,notes,status,whatsapp_opt_in',
-    [p.orgId,req.params.id,body.name??null,body.phone??null,body.email!==undefined,body.email??null,body.notes??null,body.status??null,body.whatsappOptIn??null]
-  );
-  if (!row.rowCount) { res.status(404).json({ error: 'not_found' }); return; }
-  await audit(p.orgId,p.userId,'CLIENT_UPDATED','client',req.params.id);
-  res.json(row.rows[0]);
-}));
-app.get('/api/services', sessions, route(async (req, res) => {
-  const rows=await pool.query(
-    'SELECT id,name,description,price_cents,active,created_at FROM services WHERE organization_id=$1 ORDER BY created_at DESC',
-    [who(req).orgId]
-  );
-  res.json({ items:rows.rows });
-}));
-app.post('/api/services', sessions, csrf, route(async (req, res) => {
-  const body=z.object({ name,description:z.string().max(1000).default(''),priceCents:z.number().int().min(0).max(10000000000) }).strict().parse(req.body);
-  const p=who(req); const id=randomUUID();
-  const q=await pool.query(
-    'INSERT INTO services(id,organization_id,name,description,price_cents) VALUES($1,$2,$3,$4,$5) RETURNING id,name,description,price_cents,active',
-    [id,p.orgId,body.name,body.description,body.priceCents]
-  );
-  await audit(p.orgId,p.userId,'SERVICE_CREATED','service',id);
-  res.status(201).json(q.rows[0]);
-}));
-app.get('/api/charges', sessions, route(async (req, res) => {
-  const q=await pool.query(
-    'SELECT ch.id,ch.public_token,ch.description,ch.amount_cents,ch.discount_cents,ch.due_date,ch.status,' +
-    'cl.name AS client_name,ch.created_at FROM charges ch JOIN clients cl ON cl.id=ch.client_id ' +
-    'WHERE ch.organization_id=$1 ORDER BY ch.created_at DESC LIMIT 200', [who(req).orgId]
-  );
-  res.json({ items:q.rows });
-}));
-app.post('/api/charges', sessions, csrf, route(async (req, res) => {
-  const body=z.object({
-    clientId:z.uuid(), description:z.string().trim().min(2).max(300),
-    amountCents:z.number().int().positive().max(10000000000),
-    discountCents:z.number().int().min(0).default(0),
-    dueDate:z.iso.date()
-  }).strict().parse(req.body);
-  if (body.discountCents>=body.amountCents) { res.status(400).json({ error: 'invalid_discount' }); return; }
-  const p=who(req); const id=randomUUID(); const pub=randomSecret(24);
-  const q=await pool.query(
-    "INSERT INTO charges(id,public_token,organization_id,client_id,description,amount_cents,discount_cents,due_date,status) " +
-    "SELECT $1,$2,$3,id,$5,$6,$7,$8,'draft' FROM clients WHERE id=$4 AND organization_id=$3 AND status='active' RETURNING id,public_token,status",
-    [id,pub,p.orgId,body.clientId,body.description,body.amountCents,body.discountCents,body.dueDate]
-  );
-  if (!q.rowCount) { res.status(404).json({ error: 'client_not_found' }); return; }
-  await audit(p.orgId,p.userId,'CHARGE_DRAFT_CREATED','charge',id);
-  res.status(201).json({ ...q.rows[0], message:'Rascunho persistido. Emissão Pix desabilitada até conectar PSP verificado.' });
-}));
-app.post('/api/charges/:id/cancel', sessions, csrf, route(async (req,res)=>{
-  const p=who(req);
-  const q=await pool.query(
-    "UPDATE charges SET status='cancelled',updated_at=now() WHERE id=$1 AND organization_id=$2 AND status='draft' RETURNING id,status",
-    [req.params.id,p.orgId]
-  );
-  if (!q.rowCount) { res.status(409).json({ error:'charge_not_cancellable' }); return; }
-  await audit(p.orgId,p.userId,'CHARGE_CANCELLED','charge',req.params.id);
-  res.json(q.rows[0]);
-}));
+// Phase 2 routes: all business writes derive the organization from the authenticated session.
+registerOperations(app, { sessions, csrf, route, who });
+
 app.get('/api/public/charges/:publicToken', route(async (req,res)=>{
   if (req.params.publicToken.length<20 || req.params.publicToken.length>120) { res.status(404).json({error:'not_found'}); return; }
   const q=await pool.query(
