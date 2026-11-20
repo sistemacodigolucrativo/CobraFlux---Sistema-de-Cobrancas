@@ -31,6 +31,21 @@ const providerId=z.string().trim().min(3).max(120);
 const customerData=z.object({id:providerId,externalReference:z.string().optional()}).passthrough();
 const paymentData=z.object({id:providerId,externalReference:z.string().optional(),
   value:z.number().finite().optional(),status:z.string().optional()}).passthrough();
+export const providerRefund=z.object({
+  value:z.number().finite().nonnegative(),
+  status:z.enum(['PENDING','CANCELLED','DONE']),
+  description:z.string().nullable().optional(),
+  transactionReceiptUrl:z.string().url().nullable().optional()
+}).passthrough();
+export type SandboxRefund=z.infer<typeof providerRefund>;
+const refundResponse=z.union([
+  z.array(providerRefund),
+  z.object({data:z.array(providerRefund),hasMore:z.boolean().optional()}).passthrough()
+]);
+const detailedPayment=z.object({
+  id:providerId,value:z.number().finite().positive(),status:z.string().min(3),
+  externalReference:z.string().optional(),billingType:z.string().optional()
+}).passthrough();
 const qrData=z.object({payload:z.string().trim().min(20).max(6000),
   encodedImage:z.string().regex(/^[A-Za-z0-9+/=]+$/).max(500000).optional(),expirationDate:z.string().nullable().optional()}).passthrough();
 const asaasList=z.object({data:z.array(z.unknown()),hasMore:z.boolean().optional()}).passthrough();
@@ -89,6 +104,26 @@ export class AsaasSandbox {
       dueDate:data.dueDate,description:data.description,externalReference:data.chargeId
     });
     return paymentData.parse(response);
+  }
+  async getPayment(providerPaymentId:string){
+    const id=providerId.parse(providerPaymentId);
+    return detailedPayment.parse(await this.request('GET','/payments/'+encodeURIComponent(id)));
+  }
+  async getRefunds(providerPaymentId:string):Promise<SandboxRefund[]>{
+    const id=providerId.parse(providerPaymentId);
+    const body=refundResponse.parse(await this.request('GET','/payments/'+encodeURIComponent(id)+'/refunds'));
+    if(!Array.isArray(body)&&body.hasMore)throw new Error('provider_refunds_pagination_required');
+    return Array.isArray(body)?body:body.data;
+  }
+  async requestRefund(providerPaymentId:string,amountCents:number,description:string):Promise<void>{
+    const id=providerId.parse(providerPaymentId);
+    if(!Number.isSafeInteger(amountCents)||amountCents<=0||amountCents>10000000000)
+      throw new Error('invalid_refund_amount');
+    if(description.length<12||description.length>220)throw new Error('invalid_refund_description');
+    // HTTP acceptance is NOT refund completion; only GET /refunds entries with status DONE count.
+    await this.request('POST','/payments/'+encodeURIComponent(id)+'/refund',{
+      value:Number((amountCents/100).toFixed(2)),description
+    });
   }
   async getQrCode(providerPaymentId:string){
     const id=providerId.parse(providerPaymentId);
