@@ -47,6 +47,27 @@ export function registerSandboxRefunds(app:Express,{sessions,csrf,who,route}:Dep
       sandboxOnly:true,reconciliationRequired:row.refund_sync_required});
   }));
 
+  app.get('/api/sandbox/reconciliation/overview',sessions,route(async(req,res)=>{
+    const p=who(req);if(!owner(p,res))return;
+    const [summary,incidents]=await Promise.all([
+      pool.query(
+        "SELECT count(*)::int AS total, "+
+        "count(*) FILTER (WHERE reconcile_due_at<=now() AND "+
+          "(reconcile_lease_until IS NULL OR reconcile_lease_until<=now()))::int AS due, "+
+        "count(*) FILTER (WHERE review_required=true)::int AS flagged, "+
+        "count(*) FILTER (WHERE reconcile_attempts>=3)::int AS repeated_failures "+
+        "FROM sandbox_issuances WHERE organization_id=$1 AND state='ready'",[p.orgId]
+      ),
+      pool.query(
+        'SELECT i.charge_id,i.code,i.first_seen_at,i.last_seen_at FROM sandbox_reconciliation_incidents i '+
+        'WHERE i.organization_id=$1 AND i.resolved_at IS NULL '+
+        'ORDER BY i.last_seen_at DESC LIMIT 30',[p.orgId]
+      )
+    ]);
+    res.json({sandboxOnly:true,automated:false,schedulerRequired:true,
+      summary:summary.rows[0],incidents:incidents.rows});
+  }));
+
   app.post('/api/sandbox/charges/:id/refunds',sessions,csrf,route(async(req,res)=>{
     const p=who(req);if(!owner(p,res))return;
     const {id}=idParam.parse(req.params),body=requestSchema.parse(req.body);
