@@ -3,7 +3,7 @@ import type {Express,Request,Response,RequestHandler} from 'express';
 import {z} from 'zod';
 import {pool,transaction} from './db';
 import {AsaasSandbox,credentialsReady,decryptApiKey} from './asaas-sandbox';
-import {ReconciliationError,reconcileSandboxFinancial,recordReconciliationIncident} from './sandbox-reconciliation';
+import {ReconciliationError,reconcileSandboxFinancial,recordReconciliationIncident,trustedAsaasReceipt} from './sandbox-reconciliation';
 
 type Principal={userId:string;orgId:string;role:string};
 type Dependencies={
@@ -22,7 +22,7 @@ function owner(p:Principal,res:Response){
 }
 async function accountAndCharge(orgId:string,chargeId:string){
   const q=await pool.query('SELECT ch.id,ch.provider_charge_id,ch.status,ch.amount_cents,ch.discount_cents,'+
-    'ch.refunded_cents,si.account_id,si.expected_cents,si.state,si.refund_sync_required,sp.api_key_ciphertext,sp.organization_id '+
+    'ch.refunded_cents,si.account_id,si.expected_cents,si.state,si.refund_sync_required,si.payment_receipt_url,sp.api_key_ciphertext,sp.organization_id '+
     'FROM charges ch JOIN sandbox_issuances si ON si.charge_id=ch.id AND si.organization_id=ch.organization_id '+
     'JOIN sandbox_payment_accounts sp ON sp.id=si.account_id AND sp.organization_id=ch.organization_id '+
     "WHERE ch.organization_id=$1 AND ch.id=$2 AND ch.provider='asaas_sandbox' "+
@@ -45,6 +45,18 @@ export function registerSandboxRefunds(app:Express,{sessions,csrf,who,route}:Dep
       [p.orgId,id]);
     res.json({items:q.rows,chargeStatus:row.status,refundedCents:String(row.refunded_cents),
       sandboxOnly:true,reconciliationRequired:row.refund_sync_required});
+  }));
+
+  app.get('/api/sandbox/charges/:id/payment-receipt',sessions,route(async(req,res)=>{
+    const p=who(req);if(!owner(p,res))return;
+    const {id}=idParam.parse(req.params);
+    const row=await accountAndCharge(p.orgId,id);
+    if(!row||!['paid','partially_refunded','refunded'].includes(row.status)){
+      res.status(404).json({error:'sandbox_receipt_not_available'});return;
+    }
+    const receiptUrl=trustedAsaasReceipt(row.payment_receipt_url);
+    if(!receiptUrl){res.status(404).json({error:'sandbox_receipt_not_available'});return;}
+    res.json({receiptUrl,sandboxOnly:true});
   }));
 
   app.get('/api/sandbox/reconciliation/overview',sessions,route(async(req,res)=>{
