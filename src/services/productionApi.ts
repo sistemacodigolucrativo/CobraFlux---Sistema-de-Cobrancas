@@ -41,10 +41,10 @@ export type ClientInput={
   serviceName?:string;monthlyFeeCents?:number;preferredDueDay?:number;
 };
 export type ServiceInput={
-  name:string;description:string;priceCents:number;defaultFrequency:'unica'|'semanal'|'mensal'|'personalizada';
+  name:string;description:string;priceCents:number;defaultFrequency?:'unica'|'semanal'|'mensal'|'personalizada';
 };
 export type ChargeInput={
-  clientId:string;serviceId?:string;description:string;amountCents:number;discountCents:number;dueDate:string;
+  clientId:string;serviceId?:string;description:string;amountCents:number;discountCents?:number;dueDate:string;
 };
 let csrfToken='';
 async function request<T>(path:string,method='GET',body?:object):Promise<T>{
