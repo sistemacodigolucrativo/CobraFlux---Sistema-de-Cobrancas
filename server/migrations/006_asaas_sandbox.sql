@@ -13,7 +13,8 @@ CREATE TABLE sandbox_customers (
   organization_id uuid NOT NULL REFERENCES organizations(id),
   account_id uuid NOT NULL REFERENCES sandbox_payment_accounts(id),
   client_id uuid NOT NULL REFERENCES clients(id),
-  provider_customer_id text NOT NULL,
+  provider_customer_id text,
+  state text NOT NULL CHECK(state IN('reserved','ready','reconcile_required')),
   created_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY(account_id, client_id),
   UNIQUE(account_id, provider_customer_id)
