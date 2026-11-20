@@ -6,8 +6,10 @@ import type {AddressInfo} from 'node:net';
 process.env.CF_NO_LISTEN='true';
 process.env.PAYMENT_CREDENTIAL_ENCRYPTION_KEY=randomBytes(32).toString('hex');
 const realFetch=globalThis.fetch.bind(globalThis);
-const customers=new Map<string,string>(),payments=new Map<string,{id:string;value:number;status:string}>();
-let paymentPostCount=0,customerPostCount=0,lostResponse=false;
+const customers=new Map<string,string>(),
+  payments=new Map<string,{id:string;value:number;status:string;externalReference:string;billingType:'PIX'}>();
+const refunds=new Map<string,Array<{value:number;description:string;status:'PENDING'|'DONE'|'CANCELLED'}>>();
+let paymentPostCount=0,customerPostCount=0,lostResponse=false,refundPostCount=0,lostRefundResponse=false;
 globalThis.fetch=(async(input:URL|Request|string,init?:RequestInit):Promise<Response>=>{
  const url=String(input);
  if(!url.startsWith('https://api-sandbox.asaas.com/v3/'))return realFetch(input,init);
@@ -27,9 +29,23 @@ globalThis.fetch=(async(input:URL|Request|string,init?:RequestInit):Promise<Resp
  }else if(path.pathname==='/v3/payments'&&method==='POST'){
    paymentPostCount++;
    const id='pay_'+randomUUID().slice(0,8);
-   payments.set(body.externalReference,{id,value:body.value,status:'PENDING'});
+   payments.set(body.externalReference,{id,value:body.value,status:'PENDING',externalReference:body.externalReference,billingType:'PIX'});
    if(lostResponse){lostResponse=false;throw new Error('simulated_lost_provider_response');}
    response={id,value:body.value,status:'PENDING'};
+ }else if(/^\/v3\/payments\/[^/]+\/refunds$/.test(path.pathname)&&method==='GET'){
+   const providerId=path.pathname.split('/')[3];
+   response={data:refunds.get(providerId)??[],hasMore:false};
+ }else if(/^\/v3\/payments\/[^/]+\/refund$/.test(path.pathname)&&method==='POST'){
+   refundPostCount++;
+   const providerId=path.pathname.split('/')[3];
+   const current=refunds.get(providerId)??[];
+   current.push({value:body.value,description:body.description,status:'PENDING'});
+   refunds.set(providerId,current);
+   if(lostRefundResponse){lostRefundResponse=false;throw new Error('simulated_refund_timeout');}
+   response={id:providerId,status:'REFUND_IN_PROGRESS'};
+ }else if(/^\/v3\/payments\/[^/]+$/.test(path.pathname)&&method==='GET'){
+   const providerId=path.pathname.split('/')[3];
+   response=[...payments.values()].find(x=>x.id===providerId)??{};
  }else if(path.pathname.endsWith('/pixQrCode')&&method==='GET'){
    response={payload:'000201ASAAS-SANDBOX-PIX-NAO-PAGAR-'+randomUUID().slice(0,12),expirationDate:'2026-12-25'};
  }else{
