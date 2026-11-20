@@ -259,9 +259,21 @@ export function registerSandboxPayments(app:Express,{sessions,csrf,route,who}:De
       const decision=applySandboxEvent(row.status as ChargeStatus,Number(row.paid_cents),expected,event);
       await db.query('UPDATE payment_events SET processing_result=$2 WHERE id=$1',
         [unique.rows[0].id,decision.result]);
-      if(decision.result==='refund_reconciliation_required'){
-        await db.query('UPDATE sandbox_issuances SET refund_sync_required=true,updated_at=now() '+
+      if(decision.result==='refund_reconciliation_required'||event.event==='PAYMENT_REFUND_DENIED'){
+        await db.query('UPDATE sandbox_issuances SET refund_sync_required=true,reconcile_due_at=now(),updated_at=now() '+
           'WHERE charge_id=$1 AND account_id=$2',[ref,accountId]);
+      }
+      if(decision.result==='provider_risk_manual_review'){
+        const code=event.event.includes('CHARGEBACK')||event.event==='PAYMENT_AWAITING_CHARGEBACK_REVERSAL'
+          ?'provider_chargeback_event'
+          :event.event==='PAYMENT_REFUND_DENIED'?'provider_refund_denied':'provider_risk_event';
+        await db.query('UPDATE sandbox_issuances SET review_required=true,review_reason=$3,'+
+          'reconcile_due_at=now(),updated_at=now() WHERE charge_id=$1 AND account_id=$2',
+          [ref,accountId,code]);
+        await db.query('INSERT INTO sandbox_reconciliation_incidents(id,organization_id,charge_id,code) '+
+          'VALUES($1,$2,$3,$4) ON CONFLICT(organization_id,charge_id,code) '+
+          'DO UPDATE SET last_seen_at=now(),resolved_at=NULL',
+          [randomUUID(),org,ref,code]);
       }
       if(!row.provider_payment_id){
         await db.query('UPDATE sandbox_issuances SET provider_payment_id=$2 WHERE charge_id=$1',[ref,event.payment.id]);
