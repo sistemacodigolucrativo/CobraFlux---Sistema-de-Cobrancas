@@ -78,6 +78,21 @@ test('real persistence, password validation, CSRF, cross-tenant isolation, publi
   const logout=await call('/auth/logout','POST',{},loginA.cookie,meA.body.csrfToken);
   assert.equal(logout.status,200);
   assert.equal((await call('/auth/me','GET',undefined,loginA.cookie)).status,401);
+  const adminUser=registered.rows.find((u:any)=>u.email===emailB);
+  const secret=createTotpSecret();
+  await pool.query('INSERT INTO admin_mfa(user_id,secret_encrypted) VALUES($1,$2)',[adminUser.id,encryptTotpSecret(secret)]);
+  await pool.query("UPDATE memberships SET role='super_admin' WHERE user_id=$1",[adminUser.id]);
+  assert.equal((await call('/auth/me','GET',undefined,loginB.cookie)).status,401);
+  assert.equal((await call('/auth/login','POST',{email:emailB,password:'SenhaBemForte123!!'})).status,401);
+  const code=totpCode(secret,Math.floor(Date.now()/30000));
+  const adminLogin=await call('/auth/login','POST',{email:emailB,password:'SenhaBemForte123!!',totpCode:code});
+  assert.equal(adminLogin.status,200,JSON.stringify(adminLogin.body));
+  assert.equal((await call('/auth/login','POST',{email:emailB,password:'SenhaBemForte123!!',totpCode:code})).status,401);
+  assert.equal((await call('/admin/overview','GET',undefined,adminLogin.cookie)).status,200);
+  const adminMe=await call('/auth/me','GET',undefined,adminLogin.cookie);
+  const revoke=await call('/auth/sessions/revoke-all','POST',{},adminLogin.cookie,adminMe.body.csrfToken);
+  assert.equal(revoke.status,200);
+  assert.equal((await call('/auth/me','GET',undefined,adminLogin.cookie)).status,401);
  }finally{
   await new Promise<void>((resolve,reject)=>server.close((e)=>e?reject(e):resolve()));
   await pool.end();
