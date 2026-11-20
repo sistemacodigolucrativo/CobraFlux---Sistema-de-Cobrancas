@@ -9,6 +9,7 @@ import { canSendTransactionalEmail, publicLink, sendTransactionalEmail } from '.
 import { decryptTotpSecret, matchTotpStep } from './totp';
 import { registerOperations } from './operations';
 import { registerTeamRoutes } from './team';
+import { registerSandboxPayments } from './sandbox-payments';
 import { csrfForSession, getCookie, normalizeEmail, passwordHash, passwordMatches, randomSecret, secureEquals, sha256 } from './security';
 
 const app = express();
@@ -300,20 +301,22 @@ app.delete('/api/auth/sessions/:id',sessions,csrf,route(async(req,res)=>{
 // Tenant-scoped operations and team access; independent of the demo's client-side navigation.
 registerOperations(app, { sessions, csrf, route, who });
 registerTeamRoutes(app, { sessions, csrf, route, who, rateLimit, ip });
+registerSandboxPayments(app, { sessions, csrf, route, who });
 
 app.get('/api/public/charges/:publicToken', route(async (req,res)=>{
   if (req.params.publicToken.length<20 || req.params.publicToken.length>120) { res.status(404).json({error:'not_found'}); return; }
   const q=await pool.query(
     'SELECT ch.description,ch.amount_cents,ch.discount_cents,ch.due_date,ch.status,o.name AS merchant, ' +
-    'ch.pix_payload FROM charges ch JOIN organizations o ON o.id=ch.organization_id WHERE ch.public_token=$1',
+    'ch.pix_payload,ch.provider FROM charges ch JOIN organizations o ON o.id=ch.organization_id WHERE ch.public_token=$1',
     [req.params.publicToken]
   );
   if (!q.rowCount) { res.status(404).json({error:'not_found'}); return; }
   const r=q.rows[0];
   res.json({ description:r.description, amountCents:Number(r.amount_cents)-Number(r.discount_cents),
     dueDate:r.due_date, status:r.status, merchant:r.merchant,
-    pixPayload: r.status==='pending' ? r.pix_payload : null,
-    paymentEnabled:r.status==='pending' && Boolean(r.pix_payload) });
+    pixPayload: r.status==='pending' && r.provider==='asaas_sandbox' ? r.pix_payload : null,
+    sandboxOnly:r.provider==='asaas_sandbox',
+    paymentEnabled:r.status==='pending' && r.provider==='asaas_sandbox' && Boolean(r.pix_payload) });
 }));
 app.get('/api/reports/overview', sessions, route(async (req,res)=>{
   const p=who(req);
