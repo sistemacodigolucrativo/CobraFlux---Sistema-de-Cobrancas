@@ -37,11 +37,12 @@ const serviceInput=z.object({
   defaultFrequency:z.enum(['unica','semanal','mensal','personalizada']).default('mensal')
 }).strict();
 const servicePatch=serviceInput.partial().extend({active:z.boolean().optional()}).strict();
-const chargeInput=z.object({
+const chargeBase=z.object({
   clientId:z.uuid(),serviceId:z.uuid().optional(),description:z.string().trim().min(2).max(300),
   amountCents:positiveMoney,discountCents:maxMoney.default(0),dueDate,
-}).strict().refine(v=>v.discountCents<v.amountCents,{message:'invalid_discount'});
-const chargePatch=chargeInput.omit({clientId:true,serviceId:true}).partial().strict();
+}).strict();
+const chargeInput=chargeBase.refine(v=>v.discountCents<v.amountCents,{message:'invalid_discount'});
+const chargePatch=chargeBase.omit({clientId:true,serviceId:true}).partial().strict();
 async function audit(db: {query:Function}, p:Principal, action:string,type:string,id:string,details:Record<string,unknown>={}):Promise<void>{
   await db.query('INSERT INTO audit_logs(id,organization_id,actor_id,action,entity_type,entity_id,metadata) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb)',
     [randomUUID(),p.orgId,p.userId,action,type,id,JSON.stringify(details)]);
