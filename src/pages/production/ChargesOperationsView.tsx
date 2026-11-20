@@ -138,6 +138,8 @@ export function ChargesOperationsView({onChanged,canIssue=false}:{onChanged:()=>
          },'Comprovante confirmado pelo Asaas Sandbox.')}>Consultar comprovante</Button>}
      </div>
      {refundFor===c.id&&<SandboxRefundPanel key={c.id} charge={c} onChanged={async()=>{await load();await onChanged();}} onClose={()=>setRefundFor(null)}/>}
+     {receipt?.id===c.id&&<a href={receipt.url} target="_blank" rel="noopener noreferrer"
+       className="inline-flex text-xs text-[#E2BE72] underline">Abrir comprovante oficial SANDBOX</a>}
      {historyId===c.id&&<div className="border-t border-white/10 pt-2 space-y-1 text-xs">
        {history.map(event=><p key={event.id}>{new Date(event.created_at).toLocaleString('pt-BR')} · {event.action}</p>)}
        {!history.length&&<p>Sem histórico.</p>}
