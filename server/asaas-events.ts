@@ -28,6 +28,10 @@ export function applySandboxEvent(current:ChargeStatus,paidCents:number,
   }
   const kind=event.event;
   if(current==='draft')return {status:current,paidCents,result:'not_issued'};
+  // Chargeback/dispute/refund denial is an incident, not a financial settlement.
+  if(kind.startsWith('PAYMENT_CHARGEBACK')||kind==='PAYMENT_AWAITING_CHARGEBACK_REVERSAL'||
+     kind==='PAYMENT_REFUND_DENIED'||kind==='PAYMENT_RECEIVED_IN_CASH_UNDONE')
+    return {status:current,paidCents,result:'provider_risk_manual_review'};
   // Refund events are only a signal to query the provider's refund ledger.
   // The event can precede settlement: NEVER deduct until a refund is verified DONE.
   if(['PAYMENT_REFUNDED','PAYMENT_PARTIALLY_REFUNDED','PAYMENT_REFUND_IN_PROGRESS','PAYMENT_REFUND_DENIED'].includes(kind))
