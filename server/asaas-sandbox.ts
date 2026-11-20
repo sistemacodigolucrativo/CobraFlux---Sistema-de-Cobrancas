@@ -32,7 +32,7 @@ const customerData=z.object({id:providerId,externalReference:z.string().optional
 const paymentData=z.object({id:providerId,externalReference:z.string().optional(),
   value:z.number().finite().optional(),status:z.string().optional()}).passthrough();
 const qrData=z.object({payload:z.string().trim().min(20).max(6000),
-  encodedImage:z.string().optional(),expirationDate:z.string().nullable().optional()}).passthrough();
+  encodedImage:z.string().regex(/^[A-Za-z0-9+/=]+$/).max(500000).optional(),expirationDate:z.string().nullable().optional()}).passthrough();
 const asaasList=z.object({data:z.array(z.unknown()),hasMore:z.boolean().optional()}).passthrough();
 
 export class AsaasError extends Error {
