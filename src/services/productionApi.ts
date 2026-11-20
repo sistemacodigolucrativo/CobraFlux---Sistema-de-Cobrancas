@@ -20,7 +20,7 @@ export type Charge = {
 };
 export type PublicCharge = {
   description:string;amountCents:number;dueDate:string;status:string;
-  merchant:string;pixPayload:string|null;paymentEnabled:boolean;
+  merchant:string;pixPayload:string|null;paymentEnabled:boolean;sandboxOnly?:boolean;
 };
 export type CsvPreviewRow={
   rowNumber:number;name:string;phone:string;email:string;serviceName:string;
@@ -106,6 +106,11 @@ export const productionApi={
   sessions:()=>request<{items:Array<{id:string;current:boolean;created_at:string;expires_at:string}>}>('/auth/sessions'),
   revokeAllSessions:async()=>{await request('/auth/sessions/revoke-all','POST',{});csrfToken='';},
   adminOverview:()=>request<{organizations:number;users:number}>('/admin/overview'),
+  sandboxConnection:()=>request<{configured:boolean;provider:string;sandboxOnly:true;webhookPath:string|null}>('/sandbox/connection'),
+  connectAsaasSandbox:(apiKey:string,webhookToken:string)=>request<{configured:boolean;webhookPath:string;sandboxOnly:true}>('/sandbox/connection','PUT',{apiKey,webhookToken}),
+  issueSandboxPix:(id:string)=>request<{id:string;status:string;sandboxOnly:true}>('/sandbox/charges/'+encode(id)+'/issue','POST',{}),
+  reconcileSandboxPix:(id:string)=>request<{id:string;status:string;sandboxOnly:true}>('/sandbox/charges/'+encode(id)+'/reconcile','POST',{}),
+  sandboxQr:(token:string)=>request<{payload:string;encodedImage?:string;sandboxOnly:true}>('/public/charges/'+encode(token)+'/sandbox-qr'),
   organizations:()=>request<{items:OrganizationChoice[];currentOrganizationId:string}>('/auth/organizations'),
   switchOrganization:async(organizationId:string)=>{
     await request('/auth/switch-organization','POST',{organizationId});
