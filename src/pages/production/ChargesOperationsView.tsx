@@ -107,7 +107,8 @@ export function ChargesOperationsView({onChanged,canIssue=false}:{onChanged:()=>
    </Card>}
    {items.map(c=><Card key={c.id} className="p-5 space-y-3">
      <div className="flex flex-wrap justify-between gap-2"><div><b>{c.client_name}</b><p className="text-sm text-[#B8BFCD]">{c.description}</p>
-       <p className="text-xs text-[#B8BFCD]">{String(c.due_date).slice(0,10)} · {c.status}</p></div>
+       <p className="text-xs text-[#B8BFCD]">{String(c.due_date).slice(0,10)} · {c.status}
+        {c.provider==='asaas_sandbox'?' · SANDBOX (sem dinheiro real)':''}</p></div>
        <div className="text-right"><b className="text-lg">{money(Number(c.amount_cents)-Number(c.discount_cents))}</b><p className="text-xs text-[#B8BFCD]">Desconto {money(c.discount_cents)}</p></div>
      </div>
      <div className="flex flex-wrap gap-2">

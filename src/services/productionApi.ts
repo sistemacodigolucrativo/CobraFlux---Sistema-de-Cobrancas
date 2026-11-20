@@ -16,7 +16,7 @@ export type Service = {
 export type Charge = {
   id:string;public_token:string;client_id:string;service_id:string|null;description:string;
   amount_cents:string;discount_cents:string;paid_cents:string;due_date:string;
-  status:string;client_name:string;created_at:string;updated_at:string;
+  status:string;provider:string|null;provider_charge_id:string|null;client_name:string;created_at:string;updated_at:string;
 };
 export type PublicCharge = {
   description:string;amountCents:number;dueDate:string;status:string;
@@ -154,7 +154,7 @@ export const productionApi={
   cancelCharge:(id:string,reason='Cancelada pelo profissional')=>request<{id:string;status:string}>('/charges/'+encode(id)+'/cancel','POST',{reason}),
   chargeHistory:(id:string)=>request<{items:ChargeEvent[]}>('/charges/'+encode(id)+'/history'),
   publicCharge:(token:string)=>request<PublicCharge>('/public/charges/'+encode(token)),
-  overview:()=>request<{total_charges:number;paid_charges:number;total_paid_cents:string}>('/reports/overview'),
+  overview:()=>request<{total_charges:number;paid_charges:number;total_paid_cents:string;sandbox_paid_charges:number;sandbox_paid_cents:string}>('/reports/overview'),
 
   profile:()=>request<Profile>('/profile'),
   updateProfile:(name:string)=>request<{id:string;name:string;email:string}>('/profile','PATCH',{name}),

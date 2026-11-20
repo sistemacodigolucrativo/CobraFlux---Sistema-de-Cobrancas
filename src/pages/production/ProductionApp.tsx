@@ -77,7 +77,7 @@ export function ProductionApp(){
   const [myOrganizations,setMyOrganizations]=useState<OrganizationChoice[]>([]);
   const [fullName,setFullName]=useState('');
   const [business,setBusiness]=useState('');
-  const [overview,setOverview]=useState<{total_charges:number;paid_charges:number;total_paid_cents:string}|null>(null);
+  const [overview,setOverview]=useState<{total_charges:number;paid_charges:number;total_paid_cents:string;sandbox_paid_charges:number;sandbox_paid_cents:string}|null>(null);
   const [activeSessions,setActiveSessions]=useState<Array<{id:string;current:boolean;created_at:string;expires_at:string}>>([]);
   const token=hash.startsWith('#/pagar/')?hash.split('#/pagar/')[1].split('?')[0]:null;
   const inviteToken=hash.startsWith('#/convite/')?hash.split('#/convite/')[1].split('?')[0]:null;
@@ -138,9 +138,14 @@ export function ProductionApp(){
     {tab==='inicio'&&<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Card className="p-5"><p>Cobranças</p><p className="text-3xl font-bold">{overview?.total_charges??0}</p></Card>
             <Card className="p-5"><p>Pagamentos confirmados</p><p className="text-3xl font-bold">{overview?.paid_charges??0}</p></Card>
-            <Card className="p-5"><p>Recebimento confirmado</p><p className="text-2xl font-bold">{money(overview?.total_paid_cents??0)}</p></Card>
+            <Card className="p-5"><p>Recebimento real confirmado</p><p className="text-2xl font-bold">{money(overview?.total_paid_cents??0)}</p></Card>
+            <Card className="p-5 sm:col-span-3 border-[#F5D491]/30">
+              <p className="text-xs font-semibold text-[#F5D491]">Simulações exclusivamente no SANDBOX</p>
+              <p className="text-xl font-semibold">{overview?.sandbox_paid_charges??0} recebimentos simulados · {money(overview?.sandbox_paid_cents??0)} de testes</p>
+              <p className="text-xs text-[#B8BFCD]">Os valores acima nunca compõem o caixa real.</p>
+            </Card>
             <Card className="p-5 sm:col-span-3">
-              <p className="font-semibold text-[#F5D491]">Cobranças reais ainda não habilitadas</p>
+              <p className="font-semibold text-[#F5D491]">Cobranças comerciais reais ainda não habilitadas</p>
               <p className="text-sm text-[#B8BFCD] mt-2">Os registros já são salvos no PostgreSQL. A emissão Pix, a conciliação e os recebimentos dependem da integração e homologação de um provedor de pagamentos.</p>
             </Card>
           </div>}

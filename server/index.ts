@@ -322,8 +322,10 @@ app.get('/api/reports/overview', sessions, route(async (req,res)=>{
   const p=who(req);
   const q=await pool.query(
     'SELECT count(*)::int AS total_charges, ' +
-    "count(*) FILTER (WHERE status='paid')::int AS paid_charges, " +
-    "coalesce(sum(paid_cents) FILTER (WHERE status='paid'),0)::text AS total_paid_cents " +
+    "count(*) FILTER (WHERE status='paid' AND provider IS DISTINCT FROM 'asaas_sandbox')::int AS paid_charges, " +
+    "coalesce(sum(paid_cents) FILTER (WHERE status='paid' AND provider IS DISTINCT FROM 'asaas_sandbox'),0)::text AS total_paid_cents, " +
+    "count(*) FILTER (WHERE status='paid' AND provider='asaas_sandbox')::int AS sandbox_paid_charges, " +
+    "coalesce(sum(paid_cents) FILTER (WHERE status='paid' AND provider='asaas_sandbox'),0)::text AS sandbox_paid_cents " +
     'FROM charges WHERE organization_id=$1',[p.orgId]
   );
   res.json(q.rows[0]);

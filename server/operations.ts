@@ -53,7 +53,7 @@ async function history(db:{query:Function},p:Principal,chargeId:string,action:st
 }
 const clientColumns='id,internal_code,name,phone,email,notes,status,whatsapp_opt_in,service_name,monthly_fee_cents::text,preferred_due_day,created_at,updated_at';
 const serviceColumns='id,name,description,price_cents::text,default_frequency,active,created_at';
-const chargeColumns='ch.id,ch.public_token,ch.client_id,ch.service_id,ch.description,ch.amount_cents::text,ch.discount_cents::text,ch.paid_cents::text,ch.due_date,ch.status,ch.created_at,ch.updated_at,cl.name AS client_name';
+const chargeColumns='ch.id,ch.public_token,ch.client_id,ch.service_id,ch.description,ch.amount_cents::text,ch.discount_cents::text,ch.paid_cents::text,ch.due_date,ch.status,ch.provider,ch.provider_charge_id,ch.created_at,ch.updated_at,cl.name AS client_name';
 
 export function registerOperations(app:Express,deps:Deps):void{
  const {sessions,csrf,route,who}=deps;
