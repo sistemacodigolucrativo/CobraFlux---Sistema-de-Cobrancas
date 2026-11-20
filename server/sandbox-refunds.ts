@@ -22,7 +22,7 @@ function owner(p:Principal,res:Response){
 }
 async function accountAndCharge(orgId:string,chargeId:string){
   const q=await pool.query('SELECT ch.id,ch.provider_charge_id,ch.status,ch.amount_cents,ch.discount_cents,'+
-    'ch.refunded_cents,si.account_id,si.expected_cents,si.state,sp.api_key_ciphertext,sp.organization_id '+
+    'ch.refunded_cents,si.account_id,si.expected_cents,si.state,si.refund_sync_required,sp.api_key_ciphertext,sp.organization_id '+
     'FROM charges ch JOIN sandbox_issuances si ON si.charge_id=ch.id AND si.organization_id=ch.organization_id '+
     'JOIN sandbox_payment_accounts sp ON sp.id=si.account_id AND sp.organization_id=ch.organization_id '+
     "WHERE ch.organization_id=$1 AND ch.id=$2 AND ch.provider='asaas_sandbox' "+
@@ -60,7 +60,7 @@ export function registerSandboxRefunds(app:Express,{sessions,csrf,who,route}:Dep
       'FROM sandbox_refund_requests WHERE organization_id=$1 AND charge_id=$2 ORDER BY created_at DESC LIMIT 100',
       [p.orgId,id]);
     res.json({items:q.rows,chargeStatus:row.status,refundedCents:String(row.refunded_cents),
-      sandboxOnly:true,reconciliationRequired:row.status==='partially_refunded'?false:undefined});
+      sandboxOnly:true,reconciliationRequired:row.refund_sync_required});
   }));
 
   app.post('/api/sandbox/charges/:id/refunds',sessions,csrf,route(async(req,res)=>{
