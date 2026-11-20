@@ -9,6 +9,7 @@ export const providerEvent=z.object({
     externalReference:z.string().uuid().nullable().optional(),
     value:money.optional(),
     status:z.string().nullable().optional(),
+    transactionReceiptUrl:z.string().url().nullable().optional(),
   }).passthrough()
 }).passthrough();
 export type ProviderEvent=z.infer<typeof providerEvent>;

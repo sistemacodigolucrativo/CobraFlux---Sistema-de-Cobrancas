@@ -5,6 +5,7 @@ import {pool,transaction} from './db';
 import {secureEquals,sha256} from './security';
 import {AsaasSandbox,credentialsReady,decryptApiKey,encryptApiKey} from './asaas-sandbox';
 import {applySandboxEvent,providerEvent,providerMoneyCents,type ChargeStatus} from './asaas-events';
+import {trustedAsaasReceipt} from './sandbox-reconciliation';
 
 type Principal={userId:string;orgId:string;role:string;email:string;name:string;token:string};
 type Deps={
@@ -259,6 +260,13 @@ export function registerSandboxPayments(app:Express,{sessions,csrf,route,who}:De
       const decision=applySandboxEvent(row.status as ChargeStatus,Number(row.paid_cents),expected,event);
       await db.query('UPDATE payment_events SET processing_result=$2 WHERE id=$1',
         [unique.rows[0].id,decision.result]);
+      if(decision.result==='received'){
+        const receipt=trustedAsaasReceipt(event.payment.transactionReceiptUrl);
+        if(receipt){
+          await db.query('UPDATE sandbox_issuances SET payment_receipt_url=coalesce(payment_receipt_url,$2) '+
+            'WHERE charge_id=$1 AND account_id=$3',[ref,receipt,accountId]);
+        }
+      }
       if(decision.result==='refund_reconciliation_required'||event.event==='PAYMENT_REFUND_DENIED'){
         await db.query('UPDATE sandbox_issuances SET refund_sync_required=true,reconcile_due_at=now(),updated_at=now() '+
           'WHERE charge_id=$1 AND account_id=$2',[ref,accountId]);

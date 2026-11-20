@@ -117,6 +117,7 @@ export async function reconcileSandboxFinancial(orgId:string,chargeId:string,act
     const receivedStatuses=new Set(['RECEIVED','REFUNDED','PARTIALLY_REFUNDED']);
     const received=['paid','partially_refunded','refunded'].includes(ch.status)||
       receivedStatuses.has(payment.status);
+    const verifiedPaymentReceipt=received?trustedAsaasReceipt(payment.transactionReceiptUrl):null;
     let status=ch.status as string,paidCents=Number(ch.paid_cents);
     if(received){
       if(summary.doneCents===expected){status='refunded';paidCents=0;}
@@ -128,6 +129,10 @@ export async function reconcileSandboxFinancial(orgId:string,chargeId:string,act
     }
     let changed=status!==ch.status||paidCents!==Number(ch.paid_cents)||
       summary.doneCents!==Number(ch.refunded_cents);
+    if(verifiedPaymentReceipt){
+      await db.query('UPDATE sandbox_issuances SET payment_receipt_url=coalesce(payment_receipt_url,$3) '+
+        'WHERE organization_id=$1 AND charge_id=$2',[orgId,chargeId,verifiedPaymentReceipt]);
+    }
     const pendingRequests=await db.query(
       "SELECT id,description,requested_cents,state,receipt_url FROM sandbox_refund_requests "+
       "WHERE organization_id=$1 AND charge_id=$2 AND state IN('reserved','submitted','reconcile_required') "+

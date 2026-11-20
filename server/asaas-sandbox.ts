@@ -44,7 +44,8 @@ const refundResponse=z.union([
 ]);
 const detailedPayment=z.object({
   id:providerId,value:z.number().finite().positive(),status:z.string().min(3),
-  externalReference:z.string().optional(),billingType:z.string().optional()
+  externalReference:z.string().optional(),billingType:z.string().optional(),
+  transactionReceiptUrl:z.string().url().nullable().optional()
 }).passthrough();
 const qrData=z.object({payload:z.string().trim().min(20).max(6000),
   encodedImage:z.string().regex(/^[A-Za-z0-9+/=]+$/).max(500000).optional(),expirationDate:z.string().nullable().optional()}).passthrough();
