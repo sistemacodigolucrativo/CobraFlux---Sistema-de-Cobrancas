@@ -180,6 +180,9 @@ test('Asaas sandbox: encrypted tenant config, safe issuance, webhook replay, ref
   assert.equal(reconciledPartial.body.status,'partially_refunded');
   assert.equal(reconciledPartial.body.refundedCents,15000);
   assert.equal(reconciledPartial.body.paidCents,25000);
+  const partialFilter=await call('/charges?status=partially_refunded','GET',undefined,a.cookie);
+  assert.equal(partialFilter.status,200);
+  assert.ok(partialFilter.body.items.some((x:{id:string})=>x.id===draftA.id));
   const listPartial=await call('/sandbox/charges/'+draftA.id+'/refunds','GET',undefined,a.cookie);
   assert.equal(listPartial.body.items[0].state,'completed');
   assert.equal(Number(listPartial.body.refundedCents),15000);
@@ -215,6 +218,11 @@ test('Asaas sandbox: encrypted tenant config, safe issuance, webhook replay, ref
   assert.equal(Number(after.rows[0].paid_cents),0);
   assert.equal(Number(after.rows[0].refunded_cents),40000);
   assert.equal((await call('/reports/overview','GET',undefined,a.cookie)).body.sandbox_paid_cents,'0');
+  const refundAudits=await pool.query(
+    "SELECT action FROM audit_logs WHERE organization_id=$1 AND action IN('SANDBOX_REFUND_REQUESTED','SANDBOX_REFUNDS_RECONCILED')",
+    [a.org]);
+  assert.ok(refundAudits.rows.some((x:{action:string})=>x.action==='SANDBOX_REFUND_REQUESTED'));
+  assert.ok(refundAudits.rows.some((x:{action:string})=>x.action==='SANDBOX_REFUNDS_RECONCILED'));
   const events=await pool.query('SELECT processing_result,event_payload FROM payment_events WHERE charge_id=$1',[draftA.id]);
   assert.equal(events.rowCount,6);
   assert.ok(events.rows.every((r:{event_payload:object})=>!('cpfCnpj' in r.event_payload)));
