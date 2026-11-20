@@ -1,6 +1,7 @@
 import React,{useCallback,useEffect,useState} from 'react';
 import {Button,Card,Input} from '../../components/ui/Primitives';
 import {productionApi,type Charge,type Client,type Service,type ChargeEvent} from '../../services/productionApi';
+import {SandboxRefundPanel} from './SandboxRefundPanel';
 const money=(c:number|string)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(c)/100);
 const asMoney=(c:number|string)=>(Number(c)/100).toFixed(2).replace('.',',');
 function cents(input:string):number{
@@ -11,7 +12,7 @@ function cents(input:string):number{
   return value;
 }
 type Form={clientId:string;serviceId:string;description:string;amount:string;discount:string;dueDate:string};
-type Filter='all'|'draft'|'pending_provider'|'cancelled'|'pending'|'paid'|'partial'|'overdue'|'refunded';
+type Filter='all'|'draft'|'pending_provider'|'cancelled'|'pending'|'paid'|'partial'|'partially_refunded'|'overdue'|'refunded';
 const defaults:Form={clientId:'',serviceId:'',description:'',amount:'450,00',discount:'0,00',dueDate:new Date().toISOString().slice(0,10)};
 export function ChargesOperationsView({onChanged,canIssue=false}:{onChanged:()=>Promise<void>;canIssue?:boolean}){
  const [items,setItems]=useState<Charge[]>([]);
@@ -33,6 +34,7 @@ export function ChargesOperationsView({onChanged,canIssue=false}:{onChanged:()=>
  const [duplicateDue,setDuplicateDue]=useState('');
  const [cancelId,setCancelId]=useState<string|null>(null);
  const [cancelReason,setCancelReason]=useState('Cancelada pelo profissional');
+ const [refundFor,setRefundFor]=useState<string|null>(null);
  const [sandboxConfigured,setSandboxConfigured]=useState(false);
  const load=useCallback(async()=>{
    try{const r=await productionApi.charges({search,status:status==='all'?undefined:status,limit:25,offset:page*25});setItems(r.items);setTotal(r.total);}
@@ -76,7 +78,7 @@ export function ChargesOperationsView({onChanged,canIssue=false}:{onChanged:()=>
      </label>
      <label className="text-sm">Situação
        <select className="block w-full p-3 mt-1 rounded-lg bg-[#0B0D12] border border-white/20" value={status} onChange={e=>{setStatus(e.target.value as Filter);setPage(0);}}>
-         <option value="all">Todas</option><option value="draft">Rascunho</option><option value="pending_provider">Emissão inconclusiva</option><option value="cancelled">Cancelada</option><option value="pending">Pendente</option><option value="paid">Paga</option><option value="partial">Parcial</option><option value="overdue">Vencida</option><option value="refunded">Estornada</option>
+         <option value="all">Todas</option><option value="draft">Rascunho</option><option value="pending_provider">Emissão inconclusiva</option><option value="cancelled">Cancelada</option><option value="pending">Pendente</option><option value="paid">Paga</option><option value="partial">Parcial</option><option value="partially_refunded">Estornada parcialmente</option><option value="overdue">Vencida</option><option value="refunded">Estornada</option>
        </select>
      </label>
    </Card>
@@ -124,7 +126,12 @@ export function ChargesOperationsView({onChanged,canIssue=false}:{onChanged:()=>
            'Reconciliação concluída. Nenhuma cobrança duplicada foi criada.')}>Reconciliar no sandbox</Button>}
        <Button size="sm" variant="secondary" onClick={()=>{setDuplicateId(duplicateId===c.id?null:c.id);setDuplicateDue(String(c.due_date).slice(0,10));}}>Duplicar</Button>
        {c.status==='draft'&&<Button size="sm" variant="danger" onClick={()=>setCancelId(cancelId===c.id?null:c.id)}>Cancelar</Button>}
+       {canIssue&&c.provider==='asaas_sandbox'&&['paid','partially_refunded','refunded'].includes(c.status)&&
+         <Button size="sm" variant="secondary" onClick={()=>setRefundFor(refundFor===c.id?null:c.id)}>
+           Estornos SANDBOX
+         </Button>}
      </div>
+     {refundFor===c.id&&<SandboxRefundPanel key={c.id} charge={c} onChanged={async()=>{await load();await onChanged();}} onClose={()=>setRefundFor(null)}/>}
      {historyId===c.id&&<div className="border-t border-white/10 pt-2 space-y-1 text-xs">
        {history.map(event=><p key={event.id}>{new Date(event.created_at).toLocaleString('pt-BR')} · {event.action}</p>)}
        {!history.length&&<p>Sem histórico.</p>}
