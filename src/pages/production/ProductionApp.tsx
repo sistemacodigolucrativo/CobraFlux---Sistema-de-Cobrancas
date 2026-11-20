@@ -3,6 +3,7 @@ import { Button, Card, GoldenLogo, Input } from '../../components/ui/Primitives'
 import { ApiFailure,productionApi, type Session, type PublicCharge, type OrganizationChoice } from '../../services/productionApi';
 import { TeamOperationsView } from './TeamOperationsView';
 import { TeamInvitationPage } from './TeamInvitationPage';
+import { ProductionShell,type ProductionTab } from './ProductionShell';
 import { ClientsOperationsView } from './ClientsOperationsView';
 import { ChargesOperationsView } from './ChargesOperationsView';
 import { ServicesOperationsView } from './ServicesOperationsView';
@@ -48,7 +49,7 @@ export function ProductionApp(){
   const [error,setError]=useState('');
   const [notice,setNotice]=useState('');
   const [mode,setMode]=useState<'login'|'register'|'recover'|'reset'|'verify'|'resend'>('login');
-  const [tab,setTab]=useState<'inicio'|'clientes'|'servicos'|'cobrancas'|'sessoes'|'configuracoes'|'equipe'>('inicio');
+  const [tab,setTab]=useState<ProductionTab>('inicio');
   const [email,setEmail]=useState('');
   const [password,setPassword]=useState('');
   const [totp,setTotp]=useState('');
@@ -99,28 +100,50 @@ export function ProductionApp(){
   if(token)return <PublicPayment token={token}/>;
   if(inviteToken)return booting?<p>Carregando convite...</p>:
     <TeamInvitationPage token={inviteToken} session={session} onJoined={setSession} onLogout={()=>setSession(null)} onClose={()=>{window.location.hash='#/';}}/>;
+
+  if(!booting && session)return <ProductionShell
+    session={session} organizations={myOrganizations} tab={tab}
+    onTabChange={next=>{setTab(next);setError('');}}
+    onSwitch={id=>void submitAction(async()=>{
+      const next=await productionApi.switchOrganization(id);
+      setSession(next);setTab('inicio');setNotice('Organização alterada com segurança.');
+    })}
+    onLogout={()=>void submitAction(async()=>{await productionApi.logout();setSession(null);})}
+  >
+    {error&&<p role="alert" className="p-3 border border-[#F16C79]/50 rounded-xl text-[#F16C79]">{error}</p>}
+    {notice&&<p role="status" className="p-3 border border-[#33C994]/50 rounded-xl text-[#33C994]">{notice}</p>}
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div><p className="text-xs text-[#E2BE72]">Painel profissional · Dados isolados por organização</p>
+        <h1 className="text-2xl font-display font-bold">Olá, {session.user.name}</h1></div>
+      <span className="inline-flex items-center rounded-full border border-[#33C994]/30 bg-[#33C994]/10 px-3 py-1.5 text-xs text-[#33C994]">Ambiente operacional</span>
+    </div>
+    {tab==='inicio'&&<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card className="p-5"><p>Cobranças</p><p className="text-3xl font-bold">{overview?.total_charges??0}</p></Card>
+            <Card className="p-5"><p>Pagamentos confirmados</p><p className="text-3xl font-bold">{overview?.paid_charges??0}</p></Card>
+            <Card className="p-5"><p>Recebimento confirmado</p><p className="text-2xl font-bold">{money(overview?.total_paid_cents??0)}</p></Card>
+            <Card className="p-5 sm:col-span-3">
+              <p className="font-semibold text-[#F5D491]">Cobranças reais ainda não habilitadas</p>
+              <p className="text-sm text-[#B8BFCD] mt-2">Os registros já são salvos no PostgreSQL. A emissão Pix, a conciliação e os recebimentos dependem da integração e homologação de um provedor de pagamentos.</p>
+            </Card>
+          </div>}
+          {tab==='sessoes'&&<Card className="p-5 space-y-4"><h2 className="font-semibold text-xl">Sessões conectadas</h2>
+            <p className="text-sm text-[#B8BFCD]">Dispositivos com acesso à sua conta. Revogar todas as sessões desconecta todos os dispositivos, inclusive este.</p>
+            {activeSessions.map(s=><p key={s.id} className="text-sm border-b border-white/10 py-2">{s.current?'Este dispositivo':'Outra sessão'} · Criada: {new Date(s.created_at).toLocaleString('pt-BR')}</p>)}
+            <Button variant="danger" disabled={busy} onClick={()=>submitAction(async()=>{await productionApi.revokeAllSessions();setSession(null);setNotice('Todas as sessões foram revogadas.');})}>Desconectar todos os dispositivos</Button>
+          </Card>}
+          {tab==='clientes'&&<ClientsOperationsView key={session.organizationId} onChanged={refresh}/>}
+          {tab==='servicos'&&<ServicesOperationsView key={session.organizationId} onChanged={refresh}/>}
+          {tab==='cobrancas'&&<ChargesOperationsView key={session.organizationId} onChanged={refresh}/>}
+          {tab==='equipe'&&<TeamOperationsView key={session.organizationId} session={session}/>}
+          {tab==='configuracoes'&&<AccountOperationsView key={session.organizationId} session={session} onSessionChange={setSession}/>}
+  </ProductionShell>;
   return <div className="min-h-screen bg-[#0B0D12] text-[#F6F1E8]">
-    <header className="border-b border-white/10 px-4 py-4 flex justify-between items-center max-w-6xl mx-auto">
-      <GoldenLogo compact/>
-      {session&&<div className="flex flex-wrap items-center gap-2">
-        {myOrganizations.length>1&&<label className="text-xs text-[#B8BFCD]">
-          Organização
-          <select aria-label="Trocar organização" className="ml-2 bg-[#151922] border border-white/20 rounded-lg px-2 py-2 text-sm text-[#F6F1E8]"
-            value={session.organizationId} onChange={e=>void submitAction(async()=>{
-              const updated=await productionApi.switchOrganization(e.target.value);
-              setSession(updated);setTab('inicio');setNotice('Organização alterada com segurança.');
-            })}>
-            {myOrganizations.map(o=><option value={o.id} key={o.id}>{o.name}</option>)}
-          </select>
-        </label>}
-        <Button variant="secondary" size="sm" onClick={()=>void submitAction(async()=>{await productionApi.logout();setSession(null);})}>Sair</Button>
-      </div>}
-    </header>
-    <main className="max-w-6xl mx-auto p-4 sm:p-8 space-y-6">
+    <header className="border-b border-white/10 px-4 py-4 max-w-6xl mx-auto"><GoldenLogo compact/></header>
+    <main className="max-w-xl mx-auto px-4 py-8 sm:py-14 space-y-6">
       {error&&<p role="alert" className="p-3 border border-[#F16C79]/50 rounded-xl text-[#F16C79]">{error}</p>}
       {notice&&<p role="status" className="p-3 border border-[#33C994]/50 rounded-xl text-[#33C994]">{notice}</p>}
-      {booting?<p>Carregando sessão...</p>:!session?
-        <CardForm>
+      {booting?<p>Carregando sessão...</p>:
+      <CardForm>
           <p className="text-sm text-[#E2BE72]">Ambiente operacional · dados persistidos no servidor</p>
           <h1 className="text-2xl font-bold">{mode==='login'?'Acessar CobraFlux':mode==='register'?'Criar minha conta':mode==='recover'?'Recuperar senha':mode==='reset'?'Definir nova senha':mode==='resend'?'Reenviar verificação':'Confirmar e-mail'}</h1>
           <form className="space-y-4" onSubmit={(e)=>{e.preventDefault();submitAction(async()=>{
@@ -152,39 +175,7 @@ export function ProductionApp(){
             <button onClick={()=>setMode('resend')}>Verificar e-mail</button>
             <button onClick={()=>setAdminAccess(v=>!v)}>{adminAccess?'Ocultar MFA':'Acesso admin com MFA'}</button>
           </div>
-        </CardForm>
-        : <>
-          <div><p className="text-[#E2BE72] text-sm">Painel operacional</p><h1 className="text-2xl font-bold">Olá, {session.user.name}</h1></div>
-          <div className="flex flex-wrap gap-2">
-            {(['inicio','clientes','servicos','cobrancas','equipe','sessoes','configuracoes'] as const)
-              .filter(t=>t!=='equipe'||session.user.role!=='operator').map(t=>
-              <Button key={t} size="sm" variant={tab===t?'primary':'secondary'} onClick={()=>{setTab(t);setError('');}}>
-                {t==='inicio'?'Início':t==='clientes'?'Clientes':t==='servicos'?'Serviços':t==='cobrancas'?'Cobranças':t==='equipe'?'Equipe':t==='sessoes'?'Sessões':'Configurações'}
-              </Button>
-            )}
-          </div>
-          {tab==='inicio'&&<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card className="p-5"><p>Cobranças</p><p className="text-3xl font-bold">{overview?.total_charges??0}</p></Card>
-            <Card className="p-5"><p>Pagamentos confirmados</p><p className="text-3xl font-bold">{overview?.paid_charges??0}</p></Card>
-            <Card className="p-5"><p>Recebimento confirmado</p><p className="text-2xl font-bold">{money(overview?.total_paid_cents??0)}</p></Card>
-            <Card className="p-5 sm:col-span-3">
-              <p className="font-semibold text-[#F5D491]">Cobranças reais ainda não habilitadas</p>
-              <p className="text-sm text-[#B8BFCD] mt-2">Os registros já são salvos no PostgreSQL. A emissão Pix, a conciliação e os recebimentos dependem da integração e homologação de um provedor de pagamentos.</p>
-            </Card>
-          </div>}
-          {tab==='sessoes'&&<Card className="p-5 space-y-4"><h2 className="font-semibold text-xl">Sessões conectadas</h2>
-            <p className="text-sm text-[#B8BFCD]">Dispositivos com acesso à sua conta. Revogar todas as sessões desconecta todos os dispositivos, inclusive este.</p>
-            {activeSessions.map(s=><p key={s.id} className="text-sm border-b border-white/10 py-2">{s.current?'Este dispositivo':'Outra sessão'} · Criada: {new Date(s.created_at).toLocaleString('pt-BR')}</p>)}
-            <Button variant="danger" disabled={busy} onClick={()=>submitAction(async()=>{await productionApi.revokeAllSessions();setSession(null);setNotice('Todas as sessões foram revogadas.');})}>Desconectar todos os dispositivos</Button>
-          </Card>}
-          {tab==='clientes'&&<ClientsOperationsView key={session.organizationId} onChanged={refresh}/>}
-          {tab==='servicos'&&<ServicesOperationsView key={session.organizationId} onChanged={refresh}/>}
-          {tab==='cobrancas'&&<ChargesOperationsView key={session.organizationId} onChanged={refresh}/>}
-          {tab==='equipe'&&<TeamOperationsView key={session.organizationId} session={session}/>}
-          {tab==='configuracoes'&&<AccountOperationsView key={session.organizationId} session={session} onSessionChange={setSession}/>}
-
-
-        </>}
+        </CardForm>}
     </main>
   </div>;
 }
