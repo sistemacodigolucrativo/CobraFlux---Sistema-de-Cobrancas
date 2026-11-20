@@ -95,6 +95,22 @@ export function registerSandboxPayments(app:Express,{sessions,csrf,route,who}:De
     res.json({configured:!!account,provider:'asaas_sandbox',sandboxOnly:true,
       webhookPath:account?'/api/webhooks/asaas-sandbox/'+account.id:null});
   }));
+  app.get('/api/public/charges/:publicToken/sandbox-qr',route(async(req,res)=>{
+    const token=z.string().min(20).max(120).parse(req.params.publicToken);
+    const q=await pool.query('SELECT ch.provider_charge_id,sp.organization_id,sp.api_key_ciphertext,sp.id,sp.webhook_token_hash,sp.enabled '+
+      'FROM charges ch JOIN sandbox_issuances si ON si.charge_id=ch.id '+
+      'JOIN sandbox_payment_accounts sp ON sp.id=si.account_id AND sp.organization_id=ch.organization_id '+
+      "WHERE ch.public_token=$1 AND ch.provider='asaas_sandbox' AND ch.status='pending' AND si.state='ready' AND sp.enabled=true",[token]);
+    if(!q.rowCount){res.status(404).json({error:'sandbox_qr_not_available'});return;}
+    try{
+      const api=apiFor(q.rows[0] as Account);
+      const qr=await api.getQrCode(q.rows[0].provider_charge_id);
+      res.json({payload:qr.payload,...(qr.encodedImage?{encodedImage:qr.encodedImage}:{}),sandboxOnly:true});
+    }catch(e){
+      console.error('sandbox_qr_unavailable',responseError(e));
+      res.status(502).json({error:'sandbox_qr_unavailable'});
+    }
+  }));
   app.put('/api/sandbox/connection',sessions,csrf,route(async(req,res)=>{
     const p=who(req);if(!requireOwner(p,res))return;
     if(!credentialsReady()){res.status(503).json({error:'payment_credentials_key_not_configured'});return;}
