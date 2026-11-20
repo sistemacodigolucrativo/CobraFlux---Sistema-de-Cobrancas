@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express, { type Request, type Response, type NextFunction, type RequestHandler } from 'express';
 import { randomUUID } from 'node:crypto';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { z, ZodError } from 'zod';
 import { pool, transaction } from './db';
 import { csrfForSession, getCookie, normalizeEmail, passwordHash, passwordMatches, randomSecret, secureEquals, sha256 } from './security';
@@ -328,6 +330,16 @@ app.post('/api/public/contact', route(async (req,res)=>{
   res.status(201).json({ok:true});
 }));
 app.use('/api', (_req,res) => res.status(404).json({error:'api_route_not_found'}));
+const staticDir = resolve(process.cwd(), 'dist');
+app.use(express.static(staticDir, { index: false, setHeaders: (res, file) => {
+  if (file.includes('/assets/')) res.setHeader('Cache-Control','public,max-age=31536000,immutable');
+} }));
+app.get('*', (_req,res) => {
+  const htmlPath=resolve(staticDir,'index.html');
+  if (!existsSync(htmlPath)) {res.status(503).send('Frontend has not been built.');return;}
+  res.setHeader('Cache-Control','no-cache');
+  res.sendFile(htmlPath);
+});
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof ZodError) { res.status(400).json({error:'validation_error',issues:err.issues}); return; }
   if (typeof err === 'object' && err !== null && 'code' in err) {
