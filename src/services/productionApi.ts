@@ -111,6 +111,7 @@ export const productionApi={
   issueSandboxPix:(id:string)=>request<{id:string;status:string;sandboxOnly:true}>('/sandbox/charges/'+encode(id)+'/issue','POST',{}),
   reconcileSandboxPix:(id:string)=>request<{id:string;status:string;sandboxOnly:true}>('/sandbox/charges/'+encode(id)+'/reconcile','POST',{}),
   sandboxQr:(token:string)=>request<{payload:string;encodedImage?:string;sandboxOnly:true}>('/public/charges/'+encode(token)+'/sandbox-qr'),
+  sandboxPaymentReceipt:(id:string)=>request<{receiptUrl:string;sandboxOnly:true}>('/sandbox/charges/'+encode(id)+'/payment-receipt'),
   sandboxReconciliationOverview:()=>request<{sandboxOnly:true;automated:false;schedulerRequired:true;
     summary:{total:number;due:number;flagged:number;repeated_failures:number};
     incidents:Array<{charge_id:string;code:string;first_seen_at:string;last_seen_at:string}>}>('/sandbox/reconciliation/overview'),
