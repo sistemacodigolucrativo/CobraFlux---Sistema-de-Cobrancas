@@ -46,10 +46,12 @@ export function ProductionApp(){
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [notice,setNotice]=useState('');
-  const [mode,setMode]=useState<'login'|'register'|'recover'|'reset'>('login');
+  const [mode,setMode]=useState<'login'|'register'|'recover'|'reset'|'verify'|'resend'>('login');
   const [tab,setTab]=useState<'inicio'|'clientes'|'servicos'|'cobrancas'>('inicio');
   const [email,setEmail]=useState('');
   const [password,setPassword]=useState('');
+  const [totp,setTotp]=useState('');
+  const [adminAccess,setAdminAccess]=useState(false);
   const [fullName,setFullName]=useState('');
   const [business,setBusiness]=useState('');
   const [clients,setClients]=useState<Client[]>([]);
@@ -72,7 +74,10 @@ export function ProductionApp(){
     productionApi.me().then(setSession).finally(()=>setBooting(false));
     return ()=>window.removeEventListener('hashchange',fn);
   },[]);
-  useEffect(()=>{if(hash.startsWith('#/recuperar?token='))setMode('reset');},[hash]);
+  useEffect(()=>{
+    if(hash.startsWith('#/recuperar?token='))setMode('reset');
+    if(hash.startsWith('#/verificar?token='))setMode('verify');
+  },[hash]);
   const refresh=useCallback(async()=>{
     const [a,b,c,d]=await Promise.all([
       productionApi.clients(),productionApi.services(),productionApi.charges(),productionApi.overview()
@@ -97,22 +102,27 @@ export function ProductionApp(){
       {booting?<p>Carregando sessão...</p>:!session?
         <CardForm>
           <p className="text-sm text-[#E2BE72]">Ambiente operacional · dados persistidos no servidor</p>
-          <h1 className="text-2xl font-bold">{mode==='login'?'Acessar CobraFlux':mode==='register'?'Criar minha conta':mode==='recover'?'Recuperar senha':'Definir nova senha'}</h1>
+          <h1 className="text-2xl font-bold">{mode==='login'?'Acessar CobraFlux':mode==='register'?'Criar minha conta':mode==='recover'?'Recuperar senha':mode==='reset'?'Definir nova senha':mode==='resend'?'Reenviar verificação':'Confirmar e-mail'}</h1>
           <form className="space-y-4" onSubmit={(e)=>{e.preventDefault();submitAction(async()=>{
-            if(mode==='login'){const result=await productionApi.login(email,password);if(!result)throw new Error('Falha na autenticação.');setSession(result);}
-            if(mode==='register'){await productionApi.register({name:fullName,businessName:business,email,password});setMode('login');setNotice('Conta criada. Faça login.');}
+            if(mode==='login'){const result=await productionApi.login(email,password,adminAccess?totp:undefined);if(!result)throw new Error('Falha na autenticação.');setSession(result);}
+            if(mode==='register'){await productionApi.register({name:fullName,businessName:business,email,password});setMode('login');setNotice('Conta criada. Confirme seu e-mail antes de entrar.');}
+            if(mode==='verify'){const code=new URLSearchParams(hash.split('?')[1]??'').get('token')??'';await productionApi.verifyEmail(code);window.location.hash='#/entrar';setMode('login');setNotice('E-mail confirmado. Faça login.');}
+            if(mode==='resend'){await productionApi.resendVerification(email);setNotice('Se houver uma conta pendente, enviaremos instruções.');}
             if(mode==='recover'){await productionApi.resetRequest(email);setNotice('Se a conta existir e o e-mail estiver configurado, enviaremos instruções.');}
             if(mode==='reset'){const code=new URLSearchParams(hash.split('?')[1]??'').get('token')??'';await productionApi.resetPassword(code,password);window.location.hash='#/entrar';setMode('login');setNotice('Senha atualizada. Faça login.');}
           });}}>
             {mode==='register'&&<><Input label="Seu nome" required value={fullName} onChange={e=>setFullName(e.target.value)}/><Input label="Nome do negócio" required value={business} onChange={e=>setBusiness(e.target.value)}/></>}
-            {mode!=='reset'&&<Input label="E-mail" type="email" required value={email} onChange={e=>setEmail(e.target.value)}/>}
-            {mode!=='recover'&&<Input label="Senha" type="password" minLength={mode==='login'?8:12} required value={password} onChange={e=>setPassword(e.target.value)}/>}
-            <Button type="submit" disabled={busy}>{busy?'Enviando...':mode==='login'?'Entrar':mode==='register'?'Criar conta':mode==='recover'?'Solicitar link':'Redefinir senha'}</Button>
+            {mode!=='reset'&&mode!=='verify'&&<Input label="E-mail" type="email" required value={email} onChange={e=>setEmail(e.target.value)}/>}
+            {!['recover','resend','verify'].includes(mode)&&<Input label="Senha" type="password" minLength={mode==='login'?8:12} required value={password} onChange={e=>setPassword(e.target.value)}/>} 
+            {mode==='login'&&adminAccess&&<Input label="Código MFA do autenticador" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required value={totp} onChange={e=>setTotp(e.target.value)}/>}
+            <Button type="submit" disabled={busy}>{busy?'Enviando...':mode==='login'?'Entrar':mode==='register'?'Criar conta':mode==='recover'?'Solicitar link':mode==='resend'?'Reenviar link':mode==='verify'?'Confirmar e-mail':'Redefinir senha'}</Button>
           </form>
           <div className="flex flex-wrap gap-4 text-sm text-[#E2BE72]">
             <button onClick={()=>setMode('login')}>Login</button>
             <button onClick={()=>setMode('register')}>Criar conta</button>
             <button onClick={()=>setMode('recover')}>Esqueci a senha</button>
+            <button onClick={()=>setMode('resend')}>Verificar e-mail</button>
+            <button onClick={()=>setAdminAccess(v=>!v)}>{adminAccess?'Ocultar MFA':'Acesso admin com MFA'}</button>
           </div>
         </CardForm>
         : <>
