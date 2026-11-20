@@ -81,7 +81,7 @@ test('Asaas sandbox: encrypted tenant config, safe issuance, webhook replay, ref
     apiKey:'$aact_hmlg_'+randomBytes(40).toString('hex'),webhookToken
   },a.cookie,a.csrf);
   assert.equal(configuration.status,200,JSON.stringify(configuration.body));
-  const webhookPath=configuration.body.webhookPath;
+  const webhookPath=configuration.body.webhookPath.replace(/^\/api/,'');
   assert.equal(configuration.body.sandboxOnly,true);
   assert.equal((await call('/sandbox/connection','GET',undefined,b.cookie)).body.configured,false);
   const secret=await pool.query('SELECT api_key_ciphertext,webhook_token_hash FROM sandbox_payment_accounts WHERE organization_id=$1',[a.org]);
