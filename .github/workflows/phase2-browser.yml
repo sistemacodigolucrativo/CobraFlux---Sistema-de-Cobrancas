@@ -1,4 +1,4 @@
-name: CobraFlux Phase 2 browser E2E
+name: CobraFlux operational browser E2E
 on:
   push:
     branches: [feat/production-foundation]
@@ -20,6 +20,9 @@ on:
       - 'package.json'
       - '.github/workflows/phase2-browser.yml'
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   browser:
     runs-on: ubuntu-latest
