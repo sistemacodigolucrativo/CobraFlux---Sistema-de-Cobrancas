@@ -11,9 +11,9 @@ function cents(input:string):number{
   return value;
 }
 type Form={clientId:string;serviceId:string;description:string;amount:string;discount:string;dueDate:string};
-type Filter='all'|'draft'|'cancelled'|'pending'|'paid'|'partial'|'overdue'|'refunded';
+type Filter='all'|'draft'|'pending_provider'|'cancelled'|'pending'|'paid'|'partial'|'overdue'|'refunded';
 const defaults:Form={clientId:'',serviceId:'',description:'',amount:'450,00',discount:'0,00',dueDate:new Date().toISOString().slice(0,10)};
-export function ChargesOperationsView({onChanged}:{onChanged:()=>Promise<void>}){
+export function ChargesOperationsView({onChanged,canIssue=false}:{onChanged:()=>Promise<void>;canIssue?:boolean}){
  const [items,setItems]=useState<Charge[]>([]);
  const [clients,setClients]=useState<Client[]>([]);
  const [services,setServices]=useState<Service[]>([]);
@@ -33,11 +33,13 @@ export function ChargesOperationsView({onChanged}:{onChanged:()=>Promise<void>})
  const [duplicateDue,setDuplicateDue]=useState('');
  const [cancelId,setCancelId]=useState<string|null>(null);
  const [cancelReason,setCancelReason]=useState('Cancelada pelo profissional');
+ const [sandboxConfigured,setSandboxConfigured]=useState(false);
  const load=useCallback(async()=>{
    try{const r=await productionApi.charges({search,status:status==='all'?undefined:status,limit:25,offset:page*25});setItems(r.items);setTotal(r.total);}
    catch(e){setError(e instanceof Error?e.message:'Falha ao consultar cobranças.');}
  },[search,status,page]);
  useEffect(()=>{void load();},[load]);
+ useEffect(()=>{void productionApi.sandboxConnection().then(c=>setSandboxConfigured(c.configured)).catch(()=>setSandboxConfigured(false));},[]);
  useEffect(()=>{void Promise.all([productionApi.clients({status:'active',limit:200}),productionApi.services()])
    .then(([c,s])=>{setClients(c.items);setServices(s.items);}).catch(e=>setError(String(e)));},[]);
  async function run(fn:()=>Promise<void>,done:string){
@@ -67,14 +69,14 @@ export function ChargesOperationsView({onChanged}:{onChanged:()=>Promise<void>})
      <div><p className="text-xs text-[#E2BE72]">Gestão de recebíveis · Modo operacional</p><h2 className="text-2xl font-bold">Cobranças</h2></div>
      <Button size="sm" disabled={!clients.length} onClick={()=>start()}>Nova cobrança</Button>
    </header>
-   <Card className="p-4"><p className="text-sm text-[#F5D491]">Cobranças nesta fase são rascunhos. Pix, confirmação de pagamento, estorno bancário e recibos fiscais aguardam integração homologada com o provedor.</p></Card>
+   <Card className="p-4"><p className="text-sm text-[#F5D491]">Emissão Pix Asaas disponível somente no SANDBOX, quando configurado pelo titular. Nenhum QR desta etapa movimenta dinheiro real. Confirmações dependem exclusivamente do webhook autenticado, nunca de botões do navegador.</p></Card>
    <Card className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
      <label className="text-sm sm:col-span-2">Buscar por cliente, descrição ou token
        <input className="block w-full p-3 mt-1 rounded-lg bg-[#0B0D12] border border-white/20" value={search} onChange={e=>{setSearch(e.target.value);setPage(0);}}/>
      </label>
      <label className="text-sm">Situação
        <select className="block w-full p-3 mt-1 rounded-lg bg-[#0B0D12] border border-white/20" value={status} onChange={e=>{setStatus(e.target.value as Filter);setPage(0);}}>
-         <option value="all">Todas</option><option value="draft">Rascunho</option><option value="cancelled">Cancelada</option><option value="pending">Pendente</option><option value="paid">Paga</option><option value="partial">Parcial</option><option value="overdue">Vencida</option><option value="refunded">Estornada</option>
+         <option value="all">Todas</option><option value="draft">Rascunho</option><option value="pending_provider">Emissão inconclusiva</option><option value="cancelled">Cancelada</option><option value="pending">Pendente</option><option value="paid">Paga</option><option value="partial">Parcial</option><option value="overdue">Vencida</option><option value="refunded">Estornada</option>
        </select>
      </label>
    </Card>
@@ -113,6 +115,12 @@ export function ChargesOperationsView({onChanged}:{onChanged:()=>Promise<void>})
        <a className="inline-flex items-center rounded-lg px-3 py-2 text-xs text-[#E2BE72] border border-white/20" href={'/#/pagar/'+c.public_token}>Ver página</a>
        <Button size="sm" variant="secondary" onClick={()=>void run(async()=>{const h=await productionApi.chargeHistory(c.id);setHistory(h.items);setHistoryId(historyId===c.id?null:c.id);},'Histórico consultado.')}>Histórico</Button>
        {c.status==='draft'&&<Button size="sm" variant="secondary" onClick={()=>start(c)}>Editar</Button>}
+       {canIssue&&sandboxConfigured&&c.status==='draft'&&<Button size="sm" disabled={working}
+         onClick={()=>void run(async()=>{await productionApi.issueSandboxPix(c.id);await load();await onChanged();},
+           'Pix SANDBOX gerado. Nenhum dinheiro real é movimentado.')}>Emitir Pix SANDBOX</Button>}
+       {canIssue&&c.status==='pending_provider'&&<Button size="sm" disabled={working} variant="secondary"
+         onClick={()=>void run(async()=>{await productionApi.reconcileSandboxPix(c.id);await load();await onChanged();},
+           'Reconciliação concluída. Nenhuma cobrança duplicada foi criada.')}>Reconciliar no sandbox</Button>}
        <Button size="sm" variant="secondary" onClick={()=>{setDuplicateId(duplicateId===c.id?null:c.id);setDuplicateDue(String(c.due_date).slice(0,10));}}>Duplicar</Button>
        {c.status==='draft'&&<Button size="sm" variant="danger" onClick={()=>setCancelId(cancelId===c.id?null:c.id)}>Cancelar</Button>}
      </div>
