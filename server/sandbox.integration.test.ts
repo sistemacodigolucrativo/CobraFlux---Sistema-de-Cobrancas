@@ -211,6 +211,24 @@ test('Asaas sandbox: encrypted tenant config, safe issuance, webhook replay, ref
   assert.equal((await call('/sandbox/charges/'+draftA.id+'/refunds','POST',
     {amountCents:1000,reason:'Tenant B nao pode'},b.cookie,b.csrf)).status,404);
 
+  // The worker must isolate a chargeback/dispute as an incident, not decrement funds or retry POST.
+  payment.status='CHARGEBACK_REQUESTED';
+  await pool.query("UPDATE sandbox_issuances SET reconcile_due_at=now()-interval '1 minute' WHERE charge_id=$1",
+    [draftA.id]);
+  const failedCycle=await reconcileSandboxBatch(1);
+  assert.equal(failedCycle.examined,1);
+  assert.equal(failedCycle.failed,1);
+  assert.equal(failedCycle.manualReview,1);
+  const afterFailure=await pool.query(
+    'SELECT reconcile_attempts,last_reconcile_error,review_required,refunded_cents '+
+    'FROM sandbox_issuances si JOIN charges ch ON ch.id=si.charge_id WHERE si.charge_id=$1',
+    [draftA.id]);
+  assert.equal(afterFailure.rows[0].last_reconcile_error,'provider_dispute_requires_manual_review');
+  assert.equal(afterFailure.rows[0].review_required,true);
+  assert.equal(Number(afterFailure.rows[0].reconcile_attempts),1);
+  assert.equal(Number(afterFailure.rows[0].refunded_cents),15000);
+  payment.status='PARTIALLY_REFUNDED';
+
   lostRefundResponse=true;
   const finalRequest=await call('/sandbox/charges/'+draftA.id+'/refunds','POST',
     {amountCents:25000,reason:'Estorno integral do restante'},a.cookie,a.csrf);
