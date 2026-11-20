@@ -90,6 +90,7 @@ export default defineConfig(() => {
       },
     },
     server: {
+      proxy: { '/api': { target: 'http://localhost:8080', changeOrigin: false } },
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
