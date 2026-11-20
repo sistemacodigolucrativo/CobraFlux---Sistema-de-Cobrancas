@@ -81,3 +81,35 @@ Concluir os testes CI do adapter e do webhook; implementar os pontos restantes d
 - A meta de homologação externa continua pendente; APIs reais de sandbox e estornos reais de testes não foram executados.
 
 Referências: [estorno integral/parcial Asaas](https://docs.asaas.com/reference/refund-payment), [interpretação de estornos DONE/PENDING/CANCELLED](https://docs.asaas.com/docs/refunds), [eventos de webhook](https://docs.asaas.com/docs/payment-events).
+
+
+## Incremento seguinte — conciliação automática preparada (somente código e CI)
+
+O módulo \`server/sandbox-reconciliation-worker.ts\` implementa **execuções pontuais e limitadas** de conciliação Pix de teste, usando PostgreSQL para controlar a fila. A migração \`008_reconciliation_worker.sql\` fornece controle de concorrência, leases com expiração, agendamento da próxima consulta, tentativas com backoff exponencial, histórico de falhas e avisos de risco.
+
+O worker **não executa permanentemente** e **nenhum agendador está ativado** na infraestrutura hoje. Ele foi preparado para um scheduler futuro (cron, serviço de jobs ou plataforma equivalente). Para iniciar manualmente num ambiente próprio, somente após configurar \`DATABASE_URL\`, a chave mestra e permissão operacional:
+
+\`\`\`bash
+npm run migrate
+npm run reconcile:sandbox -- --dry-run
+SANDBOX_RECONCILIATION_ENABLED=true npm run reconcile:sandbox -- --once --limit=20
+\`\`\`
+
+A rotina consulta exclusivamente \`GET /payments/{id}\` e \`GET /payments/{id}/refunds\`. **Ela não emite cobranças, não solicita estornos e não faz novos pagamentos.** Requisições de devolução feitas pelo titular continuam exigindo uma ação explícita autenticada.
+
+Regras de segurança:
+- A cada execução, apenas itens vencidos e sem lease válido são selecionados com \`FOR UPDATE SKIP LOCKED\`, permitindo vários workers sem processar o mesmo item simultaneamente.
+- Em caso de falha ou timeout, a data da próxima tentativa é movida com backoff, sem disparar um novo POST financeiro.
+- Um recebimento real não é confirmado por \`PENDING\` ou \`CONFIRMED\`. Estornos parciais ou integrais são contabilizados exclusivamente quando o provedor lista registros \`DONE\` e a cobrança, o método PIX e o valor conferem.
+- Divergências, chargebacks, eventos de estorno negado e estados desconhecidos são classificados para revisão humana; nunca são ocultados em "sucesso".
+- Links de comprovantes de estornos são exibidos somente após confirmação \`DONE\`, com HTTPS e domínio oficial do Asaas validados. A URL externa é guardada sem parâmetros nem fragmentos.
+- Um painel de monitoramento no cadastro do PSP exibe consultas pendentes, falhas e incidentes por organização, explicitando que ainda é necessário configurar cron.
+- A execução permanece limitada a no máximo 50 cobranças por lote. O ambiente live continua fisicamente indisponível neste adapter.
+
+**Dependências ainda não atendidas:** hospedar HTTPS, configurar o envio real de webhook, contratar credenciais Asaas Sandbox por organização, instalar/configurar cron, definir alertas externos, validar carga e dados reais de integração. O teste automatizado CI usa um provedor HTTP mockado, não transferência financeira verdadeira.
+
+Referências oficiais (conferidas para este incremento):
+- https://docs.asaas.com/reference/listar-estornos-de-uma-cobranca
+- https://docs.asaas.com/docs/estornos
+- https://docs.asaas.com/docs/webhook-para-cobrancas
+- https://docs.asaas.com/reference/retrieve-a-single-payment

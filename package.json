@@ -11,12 +11,13 @@
     "lint": "tsc --noEmit",
     "server": "tsx server/index.ts",
     "migrate": "tsx server/migrate.ts",
-    "test:server": "tsx --test server/security.test.ts server/totp.test.ts server/csv.test.ts server/asaas-sandbox.test.ts",
+    "test:server": "tsx --test server/security.test.ts server/totp.test.ts server/csv.test.ts server/asaas-sandbox.test.ts server/sandbox-reconciliation.test.ts",
     "test:domain": "tsx --test src/domain/finance.test.ts",
     "test:integration": "tsx --test server/integration.test.ts server/team.integration.test.ts server/sandbox.integration.test.ts",
     "admin:enroll": "tsx server/enroll-admin.ts",
     "test:ui": "tsx --test src/pages/production/ProductionShell.test.tsx",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "reconcile:sandbox": "tsx server/reconcile-sandbox-cli.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
