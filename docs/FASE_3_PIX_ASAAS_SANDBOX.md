@@ -113,3 +113,14 @@ Referências oficiais (conferidas para este incremento):
 - https://docs.asaas.com/docs/estornos
 - https://docs.asaas.com/docs/webhook-para-cobrancas
 - https://docs.asaas.com/reference/retrieve-a-single-payment
+
+## Comprovantes financeiros no sandbox
+
+- A migração `009_sandbox_payment_receipt.sql` acrescenta um campo específico para o comprovante do recebimento Pix de testes, separado das devoluções e do histórico original.
+- Um link de comprovante de pagamento somente é persistido após o `PAYMENT_RECEIVED` autenticado ou conciliação da cobrança já recebida junto ao Asaas, com confirmação do ID, referência externa, `billingType=PIX` e valor.
+- A validação aceita apenas endereços HTTPS oficiais de comprovantes Asaas (`asaas.com` e seus subdomínios sob `/comprovantes/`). Parâmetros de rastreamento e fragmentos são descartados; links de outros domínios nunca são renderizados.
+- O titular consulta o comprovante por `GET /api/sandbox/charges/:id/payment-receipt`; essa rota não é pública e não retorna documentos de outros clientes ou organizações.
+- A UI oferece o link de pagamento confirmado somente para cobranças recebidas no SANDBOX, distinguindo-o do comprovante de estorno individual `DONE`.
+- Nem o comprovante de teste nem o histórico de sandbox são documento fiscal, NFSe ou evidência de liquidação bancária comercial.
+
+Fonte: https://docs.asaas.com/docs/webhook-para-cobrancas — campo `transactionReceiptUrl` em cobranças.
