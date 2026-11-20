@@ -8,6 +8,7 @@ import { pool, transaction } from './db';
 import { canSendTransactionalEmail, publicLink, sendTransactionalEmail } from './email';
 import { decryptTotpSecret, matchTotpStep } from './totp';
 import { registerOperations } from './operations';
+import { registerTeamRoutes } from './team';
 import { csrfForSession, getCookie, normalizeEmail, passwordHash, passwordMatches, randomSecret, secureEquals, sha256 } from './security';
 
 const app = express();
@@ -99,7 +100,7 @@ async function rateLimit(key: string, max: number, minutes: number): Promise<boo
   return q.rows[0].hits <= max;
 }
 function ip(req: Request): string { return req.ip ?? req.socket.remoteAddress ?? 'unknown'; }
-const credential = z.object({ email: z.email(), password: z.string().min(8).max(128), totpCode: z.string().regex(/^\d{6}$/).optional() }).strict();
+const credential = z.object({ email: z.email(), password: z.string().min(8).max(128), totpCode: z.string().regex(/^\d{6}$/).optional(), organizationId: z.uuid().optional() }).strict();
 const name = z.string().trim().min(2).max(120);
 
 async function issueVerification(userId:string,email:string):Promise<boolean>{
@@ -174,17 +175,29 @@ app.post('/api/auth/login', route(async (req, res) => {
   const key = 'login:' + ip(req) + ':' + email;
   if (!(await rateLimit(key, 6, 15))) { res.status(429).json({ error: 'rate_limited' }); return; }
   const rows = await pool.query(
-    'SELECT u.id, u.password_hash, u.email_verified_at, m.organization_id, m.role, o.status FROM users u ' +
+    'SELECT u.id, u.password_hash, u.email_verified_at, m.organization_id, m.role, o.status, o.name AS organization_name FROM users u ' +
     'JOIN memberships m ON m.user_id=u.id JOIN organizations o ON o.id=m.organization_id ' +
-    'WHERE u.email=$1 ORDER BY m.organization_id LIMIT 2', [email]
+    'WHERE u.email=$1 ORDER BY m.organization_id LIMIT 200', [email]
   );
-  const found = rows.rows[0];
-  if (!found || !(await passwordMatches(body.password, found.password_hash))) {
+  const first = rows.rows[0];
+  if (!first || !(await passwordMatches(body.password, first.password_hash))) {
     res.status(401).json({ error: 'invalid_credentials' }); return;
   }
-  if(rows.rows.length>1){res.status(409).json({error:'organization_selection_required'});return;}
-  if (found.status !== 'active') { res.status(403).json({ error: 'account_unavailable' }); return; }
-  if(!found.email_verified_at){res.status(403).json({error:'email_unverified',message:'Confirme seu endereço de e-mail antes de entrar.'});return;}
+  if(!first.email_verified_at){
+    res.status(403).json({error:'email_unverified',message:'Confirme seu endereço de e-mail antes de entrar.'});return;
+  }
+  const active = rows.rows.filter(m=>m.status==='active');
+  if(!active.length){res.status(403).json({error:'account_unavailable'});return;}
+  if(active.length>1&&!body.organizationId){
+    res.status(409).json({
+      error:'organization_selection_required',
+      organizations:active.map(m=>({id:m.organization_id,name:m.organization_name,role:m.role}))
+    });return;
+  }
+  const found = body.organizationId
+    ? active.find(m=>m.organization_id===body.organizationId)
+    : active[0];
+  if(!found){res.status(403).json({error:'organization_not_accessible'});return;}
   let mfaVerified=false;
   if (found.role === 'super_admin') {
     if(!body.totpCode){res.status(401).json({error:'admin_mfa_required',message:'Informe o código MFA do autenticador.'});return;}
@@ -284,8 +297,9 @@ app.delete('/api/auth/sessions/:id',sessions,csrf,route(async(req,res)=>{
   res.json({ok:true});
 }));
 
-// Phase 2 routes: all business writes derive the organization from the authenticated session.
+// Tenant-scoped operations and team access; independent of the demo's client-side navigation.
 registerOperations(app, { sessions, csrf, route, who });
+registerTeamRoutes(app, { sessions, csrf, route, who, rateLimit, ip });
 
 app.get('/api/public/charges/:publicToken', route(async (req,res)=>{
   if (req.params.publicToken.length<20 || req.params.publicToken.length>120) { res.status(404).json({error:'not_found'}); return; }
