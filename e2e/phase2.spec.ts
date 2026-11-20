@@ -49,7 +49,7 @@ test('desktop: login, client records, service catalog, charge draft and team acc
   await page.getByRole('textbox',{name:'Descrição',exact:true}).fill('Sessão Playwright');
   await page.getByRole('button',{name:'Salvar rascunho'}).click();
   await expect(page.getByText('Sessão Playwright')).toBeVisible();
-  await expect(page.getByText(/Pix, confirmação de pagamento/)).toBeVisible();
+  await expect(page.getByText(/Emissão Pix Asaas disponível somente no SANDBOX/)).toBeVisible();
   await nav.getByRole('button',{name:'Equipe e permissões'}).click();
   await expect(page.getByRole('heading',{name:'Equipe e permissões'})).toBeVisible();
   await expect(page.getByText(owner.email)).toBeVisible();
