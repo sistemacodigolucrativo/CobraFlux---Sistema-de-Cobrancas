@@ -1,36 +1,74 @@
+/** Real HTTPS/API client: no demo data, no local shadow ledger, no client-held payment secrets. */
 export type Session = {
-  user: { id:string; name:string; email:string; role:string };
+  user: { id:string;name:string;email:string;role:'owner'|'operator'|'super_admin' };
   organizationId:string;
   csrfToken:string;
 };
 export type Client = {
-  id:string; name:string; phone:string; email:string|null; notes:string;
-  status:'active'|'archived'; whatsapp_opt_in:boolean;
+  id:string; internal_code:string;name:string;phone:string;email:string|null;notes:string;
+  status:'active'|'archived';whatsapp_opt_in:boolean;service_name:string;
+  monthly_fee_cents:string;preferred_due_day:number;created_at:string;updated_at:string;
 };
-export type Service = { id:string; name:string; description:string; price_cents:string; active:boolean };
+export type Service = {
+  id:string;name:string;description:string;price_cents:string;
+  default_frequency:'unica'|'semanal'|'mensal'|'personalizada';active:boolean;created_at:string;
+};
 export type Charge = {
-  id:string; public_token:string; description:string; amount_cents:string;
-  discount_cents:string; due_date:string; status:string; client_name:string;
+  id:string;public_token:string;client_id:string;service_id:string|null;description:string;
+  amount_cents:string;discount_cents:string;paid_cents:string;due_date:string;
+  status:string;client_name:string;created_at:string;updated_at:string;
 };
 export type PublicCharge = {
-  description:string; amountCents:number; dueDate:string; status:string;
-  merchant:string; pixPayload:string|null; paymentEnabled:boolean;
+  description:string;amountCents:number;dueDate:string;status:string;
+  merchant:string;pixPayload:string|null;paymentEnabled:boolean;
 };
-let csrfToken = '';
-async function request<T>(path:string, method='GET', body?:object):Promise<T> {
+export type CsvPreviewRow={
+  rowNumber:number;name:string;phone:string;email:string;serviceName:string;
+  monthlyFeeCents:number;preferredDueDay:number;valid:boolean;errors:string[];
+};
+export type ChargeEvent={
+  id:string;action:string;details:Record<string,unknown>;created_at:string;
+};
+export type SupportTicket={
+  id:string;subject:string;message:string;status:string;created_at:string;
+};
+export type Profile={
+  user:{id:string;name:string;email:string;role:string};
+  organization:{id:string;name:string;category:string;contact_phone:string;contact_email:string};
+};
+export type ClientInput={
+  name:string;phone:string;email?:string;notes?:string;whatsappOptIn:boolean;
+  serviceName?:string;monthlyFeeCents?:number;preferredDueDay?:number;
+};
+export type ServiceInput={
+  name:string;description:string;priceCents:number;defaultFrequency:'unica'|'semanal'|'mensal'|'personalizada';
+};
+export type ChargeInput={
+  clientId:string;serviceId?:string;description:string;amountCents:number;discountCents:number;dueDate:string;
+};
+let csrfToken='';
+async function request<T>(path:string,method='GET',body?:object):Promise<T>{
   const response=await fetch('/api'+path,{
     method,credentials:'include',
     headers:{...(body?{'Content-Type':'application/json'}:{}),...(csrfToken&&method!=='GET'?{'X-CF-CSRF':csrfToken}:{})},
     body:body?JSON.stringify(body):undefined
   });
-  let payload: unknown;
+  let payload:unknown;
   try{payload=await response.json();}catch{throw new Error('Resposta inválida do servidor.');}
   if(!response.ok){
-    const object=payload as {error?:string;message?:string};
-    throw new Error(object.message||object.error||'Erro HTTP '+response.status);
+    const result=payload as {error?:string;message?:string};
+    throw new Error(result.message||result.error||'Erro HTTP '+response.status);
   }
   return payload as T;
 }
+function qs(fields:Record<string,string|number|undefined>):string{
+ const p=new URLSearchParams();
+ for(const [key,value] of Object.entries(fields)){
+   if(value!==undefined&&value!=='')p.set(key,String(value));
+ }
+ return p.size?'?'+p.toString():'';
+}
+const encode=(id:string)=>encodeURIComponent(id);
 export const productionApi={
   async me():Promise<Session|null>{
     try{const data=await request<Session>('/auth/me');csrfToken=data.csrfToken;return data;}
@@ -50,18 +88,43 @@ export const productionApi={
   sessions:()=>request<{items:Array<{id:string;current:boolean;created_at:string;expires_at:string}>}>('/auth/sessions'),
   revokeAllSessions:async()=>{await request('/auth/sessions/revoke-all','POST',{});csrfToken='';},
   adminOverview:()=>request<{organizations:number;users:number}>('/admin/overview'),
-  clients:()=>request<{items:Client[]}>('/clients'),
-  createClient:(data:{name:string;phone:string;email?:string;notes?:string;whatsappOptIn:boolean})=>
-    request<Client>('/clients','POST',data),
+
+  clients:(filter:{search?:string;status?:'active'|'archived';limit?:number;offset?:number}={})=>
+    request<{items:Client[];total:number}>('/clients'+qs(filter)),
+  createClient:(data:ClientInput)=>request<Client>('/clients','POST',data),
+  updateClient:(id:string,patch:Partial<ClientInput>&{status?:Client['status']})=>
+    request<Client>('/clients/'+encode(id),'PATCH',patch),
   setClientStatus:(id:string,status:'active'|'archived')=>
-    request<Client>('/clients/'+encodeURIComponent(id),'PATCH',{status}),
+    request<Client>('/clients/'+encode(id),'PATCH',{status}),
+  clientCharges:(id:string)=>request<{items:Charge[]}>('/clients/'+encode(id)+'/charges'),
+  previewClientCsv:(csv:string)=>request<{items:CsvPreviewRow[];valid:number;invalid:number}>('/clients/import/preview','POST',{csv}),
+  importClients:(csv:string,mode:'strict'|'valid_only')=>
+    request<{id:string;importedCount:number;rejectedCount:number}>('/clients/import','POST',{csv,mode}),
+  clientImports:()=>request<{items:Array<{id:string;imported_count:number;rejected_count:number;created_at:string}>}>('/clients/imports'),
+
   services:()=>request<{items:Service[]}>('/services'),
-  createService:(data:{name:string;description:string;priceCents:number})=>
-    request<Service>('/services','POST',data),
-  charges:()=>request<{items:Charge[]}>('/charges'),
-  createCharge:(data:{clientId:string;description:string;amountCents:number;dueDate:string})=>
-    request<{id:string;public_token:string;status:string;message:string}>('/charges','POST',data),
-  cancelCharge:(id:string)=>request('/charges/'+encodeURIComponent(id)+'/cancel','POST',{}),
-  publicCharge:(token:string)=>request<PublicCharge>('/public/charges/'+encodeURIComponent(token)),
+  createService:(data:ServiceInput)=>request<Service>('/services','POST',data),
+  updateService:(id:string,patch:Partial<ServiceInput>&{active?:boolean})=>
+    request<Service>('/services/'+encode(id),'PATCH',patch),
+
+  charges:(filter:{search?:string;status?:string;limit?:number;offset?:number}={})=>
+    request<{items:Charge[];total:number}>('/charges'+qs(filter)),
+  createCharge:(data:ChargeInput)=>request<{id:string;public_token:string;status:string;paymentEnabled:boolean}>('/charges','POST',data),
+  updateCharge:(id:string,patch:Partial<Omit<ChargeInput,'clientId'|'serviceId'>>)=>
+    request<{id:string;status:string}>('/charges/'+encode(id),'PATCH',patch),
+  duplicateCharge:(id:string,dueDate?:string)=>request<{id:string;public_token:string;status:string}>('/charges/'+encode(id)+'/duplicate','POST',dueDate?{dueDate}:{}),
+  cancelCharge:(id:string,reason='Cancelada pelo profissional')=>request<{id:string;status:string}>('/charges/'+encode(id)+'/cancel','POST',{reason}),
+  chargeHistory:(id:string)=>request<{items:ChargeEvent[]}>('/charges/'+encode(id)+'/history'),
+  publicCharge:(token:string)=>request<PublicCharge>('/public/charges/'+encode(token)),
   overview:()=>request<{total_charges:number;paid_charges:number;total_paid_cents:string}>('/reports/overview'),
+
+  profile:()=>request<Profile>('/profile'),
+  updateProfile:(name:string)=>request<{id:string;name:string;email:string}>('/profile','PATCH',{name}),
+  changePassword:(currentPassword:string,newPassword:string)=>
+    request<{ok:boolean;otherSessionsRevoked:boolean}>('/profile/change-password','POST',{currentPassword,newPassword}),
+  updateOrganization:(patch:Partial<{name:string;category:string;contactPhone:string;contactEmail:string}>)=>
+    request<Profile['organization']>('/organization','PATCH',patch),
+  supportTickets:()=>request<{items:SupportTicket[]}>('/support/tickets'),
+  createSupportTicket:(subject:string,message:string)=>
+    request<SupportTicket>('/support/tickets','POST',{subject,message}),
 };
