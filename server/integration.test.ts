@@ -1,10 +1,13 @@
 import 'dotenv/config';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, randomBytes } from 'node:crypto';
+import { sha256 } from './security';
+import { createTotpSecret, encryptTotpSecret, totpCode } from './totp';
 import type { AddressInfo } from 'node:net';
 
 process.env.CF_NO_LISTEN='true';
+process.env.MFA_ENCRYPTION_KEY=randomBytes(32).toString('hex');
 const { app }=await import('./index');
 const { pool }=await import('./db');
 const server=app.listen(0,'127.0.0.1');
@@ -34,6 +37,15 @@ test('real persistence, password validation, CSRF, cross-tenant isolation, publi
   assert.equal(createA.status,201,JSON.stringify(createA.body));
   assert.equal(createB.status,201,JSON.stringify(createB.body));
   assert.equal((await call('/auth/login','POST',{email:emailA,password:'senhaerrada'})).status,401);
+  assert.equal((await call('/auth/login','POST',{email:emailA,password:'SenhaBemForte123!!'})).status,403);
+  const registered=await pool.query('SELECT id,email FROM users WHERE email=ANY($1::text[])',[[emailA,emailB]]);
+  for(const user of registered.rows){
+    const token=randomUUID()+randomUUID();
+    await pool.query("INSERT INTO email_verifications(token_hash,user_id,expires_at) VALUES($1,$2,now()+interval '24 hours')",[sha256(token),user.id]);
+    const verified=await call('/auth/verify-email','POST',{token});
+    assert.equal(verified.status,200,JSON.stringify(verified.body));
+    assert.equal((await call('/auth/verify-email','POST',{token})).status,400);
+  }
   const loginA=await call('/auth/login','POST',{email:emailA,password:'SenhaBemForte123!!'});
   const loginB=await call('/auth/login','POST',{email:emailB,password:'SenhaBemForte123!!'});
   assert.equal(loginA.status,200);
@@ -43,6 +55,8 @@ test('real persistence, password validation, CSRF, cross-tenant isolation, publi
   const meB=await call('/auth/me','GET',undefined,loginB.cookie);
   assert.equal(meA.status,200);assert.equal(meB.status,200);
   assert.notEqual(meA.body.organizationId,meB.body.organizationId);
+  assert.equal((await call('/admin/overview','GET',undefined,loginA.cookie)).status,403);
+  assert.equal((await call('/auth/sessions','GET',undefined,loginA.cookie)).body.items.length,1);
   assert.equal((await call('/clients','POST',{name:'Sem Csrf',phone:'+5511988888888'},loginA.cookie)).status,403);
   const createClient=await call('/clients','POST',{name:'Cliente A',phone:'+5511999999999',whatsappOptIn:false},loginA.cookie,meA.body.csrfToken);
   assert.equal(createClient.status,201,JSON.stringify(createClient.body));
