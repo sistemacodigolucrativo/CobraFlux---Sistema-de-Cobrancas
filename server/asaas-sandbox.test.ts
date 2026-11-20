@@ -18,7 +18,10 @@ test('provider money is accurate to cents and status cannot be faked by creation
   assert.deepEqual(paid,{status:'paid',paidCents:4500,result:'received'});
   assert.equal(applySandboxEvent('paid',4500,4500,{...baseEvent,event:'PAYMENT_OVERDUE'}).status,'paid');
   const refunded=applySandboxEvent('paid',4500,4500,{...baseEvent,event:'PAYMENT_REFUNDED'});
-  assert.equal(refunded.status,'refunded');assert.equal(refunded.paidCents,0);
+  assert.equal(refunded.status,'paid');assert.equal(refunded.paidCents,4500);
+  assert.equal(refunded.result,'refund_reconciliation_required');
+  assert.equal(applySandboxEvent('partially_refunded',3500,4500,baseEvent).paidCents,3500);
+  assert.equal(applySandboxEvent('pending',0,4500,{...baseEvent,event:'PAYMENT_PARTIALLY_REFUNDED'}).result,'refund_reconciliation_required');
   assert.equal(applySandboxEvent('refunded',0,4500,baseEvent).status,'refunded');
   assert.equal(applySandboxEvent('pending',0,4500,{...baseEvent,payment:{...baseEvent.payment,value:46}}).status,'pending');
   assert.equal(applySandboxEvent('cancelled',0,4500,baseEvent).status,'cancelled');
@@ -41,6 +44,13 @@ test('Asaas adapter uses only official sandbox host and maps payer/payment/QR en
   if(url.endsWith('/customers')&&init?.method==='POST')payload={id:'cus_0001'};
   if(url.endsWith('/payments')&&init?.method==='POST')payload={id:'pay_0001',value:45};
   if(url.endsWith('/pixQrCode'))payload={payload:'000201PIXCOBRANCASANDBOX123456789'};
+  if(url.endsWith('/payments/pay_0001')&&init?.method==='GET')
+    payload={id:'pay_0001',value:45,status:'RECEIVED',externalReference:'charge-uuid',billingType:'PIX'};
+  if(url.endsWith('/payments/pay_0001/refunds')&&init?.method==='GET')
+    payload={data:[{value:5.5,description:'CobraFlux sandbox refund ref abc',status:'DONE'}]};
+  if(url.endsWith('/payments/pay_0001/refund')&&init?.method==='POST')
+    payload={id:'pay_0001',status:'REFUND_IN_PROGRESS'};
+
   return new Response(JSON.stringify(payload),{status:200,headers:{'Content-Type':'application/json'}});
  };
  const client=new AsaasSandbox('$aact_hmlg_123456789012345678901234567890abcdef',transport as typeof fetch);
@@ -49,6 +59,12 @@ test('Asaas adapter uses only official sandbox host and maps payer/payment/QR en
  assert.equal(await client.paymentByReference('charge-uuid'),null);
  assert.equal((await client.createPayment({chargeId:'charge-uuid',customerId:'cus_0001',amountCents:4500,description:'Teste',dueDate:'2026-12-20'})).id,'pay_0001');
  assert.equal((await client.getQrCode('pay_0001')).payload,'000201PIXCOBRANCASANDBOX123456789');
+ assert.equal((await client.getPayment('pay_0001')).billingType,'PIX');
+ assert.equal((await client.getRefunds('pay_0001'))[0].status,'DONE');
+ await client.requestRefund('pay_0001',550,'CobraFlux sandbox refund ref abc');
+ assert.ok(calls.some(c=>c.url.endsWith('/payments/pay_0001/refund')&&c.method==='POST' &&
+   (c.body as {value:number}).value===5.5));
+
  assert.ok(calls.every(c=>c.url.startsWith('https://api-sandbox.asaas.com/v3/')));
  const payment=calls.find(c=>c.url.endsWith('/payments')&&c.method==='POST');
  assert.deepEqual(payment?.body,{customer:'cus_0001',billingType:'PIX',value:45,
