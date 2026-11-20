@@ -8,7 +8,7 @@ process.env.PAYMENT_CREDENTIAL_ENCRYPTION_KEY=randomBytes(32).toString('hex');
 const realFetch=globalThis.fetch.bind(globalThis);
 const customers=new Map<string,string>(),
   payments=new Map<string,{id:string;value:number;status:string;externalReference:string;billingType:'PIX'}>();
-const refunds=new Map<string,Array<{value:number;description:string;status:'PENDING'|'DONE'|'CANCELLED'}>>();
+const refunds=new Map<string,Array<{value:number;description:string;status:'PENDING'|'DONE'|'CANCELLED';transactionReceiptUrl?:string}>>();
 let paymentPostCount=0,customerPostCount=0,lostResponse=false,refundPostCount=0,lostRefundResponse=false;
 globalThis.fetch=(async(input:URL|Request|string,init?:RequestInit):Promise<Response>=>{
  const url=String(input);
@@ -174,7 +174,19 @@ test('Asaas sandbox: encrypted tenant config, safe issuance, webhook replay, ref
   assert.equal((await call('/reports/overview','GET',undefined,a.cookie)).body.sandbox_paid_cents,'40000');
 
   refunds.get(payment.id)![0].status='DONE';
+  refunds.get(payment.id)![0].transactionReceiptUrl='https://www.asaas.com/comprovantes/6677732109104548?utm=test';
   payment.status='PARTIALLY_REFUNDED';
+  const {reconcileSandboxBatch,sandboxReconciliationDueCount}=await import('./sandbox-reconciliation-worker');
+  assert.ok((await sandboxReconciliationDueCount())>=1);
+  const scheduled=await reconcileSandboxBatch(10);
+  assert.ok(scheduled.reconciled>=1,JSON.stringify(scheduled));
+  assert.equal(scheduled.failed,0,JSON.stringify(scheduled));
+  const autoState=await pool.query('SELECT status,refunded_cents FROM charges WHERE id=$1',[draftA.id]);
+  assert.equal(autoState.rows[0].status,'partially_refunded');
+  assert.equal(Number(autoState.rows[0].refunded_cents),15000);
+  const autoReceipts=await call('/sandbox/charges/'+draftA.id+'/refunds','GET',undefined,a.cookie);
+  assert.equal(autoReceipts.body.items[0].receipt_url,
+    'https://www.asaas.com/comprovantes/6677732109104548');
   const reconciledPartial=await call('/sandbox/charges/'+draftA.id+'/reconcile-financial','POST',{},a.cookie,a.csrf);
   assert.equal(reconciledPartial.status,200,JSON.stringify(reconciledPartial.body));
   assert.equal(reconciledPartial.body.status,'partially_refunded');
@@ -218,13 +230,24 @@ test('Asaas sandbox: encrypted tenant config, safe issuance, webhook replay, ref
   assert.equal(Number(after.rows[0].paid_cents),0);
   assert.equal(Number(after.rows[0].refunded_cents),40000);
   assert.equal((await call('/reports/overview','GET',undefined,a.cookie)).body.sandbox_paid_cents,'0');
+  const riskEvent=await call(webhookPath,'POST',event('evt_chargeback_1','PAYMENT_CHARGEBACK_REQUESTED'),
+    undefined,undefined,webhookToken);
+  assert.equal(riskEvent.status,200);
+  assert.equal(riskEvent.body.result,'provider_risk_manual_review');
+  const riskA=await call('/sandbox/reconciliation/overview','GET',undefined,a.cookie);
+  assert.equal(riskA.status,200);
+  assert.ok(riskA.body.summary.flagged>=1);
+  assert.ok(riskA.body.incidents.some((x:{code:string})=>x.code==='provider_chargeback_event'));
+  const riskB=await call('/sandbox/reconciliation/overview','GET',undefined,b.cookie);
+  assert.equal(riskB.status,200);
+  assert.equal(riskB.body.incidents.length,0);
   const refundAudits=await pool.query(
     "SELECT action FROM audit_logs WHERE organization_id=$1 AND action IN('SANDBOX_REFUND_REQUESTED','SANDBOX_REFUNDS_RECONCILED')",
     [a.org]);
   assert.ok(refundAudits.rows.some((x:{action:string})=>x.action==='SANDBOX_REFUND_REQUESTED'));
   assert.ok(refundAudits.rows.some((x:{action:string})=>x.action==='SANDBOX_REFUNDS_RECONCILED'));
   const events=await pool.query('SELECT processing_result,event_payload FROM payment_events WHERE charge_id=$1',[draftA.id]);
-  assert.equal(events.rowCount,6);
+  assert.equal(events.rowCount,7);
   assert.ok(events.rows.every((r:{event_payload:object})=>!('cpfCnpj' in r.event_payload)));
   // Provider accepted payment but response was lost: DO NOT repeat POST, only reconcile by externalReference.
   const another=await draft(a,'+5511980010033');
