@@ -97,6 +97,10 @@ test('Asaas sandbox: encrypted tenant config, safe issuance, webhook replay, ref
   assert.equal(page.body.sandboxOnly,true);
   assert.equal(page.body.paymentEnabled,true);
   assert.ok(page.body.pixPayload.includes('SANDBOX'));
+  const publicQr=await call('/public/charges/'+draftA.public_token+'/sandbox-qr');
+  assert.equal(publicQr.status,200);
+  assert.equal(publicQr.body.sandboxOnly,true);
+  assert.ok(publicQr.body.payload.includes('SANDBOX'));
   assert.equal((await call('/sandbox/charges/'+draftA.id+'/issue','POST',{},a.cookie,a.csrf)).status,409);
   assert.equal(paymentPostCount,1);assert.equal(customerPostCount,1);
   const payment=payments.get(draftA.id)!;
@@ -115,6 +119,7 @@ test('Asaas sandbox: encrypted tenant config, safe issuance, webhook replay, ref
   assert.equal(received.status,200,JSON.stringify(received.body));
   assert.equal(received.body.result,'received');
   assert.equal((await call('/public/charges/'+draftA.public_token)).body.status,'paid');
+  assert.equal((await call('/public/charges/'+draftA.public_token+'/sandbox-qr')).status,404);
   assert.equal((await call(webhookPath,'POST',event('evt_received_1','PAYMENT_RECEIVED'),undefined,undefined,webhookToken)).body.result,'duplicate');
   const late=await call(webhookPath,'POST',event('evt_late_overdue','PAYMENT_OVERDUE'),undefined,undefined,webhookToken);
   assert.equal(late.body.result,'ignored_after_receipt');
@@ -143,6 +148,14 @@ test('Asaas sandbox: encrypted tenant config, safe issuance, webhook replay, ref
   assert.equal((await call('/public/charges/'+another.public_token)).body.status,'pending');
   const other=await call('/sandbox/charges/'+draftB.id+'/issue','POST',{},b.cookie,b.csrf);
   assert.equal(other.status,503);
+  const ownerUser=await pool.query('SELECT u.id FROM users u JOIN memberships m ON m.user_id=u.id WHERE m.organization_id=$1 AND m.role=$2',
+    [a.org,'owner']);
+  await pool.query("UPDATE memberships SET role='operator' WHERE user_id=$1 AND organization_id=$2",[ownerUser.rows[0].id,a.org]);
+  assert.equal((await call('/sandbox/connection','PUT',{
+    apiKey:'$aact_hmlg_'+randomBytes(40).toString('hex'),
+    webhookToken:'another-token-'+randomBytes(32).toString('hex')
+  },a.cookie,a.csrf)).status,403);
+  assert.equal((await call('/sandbox/charges/'+another.id+'/reconcile','POST',{},a.cookie,a.csrf)).status,403);
  }finally{
   globalThis.fetch=realFetch;
   await new Promise<void>((resolve,reject)=>server.close(e=>e?reject(e):resolve()));

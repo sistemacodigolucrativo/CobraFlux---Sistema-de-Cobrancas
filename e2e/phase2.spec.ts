@@ -53,6 +53,9 @@ test('desktop: login, client records, service catalog, charge draft and team acc
   await nav.getByRole('button',{name:'Equipe e permissões'}).click();
   await expect(page.getByRole('heading',{name:'Equipe e permissões'})).toBeVisible();
   await expect(page.getByText(owner.email)).toBeVisible();
+  await nav.getByRole('button',{name:'Configurações'}).click();
+  await expect(page.getByRole('heading',{name:'Asaas Pix · SANDBOX'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Gerar token seguro'})).toBeVisible();
 
   const query=await request.get('/api/health');
   expect(query.status()).toBe(200);
