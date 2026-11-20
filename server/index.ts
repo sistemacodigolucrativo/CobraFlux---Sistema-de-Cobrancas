@@ -10,6 +10,7 @@ import { decryptTotpSecret, matchTotpStep } from './totp';
 import { registerOperations } from './operations';
 import { registerTeamRoutes } from './team';
 import { registerSandboxPayments } from './sandbox-payments';
+import { registerSandboxRefunds } from './sandbox-refunds';
 import { csrfForSession, getCookie, normalizeEmail, passwordHash, passwordMatches, randomSecret, secureEquals, sha256 } from './security';
 
 const app = express();
@@ -302,6 +303,7 @@ app.delete('/api/auth/sessions/:id',sessions,csrf,route(async(req,res)=>{
 registerOperations(app, { sessions, csrf, route, who });
 registerTeamRoutes(app, { sessions, csrf, route, who, rateLimit, ip });
 registerSandboxPayments(app, { sessions, csrf, route, who });
+registerSandboxRefunds(app, { sessions, csrf, route, who });
 
 app.get('/api/public/charges/:publicToken', route(async (req,res)=>{
   if (req.params.publicToken.length<20 || req.params.publicToken.length>120) { res.status(404).json({error:'not_found'}); return; }
@@ -322,10 +324,10 @@ app.get('/api/reports/overview', sessions, route(async (req,res)=>{
   const p=who(req);
   const q=await pool.query(
     'SELECT count(*)::int AS total_charges, ' +
-    "count(*) FILTER (WHERE status='paid' AND provider IS DISTINCT FROM 'asaas_sandbox')::int AS paid_charges, " +
-    "coalesce(sum(paid_cents) FILTER (WHERE status='paid' AND provider IS DISTINCT FROM 'asaas_sandbox'),0)::text AS total_paid_cents, " +
-    "count(*) FILTER (WHERE status='paid' AND provider='asaas_sandbox')::int AS sandbox_paid_charges, " +
-    "coalesce(sum(paid_cents) FILTER (WHERE status='paid' AND provider='asaas_sandbox'),0)::text AS sandbox_paid_cents " +
+    "count(*) FILTER (WHERE status IN ('paid','partially_refunded') AND provider IS DISTINCT FROM 'asaas_sandbox')::int AS paid_charges, " +
+    "coalesce(sum(paid_cents) FILTER (WHERE status IN ('paid','partially_refunded') AND provider IS DISTINCT FROM 'asaas_sandbox'),0)::text AS total_paid_cents, " +
+    "count(*) FILTER (WHERE status IN ('paid','partially_refunded') AND provider='asaas_sandbox')::int AS sandbox_paid_charges, " +
+    "coalesce(sum(paid_cents) FILTER (WHERE status IN ('paid','partially_refunded') AND provider='asaas_sandbox'),0)::text AS sandbox_paid_cents " +
     'FROM charges WHERE organization_id=$1',[p.orgId]
   );
   res.json(q.rows[0]);

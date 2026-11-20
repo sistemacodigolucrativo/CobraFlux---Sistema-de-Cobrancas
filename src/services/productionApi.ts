@@ -16,7 +16,7 @@ export type Service = {
 export type Charge = {
   id:string;public_token:string;client_id:string;service_id:string|null;description:string;
   amount_cents:string;discount_cents:string;paid_cents:string;due_date:string;
-  status:string;provider:string|null;provider_charge_id:string|null;client_name:string;created_at:string;updated_at:string;
+  status:string;provider:string|null;provider_charge_id:string|null;refunded_cents:string;client_name:string;created_at:string;updated_at:string;
 };
 export type PublicCharge = {
   description:string;amountCents:number;dueDate:string;status:string;
@@ -111,6 +111,11 @@ export const productionApi={
   issueSandboxPix:(id:string)=>request<{id:string;status:string;sandboxOnly:true}>('/sandbox/charges/'+encode(id)+'/issue','POST',{}),
   reconcileSandboxPix:(id:string)=>request<{id:string;status:string;sandboxOnly:true}>('/sandbox/charges/'+encode(id)+'/reconcile','POST',{}),
   sandboxQr:(token:string)=>request<{payload:string;encodedImage?:string;sandboxOnly:true}>('/public/charges/'+encode(token)+'/sandbox-qr'),
+  sandboxRefunds:(id:string)=>request<{items:Array<{id:string;requested_cents:string;state:string;created_at:string}>;
+    chargeStatus:string;refundedCents:string;sandboxOnly:true}>('/sandbox/charges/'+encode(id)+'/refunds'),
+  requestSandboxRefund:(id:string,amountCents:number,reason:string)=>request<{id:string;state:string;sandboxOnly:true}>('/sandbox/charges/'+encode(id)+'/refunds','POST',{amountCents,reason}),
+  reconcileSandboxFinancial:(id:string)=>request<{status:string;refundedCents:number;paidCents:number;
+    pendingRefundCents:number;needsReview:boolean;sandboxOnly:true}>('/sandbox/charges/'+encode(id)+'/reconcile-financial','POST',{}),
   organizations:()=>request<{items:OrganizationChoice[];currentOrganizationId:string}>('/auth/organizations'),
   switchOrganization:async(organizationId:string)=>{
     await request('/auth/switch-organization','POST',{organizationId});

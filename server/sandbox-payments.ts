@@ -259,6 +259,10 @@ export function registerSandboxPayments(app:Express,{sessions,csrf,route,who}:De
       const decision=applySandboxEvent(row.status as ChargeStatus,Number(row.paid_cents),expected,event);
       await db.query('UPDATE payment_events SET processing_result=$2 WHERE id=$1',
         [unique.rows[0].id,decision.result]);
+      if(decision.result==='refund_reconciliation_required'){
+        await db.query('UPDATE sandbox_issuances SET refund_sync_required=true,updated_at=now() '+
+          'WHERE charge_id=$1 AND account_id=$2',[ref,accountId]);
+      }
       if(!row.provider_payment_id){
         await db.query('UPDATE sandbox_issuances SET provider_payment_id=$2 WHERE charge_id=$1',[ref,event.payment.id]);
       }
