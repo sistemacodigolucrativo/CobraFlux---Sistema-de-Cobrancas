@@ -73,7 +73,7 @@ async function finishIssue(p:Principal,chargeId:string,account:Account,api:Asaas
     if(Number(row.rows[0].amount_cents)-Number(row.rows[0].discount_cents)!==expectedCents)
       throw new Error('amount_changed_during_issuance');
     await db.query("UPDATE sandbox_issuances SET state='ready',provider_payment_id=$3,updated_at=now() "+
-      'WHERE charge_id=$1 AND account_id=$2',[chargeId,account.id,providerPaymentId]);
+      'WHERE charge_id=$1 AND account_id=$2 AND (provider_payment_id IS NULL OR provider_payment_id=$3)',[chargeId,account.id,providerPaymentId]);
     await db.query("UPDATE charges SET provider='asaas_sandbox',provider_charge_id=$3,pix_payload=$4,"+
       "status=CASE WHEN status='pending_provider' THEN 'pending' ELSE status END,updated_at=now() "+
       'WHERE id=$1 AND organization_id=$2 AND (provider_charge_id IS NULL OR provider_charge_id=$3)',
@@ -140,7 +140,7 @@ export function registerSandboxPayments(app:Express,{sessions,csrf,route,who}:De
       const ch=existing.rows[0];
       if(ch.status!=='draft'||ch.client_status!=='active')return {error:'charge_not_issuable'} as const;
       const money=Number(ch.amount_cents)-Number(ch.discount_cents);
-      const reserve=await db.query("UPDATE charges SET status='pending_provider',updated_at=now() "+
+      const reserve=await db.query("UPDATE charges SET status='pending_provider',provider='asaas_sandbox',updated_at=now() "+
         "WHERE id=$1 AND organization_id=$2 AND status='draft' RETURNING id",[id,p.orgId]);
       if(!reserve.rowCount)return {error:'charge_already_claimed'} as const;
       await db.query("INSERT INTO sandbox_issuances(id,organization_id,account_id,charge_id,state,expected_cents) "+
