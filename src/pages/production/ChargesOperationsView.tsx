@@ -35,6 +35,7 @@ export function ChargesOperationsView({onChanged,canIssue=false}:{onChanged:()=>
  const [cancelId,setCancelId]=useState<string|null>(null);
  const [cancelReason,setCancelReason]=useState('Cancelada pelo profissional');
  const [refundFor,setRefundFor]=useState<string|null>(null);
+ const [receipt,setReceipt]=useState<{id:string;url:string}|null>(null);
  const [sandboxConfigured,setSandboxConfigured]=useState(false);
  const load=useCallback(async()=>{
    try{const r=await productionApi.charges({search,status:status==='all'?undefined:status,limit:25,offset:page*25});setItems(r.items);setTotal(r.total);}
@@ -130,6 +131,11 @@ export function ChargesOperationsView({onChanged,canIssue=false}:{onChanged:()=>
          <Button size="sm" variant="secondary" onClick={()=>setRefundFor(refundFor===c.id?null:c.id)}>
            Estornos SANDBOX
          </Button>}
+       {canIssue&&c.provider==='asaas_sandbox'&&['paid','partially_refunded','refunded'].includes(c.status)&&
+         <Button size="sm" variant="secondary" onClick={()=>void run(async()=>{
+           const document=await productionApi.sandboxPaymentReceipt(c.id);
+           setReceipt({id:c.id,url:document.receiptUrl});
+         },'Comprovante confirmado pelo Asaas Sandbox.')}>Consultar comprovante</Button>}
      </div>
      {refundFor===c.id&&<SandboxRefundPanel key={c.id} charge={c} onChanged={async()=>{await load();await onChanged();}} onClose={()=>setRefundFor(null)}/>}
      {historyId===c.id&&<div className="border-t border-white/10 pt-2 space-y-1 text-xs">
