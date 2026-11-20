@@ -47,11 +47,12 @@ export function ProductionApp(){
   const [error,setError]=useState('');
   const [notice,setNotice]=useState('');
   const [mode,setMode]=useState<'login'|'register'|'recover'|'reset'|'verify'|'resend'>('login');
-  const [tab,setTab]=useState<'inicio'|'clientes'|'servicos'|'cobrancas'>('inicio');
+  const [tab,setTab]=useState<'inicio'|'clientes'|'servicos'|'cobrancas'|'sessoes'>('inicio');
   const [email,setEmail]=useState('');
   const [password,setPassword]=useState('');
   const [totp,setTotp]=useState('');
   const [adminAccess,setAdminAccess]=useState(false);
+  const [activeSessions,setActiveSessions]=useState<Array<{id:string;current:boolean;created_at:string;expires_at:string}>>([]);
   const [fullName,setFullName]=useState('');
   const [business,setBusiness]=useState('');
   const [clients,setClients]=useState<Client[]>([]);
@@ -85,9 +86,15 @@ export function ProductionApp(){
     setClients(a.items);setServices(b.items);setCharges(c.items);setOverview(d);
   },[]);
   useEffect(()=>{if(session)refresh().catch((e)=>setError(e.message));},[session,refresh]);
+  useEffect(()=>{if(session&&tab==='sessoes')productionApi.sessions().then(v=>setActiveSessions(v.items)).catch(e=>setError(e.message));},[session,tab]);
   async function submitAction(fn:()=>Promise<unknown>){
     setBusy(true);setError('');setNotice('');
-    try{await fn();}catch(e){setError(e instanceof Error?e.message:'Falha na operação.');}
+    try{await fn();}catch(e){
+      const message=e instanceof Error?e.message:'Falha na operação.';
+      if(message.includes('MFA')||message==='admin_mfa_required')setAdminAccess(true);
+      if(message==='email_unverified')setMode('resend');
+      setError(message);
+    }
     finally{setBusy(false);}
   }
   if(token)return <PublicPayment token={token}/>;
@@ -128,8 +135,8 @@ export function ProductionApp(){
         : <>
           <div><p className="text-[#E2BE72] text-sm">Painel operacional</p><h1 className="text-2xl font-bold">Olá, {session.user.name}</h1></div>
           <div className="flex flex-wrap gap-2">
-            {(['inicio','clientes','servicos','cobrancas'] as const).map(t=>
-              <Button key={t} size="sm" variant={tab===t?'primary':'secondary'} onClick={()=>{setTab(t);setError('');}}>{t==='inicio'?'Início':t==='clientes'?'Clientes':t==='servicos'?'Serviços':'Cobranças'}</Button>
+            {(['inicio','clientes','servicos','cobrancas','sessoes'] as const).map(t=>
+              <Button key={t} size="sm" variant={tab===t?'primary':'secondary'} onClick={()=>{setTab(t);setError('');}}>{t==='inicio'?'Início':t==='clientes'?'Clientes':t==='servicos'?'Serviços':t==='cobrancas'?'Cobranças':'Sessões'}</Button>
             )}
           </div>
           {tab==='inicio'&&<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -141,6 +148,11 @@ export function ProductionApp(){
               <p className="text-sm text-[#B8BFCD] mt-2">Os registros já são salvos no PostgreSQL. A emissão Pix, a conciliação e os recebimentos dependem da integração e homologação de um provedor de pagamentos.</p>
             </Card>
           </div>}
+          {tab==='sessoes'&&<Card className="p-5 space-y-4"><h2 className="font-semibold text-xl">Sessões conectadas</h2>
+            <p className="text-sm text-[#B8BFCD]">Dispositivos com acesso à sua conta. Revogar todas as sessões desconecta todos os dispositivos, inclusive este.</p>
+            {activeSessions.map(s=><p key={s.id} className="text-sm border-b border-white/10 py-2">{s.current?'Este dispositivo':'Outra sessão'} · Criada: {new Date(s.created_at).toLocaleString('pt-BR')}</p>)}
+            <Button variant="danger" disabled={busy} onClick={()=>submitAction(async()=>{await productionApi.revokeAllSessions();setSession(null);setNotice('Todas as sessões foram revogadas.');})}>Desconectar todos os dispositivos</Button>
+          </Card>}
           {tab==='clientes'&&<>
             <CardForm><h2 className="text-xl font-semibold">Cadastrar cliente</h2>
               <form className="space-y-3" onSubmit={e=>{e.preventDefault();submitAction(async()=>{
