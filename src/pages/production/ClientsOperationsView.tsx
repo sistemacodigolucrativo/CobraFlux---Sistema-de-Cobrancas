@@ -60,7 +60,7 @@ export function ClientsOperationsView({onChanged}:{onChanged:()=>Promise<void>})
     }:{...initial});
     setFee(client?inputBR(client.monthly_fee_cents):'0,00');
   }
-  const set=<K extends keyof ClientInput>(key:K,value:ClientInput[K])=>setForm(v=>({...v,[key]:value}));
+  function set<K extends keyof ClientInput>(key:K,value:ClientInput[K]){setForm(v=>({...v,[key]:value}));}
   async function save(){
     await run(async()=>{
       const input={...form,monthlyFeeCents:parseBRL(fee)};
