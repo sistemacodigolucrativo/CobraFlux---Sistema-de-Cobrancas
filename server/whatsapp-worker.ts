@@ -1,5 +1,6 @@
 import {randomUUID} from 'node:crypto';
 import {pool,transaction} from './db';
+import {saasUsage} from './saas-domain';
 import {WhatsAppCloud,MetaHttpError,decryptWhatsAppToken,inBusinessHours,whatsappSecretsReady} from './whatsapp-cloud';
 import {replayBufferedStatuses} from './whatsapp-delivery';
 
@@ -121,6 +122,16 @@ export async function runWhatsAppBatch(limit=10,clock:Date=new Date()):Promise<W
         [row.id,row.token]);
       stats.blocked++;continue;
     }
+    // Re-check the effective SaaS plan after dequeue; a downgrade must not silently
+    // dispatch messages queued while premium entitlements were available.
+    const current=await saasUsage(row.orgId);
+    if(current.usage.messages_month>current.limits.messages_month){
+      await pool.query("UPDATE whatsapp_outbox SET state='blocked',last_error='saas_quota_reduced',"+
+        "lease_token=NULL,lease_until=NULL,updated_at=now() WHERE id=$1 AND lease_token=$2",
+        [row.id,row.token]);
+      stats.blocked++;continue;
+    }
+
     try{
       const api=new WhatsAppCloud(decryptWhatsAppToken(row.ciphertext,row.orgId));
       const date=row.dueDate.split('-').reverse().join('/');
