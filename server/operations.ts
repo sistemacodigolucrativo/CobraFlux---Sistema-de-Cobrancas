@@ -2,6 +2,7 @@ import { randomUUID, randomBytes } from 'node:crypto';
 import type { Express, Request, Response, RequestHandler } from 'express';
 import { z } from 'zod';
 import { pool, transaction } from './db';
+import {enforceSaasQuota} from './saas-domain';
 import { normalizePhone, previewClientsCsv } from './csv';
 import { passwordHash, passwordMatches, sha256 } from './security';
 
@@ -74,6 +75,7 @@ export function registerOperations(app:Express,deps:Deps):void{
  app.post('/api/clients',sessions,csrf,route(async(req,res)=>{
    const data=clientInput.parse(req.body);const p=who(req);const id=randomUUID();
    const value=await transaction(async db=>{
+     await enforceSaasQuota(db,p.orgId,'clients');
      const code='CF-'+randomBytes(6).toString('hex').toUpperCase();
      const q=await db.query('INSERT INTO clients(id,organization_id,internal_code,name,phone,email,notes,whatsapp_opt_in,service_name,monthly_fee_cents,preferred_due_day) '+
        'VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING '+clientColumns,
@@ -87,6 +89,10 @@ export function registerOperations(app:Express,deps:Deps):void{
    const {id}=uuidParam.parse(req.params);const b=clientPatch.parse(req.body);
    if(!Object.keys(b).length){res.status(400).json({error:'empty_patch'});return;}
    const p=who(req);const updated=await transaction(async db=>{
+     if(b.status==='active'){
+       const before=await db.query('SELECT status FROM clients WHERE organization_id=$1 AND id=$2',[p.orgId,id]);
+       if(before.rows[0]?.status==='archived')await enforceSaasQuota(db,p.orgId,'clients');
+     }
      const row=await db.query('UPDATE clients SET name=COALESCE($3,name),phone=COALESCE($4,phone),'+
        "email=CASE WHEN $5::boolean THEN NULLIF($6::text,'') ELSE email END,notes=COALESCE($7,notes),status=COALESCE($8,status),"+
        'whatsapp_opt_in=COALESCE($9,whatsapp_opt_in),service_name=COALESCE($10,service_name),'+
@@ -124,6 +130,7 @@ export function registerOperations(app:Express,deps:Deps):void{
    const result=await transaction(async db=>{
      let added=0,rejected=invalid.length;
      for(const row of rows.filter(x=>x.valid)){
+       await enforceSaasQuota(db,p.orgId,'clients');
        const id=randomUUID(), code='CF-'+randomBytes(6).toString('hex').toUpperCase();
        const q=await db.query('INSERT INTO clients(id,organization_id,internal_code,name,phone,email,service_name,monthly_fee_cents,preferred_due_day,whatsapp_opt_in) '+
          "VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,false) ON CONFLICT (organization_id,phone) WHERE status='active' DO NOTHING RETURNING id",
@@ -152,6 +159,7 @@ export function registerOperations(app:Express,deps:Deps):void{
  app.post('/api/services',sessions,csrf,route(async(req,res)=>{
    const b=serviceInput.parse(req.body);const p=who(req);const id=randomUUID();
    const val=await transaction(async db=>{
+     await enforceSaasQuota(db,p.orgId,'services');
      const q=await db.query('INSERT INTO services(id,organization_id,name,description,price_cents,default_frequency) VALUES($1,$2,$3,$4,$5,$6) RETURNING '+serviceColumns,
        [id,p.orgId,b.name,b.description,b.priceCents,b.defaultFrequency]);
      await audit(db,p,'SERVICE_CREATED','service',id);
@@ -163,6 +171,10 @@ export function registerOperations(app:Express,deps:Deps):void{
    const {id}=uuidParam.parse(req.params),b=servicePatch.parse(req.body),p=who(req);
    if(!Object.keys(b).length){res.status(400).json({error:'empty_patch'});return;}
    const val=await transaction(async db=>{
+     if(b.active===true){
+       const before=await db.query('SELECT active FROM services WHERE organization_id=$1 AND id=$2',[p.orgId,id]);
+       if(before.rows[0]?.active===false)await enforceSaasQuota(db,p.orgId,'services');
+     }
      const q=await db.query('UPDATE services SET name=coalesce($3,name),description=coalesce($4,description),'+
        'price_cents=coalesce($5,price_cents),default_frequency=coalesce($6,default_frequency),active=coalesce($7,active) '+
        'WHERE id=$2 AND organization_id=$1 RETURNING '+serviceColumns,
@@ -190,6 +202,7 @@ export function registerOperations(app:Express,deps:Deps):void{
  app.post('/api/charges',sessions,csrf,route(async(req,res)=>{
    const b=chargeInput.parse(req.body),p=who(req),id=randomUUID(),publicToken=randomBytes(24).toString('base64url');
    const val=await transaction(async db=>{
+     await enforceSaasQuota(db,p.orgId,'charges_month');
      if(b.serviceId){
        const valid=await db.query('SELECT 1 FROM services WHERE id=$1 AND organization_id=$2 AND active=true',[b.serviceId,p.orgId]);
        if(!valid.rowCount)return null;
