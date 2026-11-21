@@ -12,7 +12,7 @@ function cents(input:string):number{
   return value;
 }
 type Form={clientId:string;serviceId:string;description:string;amount:string;discount:string;dueDate:string};
-type Filter='all'|'draft'|'pending_provider'|'cancelled'|'pending'|'paid'|'partial'|'partially_refunded'|'overdue'|'refunded';
+type Filter='all'|'draft'|'pending_provider'|'cancel_pending'|'cancelled'|'pending'|'paid'|'partial'|'partially_refunded'|'overdue'|'refunded';
 const defaults:Form={clientId:'',serviceId:'',description:'',amount:'450,00',discount:'0,00',dueDate:new Date().toISOString().slice(0,10)};
 export function ChargesOperationsView({onChanged,canIssue=false}:{onChanged:()=>Promise<void>;canIssue?:boolean}){
  const [items,setItems]=useState<Charge[]>([]);
@@ -34,6 +34,8 @@ export function ChargesOperationsView({onChanged,canIssue=false}:{onChanged:()=>
  const [duplicateDue,setDuplicateDue]=useState('');
  const [cancelId,setCancelId]=useState<string|null>(null);
  const [cancelReason,setCancelReason]=useState('Cancelada pelo profissional');
+ const [cancelSandboxFor,setCancelSandboxFor]=useState<string|null>(null);
+ const [cancelSandboxReason,setCancelSandboxReason]=useState('Cobrança de teste não deve mais ser paga');
  const [refundFor,setRefundFor]=useState<string|null>(null);
  const [receipt,setReceipt]=useState<{id:string;url:string}|null>(null);
  const [sandboxConfigured,setSandboxConfigured]=useState(false);
@@ -79,7 +81,7 @@ export function ChargesOperationsView({onChanged,canIssue=false}:{onChanged:()=>
      </label>
      <label className="text-sm">Situação
        <select className="block w-full p-3 mt-1 rounded-lg bg-[#0B0D12] border border-white/20" value={status} onChange={e=>{setStatus(e.target.value as Filter);setPage(0);}}>
-         <option value="all">Todas</option><option value="draft">Rascunho</option><option value="pending_provider">Emissão inconclusiva</option><option value="cancelled">Cancelada</option><option value="pending">Pendente</option><option value="paid">Paga</option><option value="partial">Parcial</option><option value="partially_refunded">Estornada parcialmente</option><option value="overdue">Vencida</option><option value="refunded">Estornada</option>
+         <option value="all">Todas</option><option value="draft">Rascunho</option><option value="pending_provider">Emissão inconclusiva</option><option value="cancel_pending">Cancelamento em conciliação</option><option value="cancelled">Cancelada</option><option value="pending">Pendente</option><option value="paid">Paga</option><option value="partial">Parcial</option><option value="partially_refunded">Estornada parcialmente</option><option value="overdue">Vencida</option><option value="refunded">Estornada</option>
        </select>
      </label>
    </Card>
@@ -127,6 +129,15 @@ export function ChargesOperationsView({onChanged,canIssue=false}:{onChanged:()=>
            'Reconciliação concluída. Nenhuma cobrança duplicada foi criada.')}>Reconciliar no sandbox</Button>}
        <Button size="sm" variant="secondary" onClick={()=>{setDuplicateId(duplicateId===c.id?null:c.id);setDuplicateDue(String(c.due_date).slice(0,10));}}>Duplicar</Button>
        {c.status==='draft'&&<Button size="sm" variant="danger" onClick={()=>setCancelId(cancelId===c.id?null:c.id)}>Cancelar</Button>}
+       {canIssue&&c.provider==='asaas_sandbox'&&['pending','overdue'].includes(c.status)&&
+         <Button size="sm" variant="danger" disabled={working} onClick={()=>
+           setCancelSandboxFor(cancelSandboxFor===c.id?null:c.id)}>Cancelar Pix SANDBOX</Button>}
+       {canIssue&&c.provider==='asaas_sandbox'&&c.status==='cancel_pending'&&
+         <Button size="sm" variant="secondary" disabled={working} onClick={()=>void run(async()=>{
+           const checked=await productionApi.reconcileSandboxCancellation(c.id);
+           await load();await onChanged();
+           if(checked.state!=='completed')setMessage('Cancelamento ainda não confirmado no Asaas Sandbox.');
+         },'Cancelamento conferido junto ao Asaas Sandbox.')}>Verificar cancelamento</Button>}
        {canIssue&&c.provider==='asaas_sandbox'&&['paid','partially_refunded','refunded'].includes(c.status)&&
          <Button size="sm" variant="secondary" onClick={()=>setRefundFor(refundFor===c.id?null:c.id)}>
            Estornos SANDBOX
@@ -147,6 +158,26 @@ export function ChargesOperationsView({onChanged,canIssue=false}:{onChanged:()=>
      {duplicateId===c.id&&<div className="flex flex-wrap gap-3 items-end border-t border-white/10 pt-3">
        <Input label="Novo vencimento" type="date" value={duplicateDue} onChange={e=>setDuplicateDue(e.target.value)}/>
        <Button size="sm" disabled={working||!duplicateDue} onClick={()=>void run(async()=>{await productionApi.duplicateCharge(c.id,duplicateDue);setDuplicateId(null);await load();await onChanged();},'Novo rascunho criado.')}>Confirmar duplicação</Button>
+     </div>}
+     {cancelSandboxFor===c.id&&<div className="space-y-3 border-t border-[#F5D491]/30 pt-3">
+       <p className="text-xs text-[#F5D491]">
+         Cancelamento exclusivo do SANDBOX. A cobrança ficará indisponível ao pagador imediatamente;
+         o status Cancelada somente será aplicado após confirmação do Asaas.
+         Um pagamento já recebido exige estorno, não cancelamento.
+       </p>
+       <Input label="Motivo do cancelamento Pix de testes" minLength={5} maxLength={200} required
+         value={cancelSandboxReason} onChange={e=>setCancelSandboxReason(e.target.value)}/>
+       <div className="flex flex-wrap gap-2">
+         <Button size="sm" variant="danger" disabled={working||cancelSandboxReason.trim().length<5}
+           onClick={()=>void run(async()=>{
+             const requested=await productionApi.requestSandboxCancellation(c.id,cancelSandboxReason.trim());
+             setCancelSandboxFor(null);await load();await onChanged();
+             if(requested.state!=='completed')
+               throw new Error('Exclusão no PSP ainda não confirmada. O Pix foi bloqueado no painel; use Verificar cancelamento, sem repetir a solicitação.');
+           },'Cobrança de teste cancelada após confirmação do Asaas.')}>Confirmar cancelamento SANDBOX</Button>
+         <Button size="sm" variant="secondary" disabled={working}
+           onClick={()=>setCancelSandboxFor(null)}>Voltar</Button>
+       </div>
      </div>}
      {cancelId===c.id&&<div className="flex flex-wrap gap-3 items-end border-t border-white/10 pt-3">
        <label className="text-sm flex-1">Motivo
