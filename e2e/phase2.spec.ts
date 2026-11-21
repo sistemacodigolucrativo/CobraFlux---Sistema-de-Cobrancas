@@ -43,6 +43,16 @@ test('desktop: login, client records, service catalog, charge draft and team acc
   await page.getByRole('button',{name:'Salvar serviço'}).click();
   await expect(page.getByText('Consulta Playwright')).toBeVisible();
 
+  await nav.getByRole('button',{name:'Recorrências'}).click();
+  await expect(page.getByRole('heading',{name:'Recorrências'})).toBeVisible();
+  await page.getByRole('button',{name:'Nova recorrência'}).click();
+  await page.getByLabel('Cliente',{exact:true}).selectOption({label:'Cliente Playwright'});
+  await page.getByRole('button',{name:'Prévia de 6 ciclos'}).click();
+  await expect(page.getByText(/Calendário conferido/)).toBeVisible();
+  await page.getByRole('button',{name:'Salvar regra'}).click();
+  await expect(page.getByText(/Regra cadastrada/)).toBeVisible();
+  await expect(page.getByText('Cliente Playwright')).toBeVisible();
+
   await nav.getByRole('button',{name:'Cobranças'}).click();
   await expect(page.getByRole('button',{name:'Nova cobrança'})).toBeEnabled();
   await page.getByRole('button',{name:'Nova cobrança'}).click();
@@ -72,6 +82,9 @@ test('mobile: bottom navigation, accessible drawer and owner-only team menu',asy
   await page.getByRole('button',{name:'Abrir menu completo'}).click();
   const drawer=page.getByRole('dialog',{name:'Menu completo'});
   await expect(drawer).toBeVisible();
+  await drawer.getByRole('button',{name:'Recorrências'}).click();
+  await expect(page.getByRole('heading',{name:'Recorrências'})).toBeVisible();
+  await page.getByRole('button',{name:'Abrir menu completo'}).click();
   await drawer.getByRole('button',{name:'Equipe e permissões'}).click();
   await expect(page.getByRole('heading',{name:'Equipe e permissões'})).toBeVisible();
   await expect(drawer).toBeHidden();
