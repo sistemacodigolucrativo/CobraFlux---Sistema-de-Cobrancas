@@ -116,7 +116,7 @@ export function ClientsOperationsView({onChanged}:{onChanged:()=>Promise<void>})
         <label className="sm:col-span-2 flex items-start gap-3 text-sm text-[#B8BFCD]">
           <input type="checkbox" className="mt-1" checked={form.whatsappOptIn}
             onChange={e=>set('whatsappOptIn',e.target.checked)}/>
-          Cliente autorizou o contato via WhatsApp. Registre a autorização apenas quando houver consentimento comprovável.
+          Campo legado do cadastro; NÃO habilita envio. O consentimento documentado e revogável deve ser registrado separadamente na área WhatsApp.
         </label>
         <div className="sm:col-span-2 flex flex-wrap gap-2">
           <Button type="submit" disabled={busy}>{busy?'Salvando...':'Salvar cliente'}</Button>

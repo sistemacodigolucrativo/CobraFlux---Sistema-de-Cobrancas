@@ -13,6 +13,8 @@ import { registerSandboxPayments } from './sandbox-payments';
 import { registerSandboxRefunds } from './sandbox-refunds';
 import { registerSandboxCancellation } from './sandbox-cancellation';
 import { registerRecurrences } from './recurrences';
+import { registerWhatsApp } from './whatsapp-routes';
+import { registerMetaWebhook } from './whatsapp-webhook';
 import { csrfForSession, getCookie, normalizeEmail, passwordHash, passwordMatches, randomSecret, secureEquals, sha256 } from './security';
 
 const app = express();
@@ -23,7 +25,11 @@ if (appSecret.length < 32) throw new Error('SESSION_SECRET must have at least 32
 const prod = process.env.NODE_ENV === 'production';
 const origin = process.env.APP_ORIGIN;
 if (prod && (!origin || !origin.startsWith('https://'))) throw new Error('APP_ORIGIN must be an HTTPS origin in production.');
-app.use(express.json({ limit: '256kb' }));
+app.use(express.json({limit:'256kb',verify:(req,_res,bytes)=>{
+  if(req.path==='/api/webhooks/meta-whatsapp'){
+    (req as Request & {metaRawBody?:Buffer}).metaRawBody=Buffer.from(bytes);
+  }
+}}));
 app.use('/api', (_req, res, next) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -308,6 +314,8 @@ registerSandboxPayments(app, { sessions, csrf, route, who });
 registerSandboxRefunds(app, { sessions, csrf, route, who });
 registerSandboxCancellation(app, { sessions, csrf, route, who });
 registerRecurrences(app, { sessions, csrf, route, who });
+registerWhatsApp(app, { sessions, csrf, route, who });
+registerMetaWebhook(app);
 
 app.get('/api/public/charges/:publicToken', route(async (req,res)=>{
   if (req.params.publicToken.length<20 || req.params.publicToken.length>120) { res.status(404).json({error:'not_found'}); return; }
