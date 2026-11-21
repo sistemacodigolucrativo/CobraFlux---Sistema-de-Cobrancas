@@ -147,6 +147,68 @@ test('Phase 7 platform admin, audited exports, financial segregation, ticket tri
    {limit:1,offset:0},b,true)).headers.get('x-export-count'),'0');
   assert.equal((await call('/reports/exports/clients','POST',
    {limit:1,offset:0},{cookie:a.cookie,csrf:''})).status,403);
+
+  // F7 #7: signed tenant/filter-bound keyset export for large datasets.
+  // Separate test tenant avoids the existing 12-export/hour quota on user 'a'.
+  const cursorUser=await signedIn(await registered('Cursor7'));
+  const cursorClients=await Promise.all([
+   call('/clients','POST',{name:'Cursor registro A',phone:'+5511988888001'},cursorUser),
+   call('/clients','POST',{name:'Cursor registro B',phone:'+5511988888002'},cursorUser),
+   call('/clients','POST',{name:'Cursor registro C',phone:'+5511988888003'},cursorUser)
+  ]);
+  for(const created of cursorClients)assert.equal(created.status,201,JSON.stringify(created.body));
+  // Same timestamp tests the (created_at,id) tie breaker; PostgreSQL keeps microsecond precision.
+  await pool.query("UPDATE clients SET created_at='2026-11-20T12:00:00.123456Z' WHERE id=ANY($1::uuid[])",
+   [cursorClients.map(x=>x.body.id)]);
+  const exportCursorPath='/reports/exports/clients/keyset';
+  assert.equal((await call(exportCursorPath)).status,401);
+  assert.equal((await call(exportCursorPath,'POST',{limit:1},
+   {cookie:cursorUser.cookie,csrf:''})).status,403);
+  assert.equal((await call('/reports/exports/secrets/keyset','POST',{},cursorUser)).status,400);
+  assert.equal((await call(exportCursorPath,'POST',{limit:1001},cursorUser)).status,400);
+  const keyset1=await call(exportCursorPath,'POST',{limit:1,status:'active'},cursorUser,true);
+  assert.equal(keyset1.status,200,JSON.stringify(keyset1.body));
+  assert.equal(keyset1.headers.get('x-export-mode'),'keyset');
+  assert.equal(keyset1.headers.get('x-export-count'),'1');
+  assert.equal(keyset1.headers.get('x-export-has-more'),'true');
+  assert.match(keyset1.headers.get('cache-control')??'',/no-store/);
+  const token1=keyset1.headers.get('x-export-next-cursor')??'';
+  assert.ok(token1.length>30);
+  assert.doesNotMatch(String(keyset1.body),/access_token_ciphertext|pix_payload/);
+  const tampered=token1.slice(0,-3)+'zzz';
+  assert.equal((await call(exportCursorPath,'POST',{limit:1,status:'active',cursor:tampered},
+   cursorUser)).status,400);
+  assert.equal((await call(exportCursorPath,'POST',{limit:1,status:'archived',cursor:token1},
+   cursorUser)).status,400,'filter switching cannot reuse cursor');
+  assert.equal((await call('/reports/exports/charges/keyset','POST',{limit:1,status:'active',cursor:token1},
+   cursorUser)).status,400,'dataset changes cannot reuse cursor');
+  assert.equal((await call(exportCursorPath,'POST',{limit:1,status:'active',cursor:token1},
+   b)).status,400,'a cursor must be bound to its tenant');
+  const keyset2=await call(exportCursorPath,'POST',{limit:1,status:'active',cursor:token1},
+   cursorUser,true);
+  assert.equal(keyset2.status,200);
+  assert.equal(keyset2.headers.get('x-export-count'),'1');
+  assert.equal(keyset2.headers.get('x-export-has-more'),'true');
+  const token2=keyset2.headers.get('x-export-next-cursor')??'';
+  assert.ok(token2.length>30);
+  assert.notEqual(keyset1.body,keyset2.body,'equal timestamps must not duplicate page rows');
+  const newAfterAnchor=await call('/clients','POST',
+   {name:'Criado após início da exportação',phone:'+5511988888004'},cursorUser);
+  assert.equal(newAfterAnchor.status,201);
+  const keyset3=await call(exportCursorPath,'POST',{limit:1,status:'active',cursor:token2},
+   cursorUser,true);
+  assert.equal(keyset3.status,200);
+  assert.equal(keyset3.headers.get('x-export-has-more'),'false');
+  assert.equal(keyset3.headers.get('x-export-next-cursor'),null);
+  assert.notEqual(keyset3.body,keyset1.body);
+  assert.notEqual(keyset3.body,keyset2.body);
+  assert.doesNotMatch(String(keyset3.body),/Criado após início da exportação/,
+   'first-page cutoff prevents later insertions from entering the walk');
+  assert.equal((await call('/reports/exports/charges/keyset','POST',{limit:1,status:'draft'},
+   cursorUser,true)).headers.get('x-export-count'),'0');
+  const keysetAudit=await call('/reports/audit','GET',undefined,cursorUser);
+  assert.ok(keysetAudit.body.items.some((x:{action:string})=>x.action==='CSV_EXPORT_GENERATED'));
+  assert.equal(keysetAudit.body.metadataRedacted,true);
   const auditA=await call('/reports/audit','GET',undefined,a);
   assert.equal(auditA.status,200);
   assert.ok(auditA.body.items.some((item:{action:string})=>item.action==='CSV_EXPORT_GENERATED'));

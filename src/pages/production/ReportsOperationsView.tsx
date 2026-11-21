@@ -23,6 +23,10 @@ export function ReportsOperationsView({canManage}:{canManage:boolean}){
  const [exportOffset,setExportOffset]=useState(0);
  const [exportPreview,setExportPreview]=useState<Phase7ExportPreview|null>(null);
  const [exportResult,setExportResult]=useState<Phase7ExportResult|null>(null);
+ const [cursorStack,setCursorStack]=useState<Array<string|null>>([null]);
+ const [cursorPage,setCursorPage]=useState(0);
+ const [cursorExported,setCursorExported]=useState<number|null>(null);
+ function resetCursorExport(){setCursorStack([null]);setCursorPage(0);setCursorExported(null);}
  const load=useCallback(async()=>{
   const [report,history,privacy]=await Promise.all([
    productionApi.phase7Summary(),
@@ -114,16 +118,16 @@ export function ReportsOperationsView({canManage}:{canManage:boolean}){
    </p>
    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
     <label className="text-sm">Conjunto de dados
-     <select aria-label="Dados da exportação" value={exportDataset}
+     <select aria-label="Dados da exportação" disabled={busy} value={exportDataset}
       onChange={e=>{setExportDataset(e.target.value as typeof exportDataset);
-       setExportStatus('');setExportOffset(0);}}
+       setExportStatus('');setExportOffset(0);resetCursorExport();}}
       className="block mt-2 w-full p-3 bg-[#0B0D12] border border-white/20 rounded-lg">
       <option value="clients">Clientes</option><option value="charges">Cobranças</option>
      </select>
     </label>
     <label className="text-sm">Filtrar status
-     <select aria-label="Status da exportação" value={exportStatus}
-      onChange={e=>{setExportStatus(e.target.value);setExportOffset(0);}}
+     <select aria-label="Status da exportação" disabled={busy} value={exportStatus}
+      onChange={e=>{setExportStatus(e.target.value);setExportOffset(0);resetCursorExport();}}
       className="block mt-2 w-full p-3 bg-[#0B0D12] border border-white/20 rounded-lg">
       <option value="">Todos os status</option>
       {(exportDataset==='clients'
@@ -135,8 +139,8 @@ export function ReportsOperationsView({canManage}:{canManage:boolean}){
      </select>
     </label>
     <label className="text-sm">Linhas por arquivo
-     <select aria-label="Linhas por arquivo CSV" value={exportLimit}
-      onChange={e=>{setExportLimit(Number(e.target.value) as typeof exportLimit);setExportOffset(0);}}
+     <select aria-label="Linhas por arquivo CSV" disabled={busy} value={exportLimit}
+      onChange={e=>{setExportLimit(Number(e.target.value) as typeof exportLimit);setExportOffset(0);resetCursorExport();}}
       className="block mt-2 w-full p-3 bg-[#0B0D12] border border-white/20 rounded-lg">
       <option value="100">100</option><option value="250">250</option><option value="1000">1.000</option>
      </select>
@@ -174,6 +178,50 @@ export function ReportsOperationsView({canManage}:{canManage:boolean}){
    {exportResult&&<p className="text-xs text-[#B8BFCD]">
     Último arquivo: {exportResult.exported} registro(s).{' '}
     {exportResult.hasMore?'Há mais registros depois deste lote.':'Fim dos registros nesta consulta.'}
+   </p>}
+  </Card>}
+
+  {canManage&&<Card className="p-5 space-y-3">
+   <h3 className="font-semibold">Exportação de grandes volumes — navegação por cursor</h3>
+   <p className="text-xs text-[#B8BFCD]">
+    Percorre registros por chave de criação e ID, sem limite de offset. O cursor é assinado,
+    vinculado à organização e aos filtros, e expira 30 minutos após iniciar.
+    O acesso segue limitado a 12 arquivos/hora. Cada lote permanece com até 1.000 registros.
+    O corte temporal exclui novos registros, mas alterações e exclusões posteriores não
+    são congeladas: isto não é snapshot consistente nem exportação integral garantida.
+   </p>
+   <p role="status" className="text-sm text-[#B8BFCD]">
+    Lote por cursor nº {cursorPage+1}
+    {cursorExported!==null?' · Último download: '+cursorExported+' registro(s).':''}
+   </p>
+   <div className="flex flex-wrap gap-2">
+    <Button size="sm" variant="secondary" disabled={busy||cursorPage===0}
+     onClick={()=>{setCursorPage(x=>Math.max(0,x-1));setCursorExported(null);}}>
+     Lote anterior
+    </Button>
+    <Button size="sm" variant="secondary" disabled={busy||!cursorStack[cursorPage+1]}
+     onClick={()=>{setCursorPage(x=>x+1);setCursorExported(null);}}>
+     Próximo lote
+    </Button>
+    <Button size="sm" disabled={busy||!exportPreview||exportPreview.total===0}
+     onClick={()=>void action(async()=>{
+      const result=await productionApi.phase7ExportCsvKeyset(exportDataset,{
+       limit:exportLimit,status:exportStatus||undefined,
+       cursor:cursorStack[cursorPage]||undefined,pageNumber:cursorPage+1
+      });
+      setCursorExported(result.exported);
+      setCursorStack(previous=>[...previous.slice(0,cursorPage+1),
+       ...(result.nextCursor?[result.nextCursor]:[])]);
+     },'Lote CSV por cursor solicitado ao navegador.')}>
+     Baixar lote por cursor
+    </Button>
+    <Button size="sm" variant="secondary" disabled={busy||cursorPage===0&&cursorStack.length===1}
+     onClick={resetCursorExport}>
+     Reiniciar exportação
+    </Button>
+   </div>
+   {cursorStack[cursorPage+1]&&<p className="text-xs text-[#B8BFCD]">
+    Cursor seguinte disponível; baixe o próximo lote quando necessário.
    </p>}
   </Card>}
   {canManage&&<Card className="p-5 space-y-3">

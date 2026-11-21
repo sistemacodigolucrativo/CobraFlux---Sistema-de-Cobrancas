@@ -1,4 +1,4 @@
-import {randomUUID} from 'node:crypto';
+import {randomUUID,createHmac,timingSafeEqual} from 'node:crypto';
 import type {Express,Request,Response,RequestHandler} from 'express';
 import {z} from 'zod';
 import {pool,transaction} from './db';
@@ -34,6 +34,41 @@ function validatedExportStatus(dataset:'clients'|'charges',value:unknown):string
   ?z.enum(['active','archived']).parse(value)
   :z.enum(['draft','pending_provider','pending','paid','partial','overdue','cancelled',
    'refunded','partially_refunded']).parse(value);
+}
+
+
+type ExportDataset='clients'|'charges';
+const exportedCursorSchema=z.object({
+ v:z.literal(1),orgId:z.uuid(),dataset:z.enum(['clients','charges']),
+ status:z.string().nullable(),cutoff:z.string().regex(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}Z$/),
+ afterAt:z.string().regex(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}Z$/),
+ afterId:z.uuid(),expiresAt:z.number().int().positive()
+}).strict();
+type ExportCursor=z.infer<typeof exportedCursorSchema>;
+function exportCursorSignature(encoded:string):Buffer{
+ // Domain-separated key; SESSION_SECRET is mandatory already in server/index.ts.
+ const key=createHmac('sha256',process.env.SESSION_SECRET??'')
+  .update('cobraflux-csv-keyset-v1').digest();
+ return createHmac('sha256',key).update(encoded).digest();
+}
+function signExportCursor(value:ExportCursor):string{
+ const encoded=Buffer.from(JSON.stringify(value)).toString('base64url');
+ return encoded+'.'+exportCursorSignature(encoded).toString('base64url');
+}
+function parseExportCursor(raw:string,p:Principal,dataset:ExportDataset,status:string|null):ExportCursor|null{
+ if(raw.length>2048||!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(raw))return null;
+ const parts=raw.split('.');
+ const provided=Buffer.from(parts[1],'base64url'),expected=exportCursorSignature(parts[0]);
+ if(provided.length!==expected.length||!timingSafeEqual(provided,expected))return null;
+ let value:unknown;
+ try{value=JSON.parse(Buffer.from(parts[0],'base64url').toString('utf8'));}catch{return null;}
+ const parsed=exportedCursorSchema.safeParse(value);
+ if(!parsed.success)return null;
+ const data=parsed.data;
+ if(data.orgId!==p.orgId||data.dataset!==dataset||data.status!==status||
+  data.expiresAt<=Date.now()||data.expiresAt>Date.now()+31*60_000||
+  data.afterAt>data.cutoff)return null;
+ return data;
 }
 
 export function registerPhase7Routes(app:Express,{sessions,csrf,who,route,rateLimit}:Deps){
@@ -472,6 +507,89 @@ export function registerPhase7Routes(app:Express,{sessions,csrf,who,route,rateLi
   res.setHeader('Cache-Control','private, no-store');
   res.json({dataset,status,total:count.rows[0].total as number,maxRowsPerFile:1000,
    exportIsSnapshot:false,limitOffsetMaximum:100000,containsPersonalData:dataset==='clients'});
+ }));
+ // Large exports: signed tenant-bound keyset cursor, anchored at first request.
+ // Not a MVCC snapshot: changes to/deletions of existing rows can affect later pages.
+ app.post('/api/reports/exports/:dataset/keyset',sessions,csrf,route(async(req,res)=>{
+  const p=who(req);if(!requireOwner(p,res))return;
+  if(!(await rateLimit('export:'+p.orgId+':'+p.userId,12,60))){
+   res.status(429).json({error:'export_rate_limited'});return;
+  }
+  const {dataset}=z.object({dataset:z.enum(['clients','charges'])}).parse(req.params);
+  const b=z.object({
+   limit:z.number().int().min(1).max(1000).default(1000),
+   status:z.string().optional(),
+   cursor:z.string().min(1).max(2048).optional()
+  }).strict().parse(req.body??{});
+  const status=validatedExportStatus(dataset,b.status);
+  const cursor=b.cursor?parseExportCursor(b.cursor,p,dataset,status):null;
+  if(b.cursor&&!cursor){res.status(400).json({error:'invalid_or_expired_export_cursor'});return;}
+  // PostgreSQL microsecond timestamps are kept as text; JS Date would truncate microseconds.
+  const cutoff=cursor?.cutoff??(await pool.query(
+   "SELECT to_char(clock_timestamp() AT TIME ZONE 'UTC',"+
+   " 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS cutoff")).rows[0].cutoff as string;
+  const params=[p.orgId,status,cutoff,cursor?.afterAt??null,cursor?.afterId??null,b.limit+1];
+  const cursorDateSql="to_char(created_at AT TIME ZONE 'UTC',"+
+   " 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS cursor_created_at ";
+  let headers:string[],exportRows:unknown[][];
+  let resultRows:Record<string,any>[];
+  if(dataset==='clients'){
+   const q=await pool.query(
+    'SELECT id,internal_code,name,phone,email,service_name,monthly_fee_cents::text,'+
+    'preferred_due_day,status,created_at,'+cursorDateSql+
+    'FROM clients WHERE organization_id=$1 AND ($2::text IS NULL OR status=$2) '+
+    'AND created_at<=$3::timestamptz '+
+    'AND ($4::timestamptz IS NULL OR (created_at,id)<($4::timestamptz,$5::uuid)) '+
+    'ORDER BY created_at DESC,id DESC LIMIT $6',params);
+   resultRows=q.rows;
+   headers=['id','codigo','nome','telefone','email','servico','mensalidade_centavos',
+    'vencimento_dia','status','criado_em'];
+   exportRows=q.rows.slice(0,b.limit).map(r=>[r.id,r.internal_code,r.name,r.phone,r.email,
+    r.service_name,r.monthly_fee_cents,r.preferred_due_day,r.status,
+    r.created_at?.toISOString?.()??r.created_at]);
+  }else{
+   const q=await pool.query(
+    'SELECT ch.id,cl.name AS client_name,ch.description,ch.amount_cents::text,'+
+    'ch.discount_cents::text,ch.paid_cents::text,ch.refunded_cents::text,ch.status,'+
+    'ch.provider,ch.due_date::text,ch.created_at,'+
+    "to_char(ch.created_at AT TIME ZONE 'UTC',"+
+    " 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS cursor_created_at "+
+    'FROM charges ch JOIN clients cl ON cl.id=ch.client_id '+
+    'AND cl.organization_id=ch.organization_id '+
+    'WHERE ch.organization_id=$1 AND ($2::text IS NULL OR ch.status=$2) '+
+    'AND ch.created_at<=$3::timestamptz '+
+    'AND ($4::timestamptz IS NULL OR (ch.created_at,ch.id)<($4::timestamptz,$5::uuid)) '+
+    'ORDER BY ch.created_at DESC,ch.id DESC LIMIT $6',params);
+   resultRows=q.rows;
+   headers=['id','cliente','descricao','valor_centavos','desconto_centavos',
+    'pago_centavos','estornado_centavos','status','ambiente_provedor','vencimento','criado_em'];
+   exportRows=q.rows.slice(0,b.limit).map(r=>[r.id,r.client_name,r.description,
+    r.amount_cents,r.discount_cents,r.paid_cents,r.refunded_cents,r.status,
+    r.provider,r.due_date,r.created_at?.toISOString?.()??r.created_at]);
+  }
+  const hasMore=resultRows.length>b.limit;
+  const last=hasMore?resultRows[b.limit-1]:null;
+  const next=last?signExportCursor({
+   v:1,orgId:p.orgId,dataset,status,cutoff,
+   afterAt:last.cursor_created_at as string,afterId:last.id as string,
+   expiresAt:cursor?.expiresAt??Date.now()+30*60_000
+  }):null;
+  await transaction(async db=>{
+   await audit(db,p,'CSV_EXPORT_GENERATED','report_export',randomUUID(),{
+    mode:'keyset',dataset,status,limit:b.limit,rows:exportRows.length,
+    continued:Boolean(cursor),hasMore,containsPersonalData:dataset==='clients'
+   });
+  });
+  const filename='cobraflux-'+dataset+'-keyset-'+new Date().toISOString().slice(0,10)+'.csv';
+  res.setHeader('Content-Type','text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition','attachment; filename="'+filename+'"');
+  res.setHeader('X-Content-Type-Options','nosniff');
+  res.setHeader('Cache-Control','private, no-store');
+  res.setHeader('X-Export-Mode','keyset');
+  res.setHeader('X-Export-Count',String(exportRows.length));
+  res.setHeader('X-Export-Has-More',String(hasMore));
+  if(next)res.setHeader('X-Export-Next-Cursor',next);
+  res.status(200).send(csvRows(headers,exportRows));
  }));
  // Sensitive exports require both owner role and CSRF (not just a navigable GET URL).
  app.post('/api/reports/exports/:dataset',sessions,csrf,route(async(req,res)=>{

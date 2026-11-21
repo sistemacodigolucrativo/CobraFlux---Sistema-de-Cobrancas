@@ -219,6 +219,43 @@ async function downloadPhase7Csv(dataset:'clients'|'charges',
  return {exported:parsedCount,offset:options.offset,nextOffset:options.offset+parsedCount,
   hasMore:hasMoreText==='true'};
 }
+
+export type Phase7KeysetExportResult={
+ exported:number;hasMore:boolean;nextCursor:string|null;
+};
+async function downloadPhase7CsvKeyset(dataset:'clients'|'charges',
+ options:{limit:number;status?:string;cursor?:string;pageNumber:number}):Promise<Phase7KeysetExportResult>{
+ const response=await fetch('/api/reports/exports/'+encodeURIComponent(dataset)+'/keyset',{
+  method:'POST',credentials:'include',
+  headers:{'Content-Type':'application/json',...(csrfToken?{'X-CF-CSRF':csrfToken}:{})},
+  body:JSON.stringify({limit:options.limit,...(options.status?{status:options.status}:{}),
+   ...(options.cursor?{cursor:options.cursor}:{})})
+ });
+ if(!response.ok){
+  const details=await response.json() as {error?:string;message?:string};
+  throw new ApiFailure(details,response.status);
+ }
+ const countText=response.headers.get('X-Export-Count');
+ const count=countText===null?NaN:Number(countText);
+ const hasMore=response.headers.get('X-Export-Has-More');
+ const cursor=response.headers.get('X-Export-Next-Cursor');
+ if(!(response.headers.get('Content-Type')??'').includes('text/csv')||
+  response.headers.get('X-Export-Mode')!=='keyset'||
+  !Number.isSafeInteger(count)||count<0||count>options.limit||
+  (hasMore!=='true'&&hasMore!=='false')||(hasMore==='true'&&!cursor)||
+  (hasMore==='false'&&cursor))
+  throw new Error('Metadados de exportação por cursor inválidos; download cancelado.');
+ const file=await response.blob();
+ if(file.size>4000000)throw new Error('Arquivo excedeu o tamanho permitido.');
+ const url=URL.createObjectURL(file),link=document.createElement('a');
+ link.href=url;
+ link.download='cobraflux-'+dataset+'-cursor-'+new Date().toISOString().slice(0,10)+
+  '-pagina-'+String(options.pageNumber).padStart(4,'0')+'.csv';
+ document.body.appendChild(link);
+ try{link.click();}finally{link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+ return {exported:count,hasMore:hasMore==='true',nextCursor:cursor};
+}
+
 function qs(fields:Record<string,string|number|undefined>):string{
  const p=new URLSearchParams();
  for(const [key,value] of Object.entries(fields)){
@@ -289,6 +326,7 @@ export const productionApi={
   phase7Summary:()=>request<Phase7Summary>('/reports/summary'),
   phase7Audit:()=>request<{items:Phase7AuditEntry[];metadataRedacted:true}>('/reports/audit'),
   phase7ExportCsv:downloadPhase7Csv,
+  phase7ExportCsvKeyset:downloadPhase7CsvKeyset,
   phase7ExportPreview:(dataset:'clients'|'charges',status?:string)=>
     request<Phase7ExportPreview>('/reports/exports/'+encode(dataset)+'/preview'+qs({status})),
   phase7MyPrivacy:()=>request<{items:Phase7PrivacyRequest[];automaticErasure:false}>('/privacy/requests'),
