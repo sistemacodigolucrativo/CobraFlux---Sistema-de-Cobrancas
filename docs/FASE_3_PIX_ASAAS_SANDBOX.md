@@ -133,7 +133,7 @@ Fonte: https://docs.asaas.com/docs/webhook-para-cobrancas — campo `transaction
 ### Fluxo transacional
 
 1. O titular solicita o cancelamento de uma cobrança com situação local \`pending\` ou \`overdue\`, sem recebimentos ou devoluções contabilizados, sem solicitação de estorno em andamento. A API exige sessão autenticada e CSRF; operadores não podem cancelar Pix emitido.
-2. O PostgreSQL cria uma intenção única na tabela \`sandbox_cancellation_requests\`, inclui motivo, autor, dados da organização e identificador de pagamento do PSP; bloqueia imediatamente o Pix na página pública alterando o estado local para \`cancel_pending\`. O histórico não é apagado.
+2. O PostgreSQL cria uma intenção única na tabela \`sandbox_cancellation_requests\`, inclui motivo, autor, dados da organização e identificador de pagamento do PSP; oculta imediatamente o Pix na página pública alterando o estado local para \`cancel_pending\`. Códigos já copiados permanecem potencialmente pagáveis até a confirmação externa do Asaas. O histórico não é apagado.
 3. Antes da única requisição \`DELETE\`, a API consulta \`GET /payments/{id}\` e confere exatamente ID externo, \`externalReference\`, valor e \`billingType=PIX\`. Só prossegue se o estado do PSP ainda é \`PENDING\` ou \`OVERDUE\`.
 4. Após o DELETE, a API consulta novamente o PSP. O estado local só vira \`cancelled\` quando \`GET\` confirma \`DELETED\`; HTTP 200 do DELETE e webhook \`PAYMENT_DELETED\` isoladamente nunca são usados como prova suficiente.
 5. Se a conexão falhar, a intenção passa a \`reconcile_required\`, o código Pix continua indisponível e nenhuma outra solicitação poderá repetir a exclusão. A verificação manual ou worker agendável faz **somente GET**.

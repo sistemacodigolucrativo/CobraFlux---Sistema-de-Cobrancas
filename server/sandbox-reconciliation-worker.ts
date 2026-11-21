@@ -59,7 +59,7 @@ export async function reconcileSandboxBatch(limit=20,organizationId?:string):Pro
       const result=cancellation.rowCount
         ?await reconcileSandboxCancellation(candidate.organizationId,candidate.chargeId,null)
         :await reconcileSandboxFinancial(candidate.organizationId,candidate.chargeId,null);
-      await finish(candidate,true,result.status,null);
+      await finish(candidate,true,'status' in result?result.status:result.chargeStatus,null);
       stats.reconciled++;
     }catch(e){
       stats.failed++;

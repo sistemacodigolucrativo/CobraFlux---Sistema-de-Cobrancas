@@ -161,7 +161,7 @@ export function ChargesOperationsView({onChanged,canIssue=false}:{onChanged:()=>
      </div>}
      {cancelSandboxFor===c.id&&<div className="space-y-3 border-t border-[#F5D491]/30 pt-3">
        <p className="text-xs text-[#F5D491]">
-         Cancelamento exclusivo do SANDBOX. A cobrança ficará indisponível ao pagador imediatamente;
+         Cancelamento exclusivo do SANDBOX. O link público deixará de mostrar o Pix imediatamente, mas códigos já copiados podem continuar válidos até a confirmação no Asaas;
          o status Cancelada somente será aplicado após confirmação do Asaas.
          Um pagamento já recebido exige estorno, não cancelamento.
        </p>
