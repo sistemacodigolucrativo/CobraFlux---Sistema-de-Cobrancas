@@ -1,11 +1,13 @@
 import React,{useEffect,useState} from 'react';
 import {Button,Card,Input} from '../../components/ui/Primitives';
-import {productionApi,type Session,type Profile,type SupportTicket} from '../../services/productionApi';
+import {productionApi,type Session,type Profile,type SupportTicket,type Phase7SupportReply} from '../../services/productionApi';
 import {SandboxConnectionView} from './SandboxConnectionView';
 
 export function AccountOperationsView({session,onSessionChange}:{session:Session;onSessionChange:(s:Session)=>void}){
  const [profile,setProfile]=useState<Profile|null>(null);
  const [tickets,setTickets]=useState<SupportTicket[]>([]);
+ const [selectedTicketId,setSelectedTicketId]=useState('');
+ const [ticketReplies,setTicketReplies]=useState<Phase7SupportReply[]>([]);
  const [name,setName]=useState(session.user.name);
  const [business,setBusiness]=useState('');
  const [category,setCategory]=useState('');
@@ -29,6 +31,15 @@ export function AccountOperationsView({session,onSessionChange}:{session:Session
   try{await fn();setSuccess(text);}catch(e){setError(e instanceof Error?e.message:'Não foi possível concluir.');}
   finally{setBusy(false);}
  }
+ useEffect(()=>{
+  if(!selectedTicketId){setTicketReplies([]);return;}
+  let current=true;
+  setTicketReplies([]);
+  void productionApi.supportTicketReplies(selectedTicketId).then(r=>{
+   if(current)setTicketReplies(r.items);
+  }).catch(e=>{if(current)setError(e instanceof Error?e.message:'Falha ao consultar respostas.');});
+  return ()=>{current=false;};
+ },[selectedTicketId]);
  if(!profile)return <Card className="p-6">Carregando configurações...</Card>;
  return <div className="space-y-5">
    <div><p className="text-xs text-[#E2BE72]">Conta e organização</p><h2 className="text-2xl font-bold">Configurações e suporte</h2></div>
@@ -74,7 +85,7 @@ export function AccountOperationsView({session,onSessionChange}:{session:Session
      </Card>
      <Card className="p-5 space-y-3">
        <h3 className="text-lg font-semibold">Atendimento</h3>
-       <p className="text-xs text-[#B8BFCD]">Chamados da sua organização. Respostas e moderação administrativa serão integradas na fase correspondente.</p>
+       <p className="text-xs text-[#B8BFCD]">Chamados da sua organização. Respostas da administração aparecem somente neste painel autenticado; não são enviadas por e-mail.</p>
        <form className="space-y-3" onSubmit={e=>{e.preventDefault();void run(async()=>{
          await productionApi.createSupportTicket(subject,message);
          setSubject('');setMessage('');await load();
@@ -88,7 +99,22 @@ export function AccountOperationsView({session,onSessionChange}:{session:Session
        </form>
        <div className="border-t border-white/10 pt-3 space-y-2">
          {tickets.length===0?<p className="text-sm text-[#B8BFCD]">Nenhum chamado anterior.</p>:tickets.slice(0,15).map(t=>
-           <p key={t.id} className="text-xs text-[#B8BFCD]">{t.subject} · {t.status} · {new Date(t.created_at).toLocaleDateString('pt-BR')}</p>)}
+           <div key={t.id} className="border-b border-white/10 pb-2 space-y-2">
+            <button type="button" aria-expanded={selectedTicketId===t.id}
+             className="w-full text-left text-xs text-[#B8BFCD] hover:text-white"
+             onClick={()=>setSelectedTicketId(current=>current===t.id?'':t.id)}>
+             {t.subject} · {t.status} · {new Date(t.created_at).toLocaleDateString('pt-BR')}
+             <span className="block mt-1 text-[#E2BE72]">Ver respostas no painel</span>
+            </button>
+            {selectedTicketId===t.id&&<div className="space-y-2">
+             {ticketReplies.length===0
+              ?<p className="text-xs text-[#B8BFCD]">Ainda não há respostas da administração.</p>
+              :ticketReplies.map(r=><div key={r.id} className="p-3 rounded-lg border border-white/10">
+               <p className="text-xs text-[#B8BFCD]">{r.author_name} · {new Date(r.created_at).toLocaleString('pt-BR')}</p>
+               <p className="text-sm whitespace-pre-wrap break-words">{r.message}</p>
+              </div>)}
+            </div>}
+           </div>)}
        </div>
      </Card>
    </div>
