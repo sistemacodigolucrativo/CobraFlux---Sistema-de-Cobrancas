@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { Express, Request, Response, RequestHandler } from 'express';
 import { z } from 'zod';
 import { pool, transaction } from './db';
+import type {PoolClient} from 'pg';
 import {enforceSaasQuota} from './saas-domain';
 import { canSendTransactionalEmail, publicLink, sendTransactionalEmail } from './email';
 import { normalizeEmail, passwordHash, randomSecret, sha256 } from './security';
@@ -28,7 +29,7 @@ async function audit(db:{query:Function},p:Principal,action:string,entityId:stri
   await db.query('INSERT INTO audit_logs(id,organization_id,actor_id,action,entity_type,entity_id,metadata) VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb)',
     [randomUUID(),p.orgId,p.userId,action,'team',entityId,JSON.stringify(details)]);
 }
-async function acceptInvitation(db:{query:Function},token:string,email:string,userId:string):Promise<Accepted|null>{
+async function acceptInvitation(db:Pick<PoolClient,'query'>,token:string,email:string,userId:string):Promise<Accepted|null>{
   // Lock the organization before invitation rows, consistent with invite-creation quota checks.
   const pre=await db.query('SELECT organization_id,email FROM team_invitations WHERE token_hash=$1',[sha256(token)]);
   if(!pre.rowCount||pre.rows[0].email!==email)return null;
