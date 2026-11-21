@@ -9,7 +9,7 @@ O projeto foi planejado em **10 fases, de 0 a 9**. Esta pasta mantém uma págin
 - [Fase 4 — Recorrências](04-recorrencias.md) — **NÚCLEO TESTADO; SCHEDULER EXTERNO PENDENTE**
 - [Fase 5 — WhatsApp Meta Cloud API](05-whatsapp.md) — **NÚCLEO TESTADO; ENVIO DESATIVADO**
 - [Fase 6 — Monetização SaaS da plataforma](06-saas.md) — **NÚCLEO TÉCNICO TESTADO; MONETIZAÇÃO REAL INCOMPLETA**
-- [Fase 7 — Administração, relatórios, suporte e LGPD](07-admin-relatorios-lgpd.md) — **EM DESENVOLVIMENTO — DOIS INCREMENTOS TESTADOS**
+- [Fase 7 — Administração, relatórios, suporte e LGPD](07-admin-relatorios-lgpd.md) — **EM DESENVOLVIMENTO — TRÊS INCREMENTOS TESTADOS**
 - [Fase 8 — Homologação e segurança operacional](08-homologacao.md) — **PENDENTE**
 - [Fase 9 — Android e Google Play](09-android-play.md) — **PENDENTE**
 
