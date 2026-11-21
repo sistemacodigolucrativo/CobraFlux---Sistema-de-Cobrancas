@@ -4,7 +4,7 @@
 O responsável forneceu o **CobraFlux-Knowledge-Handoff-2026-11-21.zip** (arquivo ZIP original), além do arquivo separado **08-PROTOCOLO-DE-RETOMADA.md**. O ZIP contém 12 Markdown, com origem documental no commit 9c854473; o documento MANIFESTO-DE-INTEGRIDADE afirma expressamente que o pacote original **não havia sido enviado ao repositório**.
 
 - SHA-256 do ZIP recebido: **730fba546e3d834cadcf29849f81b3a7cba70c0af9967dddb4e8b79f9cc6fe86**.
-- **Status de armazenamento:** este diretório Git guarda uma **consolidação rastreável do conteúdo analisado**; **não contém os bytes integrais do ZIP original** nem os 12 arquivos históricos. O anexo da conversa não é recuperável automaticamente por uma nova IA apenas lendo este Git. Use o importador **scripts/import-handoff-knowledge.sh** com o ZIP original para versionar a cópia integral, após revisão de segredos e dados pessoais.
+- **Status atual de armazenamento (após reconciliação):** os **12 Markdown originais, em bytes idênticos**, foram versionados em [originais/](originais/), commit [2b60a089](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/2b60a089d0cf47186fcc51befdec3b0bd8608b3e). Todos os **12/12 Git blob hashes** foram comparados aos blobs calculados localmente a partir do ZIP original e **coincidiram**. O **ZIP compactado como binário não está versionado**; seu conteúdo Markdown integral está. Uma nova IA pode ler o handoff, matriz REQ-001–119 e ADR-001–024 sem acesso a esta conversa. O importador em scripts/ é apenas opção de restauração.
 - O snapshot do handoff cobre fontes parcialmente disponíveis e **não garante 100% do histórico de conversas**. Não inventar decisões ou dados ausentes.
 
 ## Manifesto do pacote original

@@ -8,7 +8,8 @@
 3. Leia **03-DECISOES.md** e **02-ARQUITETURA-E-SEGURANCA.md**.
 4. Consulte **fases/** (0 a 9), **05-DIARIO-DE-DESENVOLVIMENTO.md** e **06-EVIDENCIAS.md**.
 5. Consulte **04-BACKLOG.md** e identifique decisão aprovada, dependências, impacto cross-tenant e a próxima tarefa.
-6. Execute **08-PROTOCOLO-DE-CONTINUIDADE.md**; antes de qualquer mudança leia os arquivos reais. Registre cada entrega em **entregas/**.
+6. Consulte o **handoff original integral** em [originais/](originais/), especialmente a matriz REQ-001–119 e as ADRs. Leia [10-REQUISITOS-RECENTES](10-REQUISITOS-RECENTES.md) para acréscimos.
+7. Execute **08-PROTOCOLO-DE-CONTINUIDADE.md**; antes de qualquer mudança leia os arquivos reais. Registre cada entrega em **entregas/**.
 
 ## Fontes e ordem de precedência
 1. **GitHub atual (HEAD real, diff, PR/Issue, testes no mesmo SHA)**: prova técnica contemporânea.

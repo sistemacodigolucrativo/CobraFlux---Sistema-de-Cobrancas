@@ -1,7 +1,14 @@
-# Fontes originais do handoff — importação controlada
+# Fontes históricas originais — preservadas e verificadas
 
-Os arquivos originais **não foram copiados automaticamente para este diretório**: o arquivo ZIP foi recebido como anexo de conversa, e a conexão atual do GitHub não o transferiu diretamente. A documentação resumida está em docs/ai-memory; consulte [07-FONTES-E-INTEGRIDADE](../07-FONTES-E-INTEGRIDADE.md) para os 12 documentos, hashes e escopo da auditoria.
+Os **12 documentos Markdown extraídos de CobraFlux-Knowledge-Handoff-2026-11-21.zip** estão nesta pasta, como arquivos de **conteúdo exato**. Todos foram verificados contra os Git blob SHA-1 locais extraídos do ZIP, com correspondência 12/12, no commit [2b60a089](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/2b60a089d0cf47186fcc51befdec3b0bd8608b3e).
 
-Para preservar os **bytes originais**, execute **scripts/import-handoff-knowledge.sh /caminho/CobraFlux-Knowledge-Handoff-2026-11-21.zip** em clone autorizado e na branch **feat/production-foundation**, examine o diff/possíveis dados privados, valide os SHA-256 e realize commit/push **somente após revisão**. Isso não mexe na main e não faz deploy.
+**Fonte histórica não normativa para HEAD atual:** estes documentos descrevem o snapshot 9c854473 de 21/11/2026. Depois deles, o código avançou para 4dcbb80 (suporte em portal, CI verde) e esta documentação de memória continuou evoluindo. Sempre leia [estado.json](../estado.json) e consulte o GitHub remoto antes de começar.
 
-Depois de importar, atualizar 07-FONTES-E-INTEGRIDADE.md e estado.json (sourceArchiveUploadedToRepository=true **somente depois** de verificar o SHA correspondente no GitHub).
+## Leitura recomendada
+00-LEIA-PRIMEIRO.md → 01-HANDOFF-MESTRE.md → 03-REGISTRO-DE-DECISOES.md → 02-MATRIZ-DE-REQUISITOS.md → 04-BACKLOG-CONSOLIDADO.md → 05-ARQUITETURA-E-ESTADO-TECNICO.md → 06-ROADMAP-E-MARCOS.md → 07-EVIDENCIAS-E-LACUNAS.md → 08-PROTOCOLO-DE-RETOMADA.md → 09-PROMPT-AUTONOMO-DE-RETOMADA.md.
+
+HANDOFF-COMPLETO.md é a consolidação histórica e MANIFESTO-DE-INTEGRIDADE.md contém checksums do ZIP original. Para fontes e SHA-256, consulte [07-FONTES-E-INTEGRIDADE.md](../07-FONTES-E-INTEGRIDADE.md).
+
+O ZIP binário original não foi transferido ao Git; todos os seus 12 arquivos Markdown foram. O script [scripts/import-handoff-knowledge.sh](../../../scripts/import-handoff-knowledge.sh) permanece opcional para recuperar as cópias a partir de um ZIP local, sem auto-commit/push.
+
+**Imutabilidade de fonte:** não reescrever estes arquivos em evoluções futuras. Adicionar alterações e decisões em docs/ai-memory/ e seu histórico Git.

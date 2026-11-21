@@ -39,5 +39,10 @@
   ],
   "sourceArchive": "CobraFlux-Knowledge-Handoff-2026-11-21.zip",
   "sourceArchiveUploadedToRepository": false,
-  "caution": "Snapshot historico; reverificar HEAD, PR, issue e CI antes de alterar."
+  "caution": "Snapshot historico; reverificar HEAD, PR, issue e CI antes de alterar.",
+  "sourceArchiveZipInRepository": false,
+  "sourceDocumentsUploadedToRepository": true,
+  "sourceDocumentsVerifiedExactGitBlobs": 12,
+  "sourceDocumentsGitCommit": "2b60a089d0cf47186fcc51befdec3b0bd8608b3e",
+  "sourceDocumentsDirectory": "docs/ai-memory/originais"
 }
