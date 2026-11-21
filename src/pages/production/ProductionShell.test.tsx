@@ -9,6 +9,7 @@ import {ServicesOperationsView} from './ServicesOperationsView';
 import {ChargesOperationsView} from './ChargesOperationsView';
 import {AccountOperationsView} from './AccountOperationsView';
 import {RecurrencesOperationsView} from './RecurrencesOperationsView';
+import {WhatsAppOperationsView} from './WhatsAppOperationsView';
 import type {Session,OrganizationChoice} from '../../services/productionApi';
 
 const session:Session={
@@ -34,6 +35,7 @@ test('paridade do shell: sidebar, mobile bottom bar e drawer acessível',()=>{
  assert.match(html,/Clientes/);
  assert.match(html,/Cobranças/);
  assert.match(html,/Recorrências/);
+ assert.match(html,/WhatsApp Business/);
  assert.match(html,/Configurações/);
  assert.match(html,/Equipe e permissões/);
  assert.match(html,/aria-current="page"/);
@@ -51,6 +53,7 @@ test('componentes operacionais renderizam sem contexto ou dados de demo',()=>{
   renderToStaticMarkup(<ClientsOperationsView onChanged={onChanged}/>),
   renderToStaticMarkup(<ChargesOperationsView onChanged={onChanged}/>),
   renderToStaticMarkup(<RecurrencesOperationsView canManage={true} onChanged={onChanged}/>),
+  renderToStaticMarkup(<WhatsAppOperationsView canManage={true}/>),
   renderToStaticMarkup(<ServicesOperationsView onChanged={onChanged}/>),
   renderToStaticMarkup(<TeamOperationsView session={session}/>),
   renderToStaticMarkup(<AccountOperationsView session={session} onSessionChange={()=>{}}/>),

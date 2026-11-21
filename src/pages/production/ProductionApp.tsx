@@ -7,6 +7,7 @@ import { ProductionShell,type ProductionTab } from './ProductionShell';
 import { ClientsOperationsView } from './ClientsOperationsView';
 import { ChargesOperationsView } from './ChargesOperationsView';
 import { RecurrencesOperationsView } from './RecurrencesOperationsView';
+import { WhatsAppOperationsView } from './WhatsAppOperationsView';
 import { ServicesOperationsView } from './ServicesOperationsView';
 import { AccountOperationsView } from './AccountOperationsView';
 
@@ -159,6 +160,7 @@ export function ProductionApp(){
           {tab==='servicos'&&<ServicesOperationsView key={session.organizationId} onChanged={refresh}/>}
           {tab==='cobrancas'&&<ChargesOperationsView key={session.organizationId} onChanged={refresh} canIssue={session.user.role!=='operator'}/>}
           {tab==='recorrencias'&&<RecurrencesOperationsView key={session.organizationId} canManage={session.user.role!=='operator'} onChanged={refresh}/>}
+          {tab==='whatsapp'&&<WhatsAppOperationsView key={session.organizationId} canManage={session.user.role!=='operator'}/>}
           {tab==='equipe'&&<TeamOperationsView key={session.organizationId} session={session}/>}
           {tab==='configuracoes'&&<AccountOperationsView key={session.organizationId} session={session} onSessionChange={setSession}/>}
   </ProductionShell>;

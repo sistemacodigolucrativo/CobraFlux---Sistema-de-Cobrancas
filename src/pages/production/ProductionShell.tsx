@@ -1,18 +1,19 @@
 import React,{useEffect,useState} from 'react';
 import {
   CreditCard,Home,LogOut,Menu,Settings,ShieldCheck,Users,UserRoundCheck,
-  X,Layers,CalendarClock
+  X,Layers,CalendarClock,MessageCircle
 } from 'lucide-react';
 import { GoldenLogo } from '../../components/ui/Primitives';
 import type { OrganizationChoice,Session } from '../../services/productionApi';
 
-export type ProductionTab='inicio'|'clientes'|'cobrancas'|'recorrencias'|'servicos'|'equipe'|'sessoes'|'configuracoes';
+export type ProductionTab='inicio'|'clientes'|'cobrancas'|'recorrencias'|'whatsapp'|'servicos'|'equipe'|'sessoes'|'configuracoes';
 type NavItem={id:ProductionTab;label:string;icon:React.ComponentType<{className?:string}>};
 const NAV_ITEMS:NavItem[]=[
   {id:'inicio',label:'Início',icon:Home},
   {id:'clientes',label:'Clientes',icon:Users},
   {id:'cobrancas',label:'Cobranças',icon:CreditCard},
   {id:'recorrencias',label:'Recorrências',icon:CalendarClock},
+  {id:'whatsapp',label:'WhatsApp Business',icon:MessageCircle},
   {id:'servicos',label:'Serviços',icon:Layers},
   {id:'equipe',label:'Equipe e permissões',icon:UserRoundCheck},
   {id:'sessoes',label:'Sessões e segurança',icon:ShieldCheck},
