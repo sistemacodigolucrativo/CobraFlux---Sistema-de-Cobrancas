@@ -62,9 +62,9 @@ export function WhatsAppOperationsView({canManage}:{canManage:boolean}){
        await productionApi.configureWhatsApp({wabaId:waba,phoneNumberId:phoneId,accessToken:token});
        setToken('');setShowConfig(false);
      },'Token armazenado criptografado. Sincronize os modelos antes de habilitar.');}}>
-       <Input label="WhatsApp Business Account ID" required value={waba} onChange={setWaba}/>
-       <Input label="Phone Number ID" required value={phoneId} onChange={setPhoneId}/>
-       <Input label="Token de acesso Meta" type="password" required value={token} onChange={setToken}/>
+       <Input label="WhatsApp Business Account ID" required value={waba} onChange={e=>setWaba(e.target.value)}/>
+       <Input label="Phone Number ID" required value={phoneId} onChange={e=>setPhoneId(e.target.value)}/>
+       <Input label="Token de acesso Meta" type="password" required value={token} onChange={e=>setToken(e.target.value)}/>
        <Button type="submit" disabled={busy}>Salvar configuração</Button>
      </form>}
      <p className="text-xs text-[#B8BFCD]">Modelos UTILITY aprovados com três variáveis: {approved.length}</p>
@@ -99,7 +99,7 @@ export function WhatsAppOperationsView({canManage}:{canManage:boolean}){
            <option value="web_form">Formulário web com registro</option>
            <option value="documented_request">Pedido documentado do cliente</option>
          </select></label>
-       <Input label="Referência da prova (mínimo 12 caracteres)" value={evidence} onChange={setEvidence} required/>
+       <Input label="Referência da prova (mínimo 12 caracteres)" value={evidence} onChange={e=>setEvidence(e.target.value)} required/>
        <label className="text-xs flex gap-2 items-center"><input type="checkbox" checked={ack}
          onChange={e=>setAck(e.target.checked)}/> Confirmo que tenho autorização do destinatário.</label>
        <div className="flex flex-wrap gap-2">
