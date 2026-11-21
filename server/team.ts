@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { Express, Request, Response, RequestHandler } from 'express';
 import { z } from 'zod';
 import { pool, transaction } from './db';
+import {enforceSaasQuota} from './saas-domain';
 import { canSendTransactionalEmail, publicLink, sendTransactionalEmail } from './email';
 import { normalizeEmail, passwordHash, randomSecret, sha256 } from './security';
 
@@ -37,6 +38,7 @@ async function acceptInvitation(db:{query:Function},token:string,email:string,us
   if(!q.rowCount)return null;
   const entry=q.rows[0];
   if(entry.email!==email)return null;
+  await enforceSaasQuota(db,entry.organization_id,'members');
   const inserted=await db.query(
     "INSERT INTO memberships(user_id,organization_id,role) VALUES($1,$2,'operator') ON CONFLICT DO NOTHING RETURNING user_id",
     [userId,entry.organization_id]
@@ -83,6 +85,7 @@ export function registerTeamRoutes(app:Express,{sessions,csrf,who,route,rateLimi
       if(member.rowCount)return {error:'already_member'} as const;
       await db.query("UPDATE team_invitations SET revoked_at=now() WHERE organization_id=$1 AND email=$2 " +
         'AND accepted_at IS NULL AND revoked_at IS NULL',[p.orgId,email]);
+      await enforceSaasQuota(db,p.orgId,'members',1,{includePendingInvites:true});
       const row=await db.query("INSERT INTO team_invitations(id,organization_id,invited_by,email,token_hash,expires_at) " +
         "VALUES($1,$2,$3,$4,$5,now()+interval '48 hours') RETURNING id,expires_at",
         [invitationId,p.orgId,p.userId,email,sha256(token)]);

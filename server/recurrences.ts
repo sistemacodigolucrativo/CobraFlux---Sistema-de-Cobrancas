@@ -2,6 +2,7 @@ import {randomUUID} from 'node:crypto';
 import type {Express,Request,Response,RequestHandler} from 'express';
 import {z} from 'zod';
 import {pool,transaction} from './db';
+import {enforceSaasQuota} from './saas-domain';
 import {
   isoDate,isAlignedFirstDue,previewCycles,skipPastCycles,advanceRecurrence,localBillingDate
 } from './recurrence-calendar';
@@ -92,10 +93,7 @@ export function registerRecurrences(app:Express,{sessions,csrf,who,route}:Deps):
     if(b.firstDueDate<today){res.status(422).json({error:'first_due_date_must_be_today_or_future'});return;}
     const id=randomUUID();
     const result=await transaction(async db=>{
-      await db.query('SELECT id FROM organizations WHERE id=$1 FOR UPDATE',[p.orgId]);
-      const count=await db.query("SELECT count(*)::int AS count FROM recurrence_plans "+
-        "WHERE organization_id=$1 AND state<>'cancelled'",[p.orgId]);
-      if(count.rows[0].count>=250)return {error:'recurrence_plan_limit_reached'};
+      await enforceSaasQuota(db,p.orgId,'recurrences');
       const client=await db.query("SELECT id FROM clients WHERE id=$1 AND organization_id=$2 AND status='active'",
         [b.clientId,p.orgId]);
       if(!client.rowCount)return null;

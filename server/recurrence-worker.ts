@@ -1,5 +1,6 @@
 import {randomBytes,randomUUID} from 'node:crypto';
 import {pool,transaction} from './db';
+import {enforceSaasQuota,SaasQuotaError} from './saas-domain';
 import {advanceRecurrence,calendarCycleKey,isoDate,localBillingDate} from './recurrence-calendar';
 
 type Claimed={id:string;orgId:string;token:string;attempts:number};
@@ -56,6 +57,16 @@ async function finishOne(item:Claimed,through:string):Promise<'generated'|'pause
     const cycleKey=calendarCycleKey(due,p.frequency);
     const existing=await db.query('SELECT id FROM recurrence_cycles WHERE plan_id=$1 AND cycle_key=$2',[item.id,cycleKey]);
     if(!existing.rowCount){
+      try{await enforceSaasQuota(db,item.orgId,'charges_month');}
+      catch(e){
+        if(!(e instanceof SaasQuotaError))throw e;
+        await db.query("UPDATE recurrence_plans SET state='paused',last_error='saas_quota_exceeded',"+
+          "lease_token=NULL,lease_until=NULL,updated_at=now() WHERE id=$1",[item.id]);
+        await db.query("INSERT INTO audit_logs(id,organization_id,action,entity_type,entity_id,metadata) "+
+          "VALUES($1,$2,'RECURRENCE_PAUSED_SAAS_LIMIT','recurrence',$3,$4::jsonb)",
+          [randomUUID(),item.orgId,item.id,JSON.stringify({resource:e.resource,limit:e.limit})]);
+        return 'paused';
+      }
       const chargeId=randomUUID(),publicToken=randomBytes(24).toString('base64url');
       await db.query(
         "INSERT INTO charges(id,public_token,organization_id,client_id,service_id,description,"+
