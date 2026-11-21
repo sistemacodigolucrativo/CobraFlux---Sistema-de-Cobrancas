@@ -7,6 +7,7 @@ import {advanceRecurrence,localBillingDate} from './recurrence-calendar';
 
 process.env.CF_NO_LISTEN='true';
 const {app}=await import('./index');
+app.set('trust proxy',1); // Integration-test-only: distinguish fixtures without weakening production IP limits.
 const {pool}=await import('./db');
 const {generateRecurrenceBatch,recurrenceDueCount}=await import('./recurrence-worker');
 const server=app.listen(0,'127.0.0.1');
@@ -16,7 +17,7 @@ const password='SenhaRecorrenciaSegura#2026';
 async function call(path:string,method='GET',data?:unknown,cookie='',csrf=''){
  const response=await fetch(base+path,{
   method,
-  headers:{...(data?{'Content-Type':'application/json'}:{}),
+  headers:{'X-Forwarded-For':'198.51.100.45',...(data?{'Content-Type':'application/json'}:{}),
    ...(cookie?{Cookie:cookie}:{}),
    ...(csrf?{'X-CF-CSRF':csrf}:{})},
   body:data?JSON.stringify(data):undefined

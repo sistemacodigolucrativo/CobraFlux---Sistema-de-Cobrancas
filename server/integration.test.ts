@@ -9,6 +9,7 @@ import type { AddressInfo } from 'node:net';
 process.env.CF_NO_LISTEN='true';
 process.env.MFA_ENCRYPTION_KEY=randomBytes(32).toString('hex');
 const { app }=await import('./index');
+app.set('trust proxy',1); // Integration-test-only: distinguish fixtures without weakening production IP limits.
 const { pool }=await import('./db');
 const server=app.listen(0,'127.0.0.1');
 await new Promise<void>((resolve)=>server.once('listening',resolve));
@@ -18,7 +19,7 @@ type ResponseData={ status:number; body:any; cookie:string };
 async function call(path:string,method='GET',data?:object,cookie='',csrf=''):Promise<ResponseData>{
  const response=await fetch(base+path,{
   method,
-  headers:{Origin:'http://localhost:3000',...(data?{'Content-Type':'application/json'}:{}),
+  headers:{'X-Forwarded-For':'198.51.100.41',Origin:'http://localhost:3000',...(data?{'Content-Type':'application/json'}:{}),
     ...(cookie?{Cookie:cookie}:{}),...(csrf?{'X-CF-CSRF':csrf}:{})},
   body:data?JSON.stringify(data):undefined
  });

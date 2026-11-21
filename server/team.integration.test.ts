@@ -7,13 +7,14 @@ import {randomSecret,sha256} from './security';
 
 process.env.CF_NO_LISTEN='true';
 const {app}=await import('./index');
+app.set('trust proxy',1); // Integration-test-only: distinguish fixtures without weakening production IP limits.
 const {pool}=await import('./db');
 const server=app.listen(0,'127.0.0.1');
 await new Promise<void>(resolve=>server.once('listening',resolve));
 const base='http://127.0.0.1:'+(server.address() as AddressInfo).port+'/api';
 async function call(path:string,method='GET',data?:object,cookie='',csrf=''){
  const r=await fetch(base+path,{
-   method,headers:{Origin:'http://localhost:3000',...(data?{'Content-Type':'application/json'}:{}),
+   method,headers:{'X-Forwarded-For':'198.51.100.42',Origin:'http://localhost:3000',...(data?{'Content-Type':'application/json'}:{}),
      ...(cookie?{Cookie:cookie}:{}),...(csrf?{'X-CF-CSRF':csrf}:{})},
    body:data?JSON.stringify(data):undefined
  });

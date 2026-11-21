@@ -51,9 +51,10 @@ globalThis.fetch=(async(input:URL|Request|string,init?:RequestInit):Promise<Resp
  }else{
    return new Response(JSON.stringify({errors:[{description:'route_not_mocked'}]}),{status:404});
  }
- return new Response(JSON.stringify(response),{status:200,headers:{'Content-Type':'application/json'}});
+ return new Response(JSON.stringify(response),{status:200,headers:{'X-Forwarded-For':'198.51.100.43','Content-Type':'application/json'}});
 }) as typeof fetch;
 const {app}=await import('./index');
+app.set('trust proxy',1); // Integration-test-only: distinguish fixtures without weakening production IP limits.
 const {pool}=await import('./db');
 const server=app.listen(0,'127.0.0.1');
 await new Promise<void>(r=>server.once('listening',r));

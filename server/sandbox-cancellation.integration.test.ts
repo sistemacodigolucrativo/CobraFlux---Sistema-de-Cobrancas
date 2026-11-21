@@ -47,10 +47,11 @@ globalThis.fetch=(async(input:URL|string|Request,init?:RequestInit):Promise<Resp
  }else{
    return new Response(JSON.stringify({errors:[{description:'unmocked endpoint'}]}),{status:404});
  }
- return new Response(JSON.stringify(result),{status:200,headers:{'Content-Type':'application/json'}});
+ return new Response(JSON.stringify(result),{status:200,headers:{'X-Forwarded-For':'198.51.100.44','Content-Type':'application/json'}});
 }) as typeof fetch;
 
 const {app}=await import('./index');
+app.set('trust proxy',1); // Integration-test-only: distinguish fixtures without weakening production IP limits.
 const {pool}=await import('./db');
 const server=app.listen(0,'127.0.0.1');
 await new Promise<void>(resolve=>server.once('listening',resolve));
