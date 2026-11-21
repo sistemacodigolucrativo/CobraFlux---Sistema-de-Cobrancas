@@ -1,6 +1,7 @@
 import React,{useCallback,useEffect,useState} from 'react';
 import {Button,Card,Input} from '../../components/ui/Primitives';
-import {productionApi,type Phase7Summary,type Phase7AuditEntry,type Phase7PrivacyRequest} from '../../services/productionApi';
+import {productionApi,type Phase7Summary,type Phase7AuditEntry,type Phase7PrivacyRequest,
+ type Phase7ExportPreview,type Phase7ExportResult} from '../../services/productionApi';
 
 const money=(cents:string|number)=>new Intl.NumberFormat('pt-BR',{
  style:'currency',currency:'BRL'}).format(Number(cents)/100);
@@ -16,6 +17,12 @@ export function ReportsOperationsView({canManage}:{canManage:boolean}){
  const [error,setError]=useState(''),[notice,setNotice]=useState('');
  const [kind,setKind]=useState<Phase7PrivacyRequest['kind']>('access');
  const [reason,setReason]=useState('');
+ const [exportDataset,setExportDataset]=useState<'clients'|'charges'>('clients');
+ const [exportStatus,setExportStatus]=useState('');
+ const [exportLimit,setExportLimit]=useState<100|250|1000>(250);
+ const [exportOffset,setExportOffset]=useState(0);
+ const [exportPreview,setExportPreview]=useState<Phase7ExportPreview|null>(null);
+ const [exportResult,setExportResult]=useState<Phase7ExportResult|null>(null);
  const load=useCallback(async()=>{
   const [report,history,privacy]=await Promise.all([
    productionApi.phase7Summary(),
@@ -24,6 +31,14 @@ export function ReportsOperationsView({canManage}:{canManage:boolean}){
   ]);
   setSummary(report);setAudit(history.items);setRequests(privacy.items);
  },[canManage]);
+ useEffect(()=>{
+  if(!canManage){setExportPreview(null);return;}
+  let current=true;setExportPreview(null);setExportResult(null);
+  void productionApi.phase7ExportPreview(exportDataset,exportStatus||undefined)
+   .then(r=>{if(current)setExportPreview(r);})
+   .catch(e=>{if(current)setError(e instanceof Error?e.message:'Não foi possível consultar a exportação.');});
+  return ()=>{current=false;};
+ },[canManage,exportDataset,exportStatus]);
  useEffect(()=>{setLoading(true);void load().catch(e=>setError(e instanceof Error?e.message:'Não foi possível carregar o relatório.'))
   .finally(()=>setLoading(false));},[load]);
  async function action(fn:()=>Promise<unknown>,message:string){
@@ -91,21 +106,75 @@ export function ReportsOperationsView({canManage}:{canManage:boolean}){
    </div>)}
   </Card>
   {canManage&&<Card className="p-5 space-y-4">
-   <h3 className="font-semibold">Exportações autorizadas (CSV)</h3>
+   <h3 className="font-semibold">Exportações autorizadas (CSV) por página</h3>
    <p className="text-xs text-[#B8BFCD]">
-    Exclusivas do titular. Exportação limitada a 1.000 registros por arquivo, protegida contra fórmulas
-    de planilhas e registrada na auditoria. Não inclui credenciais, tokens de cobrança, QR Pix nem segredos.
+    Exclusivas do titular. Cada arquivo contém até 1.000 registros, com filtro, controle de lotes,
+    proteção contra fórmulas e auditoria. Não inclui tokens, QR Pix, segredos ou webhooks.
+    Mudanças nos dados entre downloads podem deslocar registros: cada página não é um snapshot.
+   </p>
+   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <label className="text-sm">Conjunto de dados
+     <select aria-label="Dados da exportação" value={exportDataset}
+      onChange={e=>{setExportDataset(e.target.value as typeof exportDataset);
+       setExportStatus('');setExportOffset(0);}}
+      className="block mt-2 w-full p-3 bg-[#0B0D12] border border-white/20 rounded-lg">
+      <option value="clients">Clientes</option><option value="charges">Cobranças</option>
+     </select>
+    </label>
+    <label className="text-sm">Filtrar status
+     <select aria-label="Status da exportação" value={exportStatus}
+      onChange={e=>{setExportStatus(e.target.value);setExportOffset(0);}}
+      className="block mt-2 w-full p-3 bg-[#0B0D12] border border-white/20 rounded-lg">
+      <option value="">Todos os status</option>
+      {(exportDataset==='clients'
+       ?[['active','Ativo'],['archived','Arquivado']]
+       :[['draft','Rascunho'],['pending_provider','Pendente provedor'],['pending','Pendente'],
+         ['paid','Pago'],['partial','Parcial'],['overdue','Vencido'],
+         ['cancelled','Cancelado'],['refunded','Estornado'],['partially_refunded','Estorno parcial']]
+       ).map(([value,label])=><option key={value} value={value}>{label}</option>)}
+     </select>
+    </label>
+    <label className="text-sm">Linhas por arquivo
+     <select aria-label="Linhas por arquivo CSV" value={exportLimit}
+      onChange={e=>{setExportLimit(Number(e.target.value) as typeof exportLimit);setExportOffset(0);}}
+      className="block mt-2 w-full p-3 bg-[#0B0D12] border border-white/20 rounded-lg">
+      <option value="100">100</option><option value="250">250</option><option value="1000">1.000</option>
+     </select>
+    </label>
+   </div>
+   <p className="text-sm text-[#B8BFCD]" role="status">
+    {exportPreview
+     ?exportPreview.total.toLocaleString('pt-BR')+' registro(s) neste filtro. Página '+
+      (Math.floor(exportOffset/exportLimit)+1)+' · '+(exportOffset+1)+'–'+
+      Math.min(exportOffset+exportLimit,exportPreview.total)+'.'
+     :'Consultando quantidade disponível...'}
    </p>
    <div className="flex flex-wrap gap-2">
-    <Button size="sm" variant="secondary" disabled={busy}
-     onClick={()=>void action(()=>productionApi.phase7ExportCsv('clients'),'Arquivo CSV solicitado ao navegador.')}>
-     Exportar clientes
+    <Button size="sm" variant="secondary" disabled={busy||exportOffset===0}
+     onClick={()=>{setExportOffset(Math.max(0,exportOffset-exportLimit));setExportResult(null);}}>
+     Página anterior
     </Button>
-    <Button size="sm" variant="secondary" disabled={busy}
-     onClick={()=>void action(()=>productionApi.phase7ExportCsv('charges'),'Arquivo CSV solicitado ao navegador.')}>
-     Exportar cobranças
+    <Button size="sm" variant="secondary"
+     disabled={busy||!exportPreview||exportOffset+exportLimit>=exportPreview.total||
+      exportOffset+exportLimit>100000}
+     onClick={()=>{setExportOffset(exportOffset+exportLimit);setExportResult(null);}}>
+     Próxima página
+    </Button>
+    <Button size="sm" disabled={busy||!exportPreview||exportPreview.total===0||
+     exportOffset>=exportPreview.total}
+     onClick={()=>void action(async()=>{
+      const result=await productionApi.phase7ExportCsv(exportDataset,{
+       limit:exportLimit,offset:exportOffset,...(exportStatus?{status:exportStatus}:{})
+      });
+      setExportResult(result);
+     },'Download CSV desta página solicitado ao navegador.')}>
+     Baixar esta página CSV
     </Button>
    </div>
+   {exportResult&&<p className="text-xs text-[#B8BFCD]">
+    Último arquivo: {exportResult.exported} registro(s).{' '}
+    {exportResult.hasMore?'Há mais registros depois deste lote.':'Fim dos registros nesta consulta.'}
+   </p>}
   </Card>}
   {canManage&&<Card className="p-5 space-y-3">
    <h3 className="font-semibold">Solicitações de privacidade — LGPD</h3>

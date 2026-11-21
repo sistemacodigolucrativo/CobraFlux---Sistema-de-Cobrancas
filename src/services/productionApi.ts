@@ -184,11 +184,17 @@ async function request<T>(path:string,method='GET',body?:object):Promise<T>{
   }
   return payload as T;
 }
-async function downloadPhase7Csv(dataset:'clients'|'charges'):Promise<void>{
+export type Phase7ExportPreview={
+ dataset:'clients'|'charges';status:string|null;total:number;maxRowsPerFile:1000;
+ exportIsSnapshot:false;limitOffsetMaximum:100000;containsPersonalData:boolean;
+};
+export type Phase7ExportResult={exported:number;offset:number;nextOffset:number;hasMore:boolean};
+async function downloadPhase7Csv(dataset:'clients'|'charges',
+ options:{limit:number;offset:number;status?:string}):Promise<Phase7ExportResult>{
  const response=await fetch('/api/reports/exports/'+encodeURIComponent(dataset),{
   method:'POST',credentials:'include',
   headers:{'Content-Type':'application/json',...(csrfToken?{'X-CF-CSRF':csrfToken}:{})},
-  body:JSON.stringify({limit:1000,offset:0})
+  body:JSON.stringify(options)
  });
  if(!response.ok){
   const details=await response.json() as {error?:string;message?:string};
@@ -196,12 +202,22 @@ async function downloadPhase7Csv(dataset:'clients'|'charges'):Promise<void>{
  }
  if(!(response.headers.get('Content-Type')??'').includes('text/csv'))
   throw new Error('Servidor não devolveu uma exportação CSV válida.');
+ const parsedOffset=Number(response.headers.get('X-Export-Offset'));
+ const parsedCount=Number(response.headers.get('X-Export-Count'));
+ const hasMoreText=response.headers.get('X-Export-Has-More');
+ if(!Number.isSafeInteger(parsedOffset)||parsedOffset!==options.offset||
+  !Number.isSafeInteger(parsedCount)||parsedCount<0||parsedCount>options.limit||
+  (hasMoreText!=='true'&&hasMoreText!=='false'))
+  throw new Error('Metadados da exportação inválidos; download cancelado.');
  const file=await response.blob();
  if(file.size>4000000)throw new Error('Arquivo excedeu o tamanho permitido.');
  const url=URL.createObjectURL(file),link=document.createElement('a');
- link.href=url;link.download='cobraflux-'+dataset+'-'+new Date().toISOString().slice(0,10)+'.csv';
+ link.href=url;link.download='cobraflux-'+dataset+'-'+new Date().toISOString().slice(0,10)+
+  '-pagina-'+String(Math.floor(options.offset/options.limit)+1).padStart(4,'0')+'.csv';
  document.body.appendChild(link);
  try{link.click();}finally{link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+ return {exported:parsedCount,offset:options.offset,nextOffset:options.offset+parsedCount,
+  hasMore:hasMoreText==='true'};
 }
 function qs(fields:Record<string,string|number|undefined>):string{
  const p=new URLSearchParams();
@@ -273,6 +289,8 @@ export const productionApi={
   phase7Summary:()=>request<Phase7Summary>('/reports/summary'),
   phase7Audit:()=>request<{items:Phase7AuditEntry[];metadataRedacted:true}>('/reports/audit'),
   phase7ExportCsv:downloadPhase7Csv,
+  phase7ExportPreview:(dataset:'clients'|'charges',status?:string)=>
+    request<Phase7ExportPreview>('/reports/exports/'+encode(dataset)+'/preview'+qs({status})),
   phase7MyPrivacy:()=>request<{items:Phase7PrivacyRequest[];automaticErasure:false}>('/privacy/requests'),
   phase7CreatePrivacy:(kind:Phase7PrivacyRequest['kind'],reason:string)=>request<{
     id:string;kind:string;state:'open';automaticDeletion:false

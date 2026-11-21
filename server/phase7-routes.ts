@@ -28,6 +28,14 @@ async function audit(db:{query:Function},p:Principal,action:string,entityType:st
   [randomUUID(),orgId===undefined?p.orgId:orgId,p.userId,action,entityType,entityId,JSON.stringify(meta)]);
 }
 const isoMonth=z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
+function validatedExportStatus(dataset:'clients'|'charges',value:unknown):string|null{
+ if(value===undefined)return null;
+ return dataset==='clients'
+  ?z.enum(['active','archived']).parse(value)
+  :z.enum(['draft','pending_provider','pending','paid','partial','overdue','cancelled',
+   'refunded','partially_refunded']).parse(value);
+}
+
 export function registerPhase7Routes(app:Express,{sessions,csrf,who,route,rateLimit}:Deps){
  // Cross-tenant platform overview: MRR is recognized only for a separately verified live SaaS payment.
  // Merchant GPV is a different financial measure, and sandbox is never a real-money component.
@@ -448,6 +456,23 @@ export function registerPhase7Routes(app:Express,{sessions,csrf,who,route,rateLi
   if('error' in result){res.status(409).json(result);return;}
   res.json(result);
  }));
+ // Export preview exposes counts only, never client PII; owner role is required on server.
+ app.get('/api/reports/exports/:dataset/preview',sessions,route(async(req,res)=>{
+  const p=who(req);if(!requireOwner(p,res))return;
+  const {dataset}=z.object({dataset:z.enum(['clients','charges'])}).parse(req.params);
+  const query=z.object({status:z.string().optional()}).strict().parse(req.query);
+  const status=validatedExportStatus(dataset,query.status);
+  if(!(await rateLimit('export-preview:'+p.orgId+':'+p.userId,60,60))){
+   res.status(429).json({error:'export_preview_rate_limited'});return;
+  }
+  const sql=dataset==='clients'
+   ?'SELECT count(*)::int AS total FROM clients WHERE organization_id=$1 AND ($2::text IS NULL OR status=$2)'
+   :'SELECT count(*)::int AS total FROM charges WHERE organization_id=$1 AND ($2::text IS NULL OR status=$2)';
+  const count=await pool.query(sql,[p.orgId,status]);
+  res.setHeader('Cache-Control','private, no-store');
+  res.json({dataset,status,total:count.rows[0].total as number,maxRowsPerFile:1000,
+   exportIsSnapshot:false,limitOffsetMaximum:100000,containsPersonalData:dataset==='clients'});
+ }));
  // Sensitive exports require both owner role and CSRF (not just a navigable GET URL).
  app.post('/api/reports/exports/:dataset',sessions,csrf,route(async(req,res)=>{
   const p=who(req);if(!requireOwner(p,res))return;
@@ -456,38 +481,50 @@ export function registerPhase7Routes(app:Express,{sessions,csrf,who,route,rateLi
   }
   const {dataset}=z.object({dataset:z.enum(['clients','charges'])}).parse(req.params);
   const b=z.object({limit:z.number().int().min(1).max(1000).default(1000),
-   offset:z.number().int().min(0).max(100000).default(0)}).strict().parse(req.body??{});
-  let headers:string[],rows:unknown[][];
+   offset:z.number().int().min(0).max(100000).default(0),
+   status:z.string().optional()}).strict().parse(req.body??{});
+  const status=validatedExportStatus(dataset,b.status);
+  let headers:string[],rows:unknown[][],hasMore:boolean;
   if(dataset==='clients'){
    const q=await pool.query(
     'SELECT id,internal_code,name,phone,email,service_name,monthly_fee_cents::text,'+
     'preferred_due_day,status,created_at FROM clients WHERE organization_id=$1 '+
-    'ORDER BY created_at DESC,id DESC LIMIT $2 OFFSET $3',[p.orgId,b.limit,b.offset]);
+    'AND ($4::text IS NULL OR status=$4) '+
+    'ORDER BY created_at DESC,id DESC LIMIT $2 OFFSET $3',
+    [p.orgId,b.limit+1,b.offset,status]);
    headers=['id','codigo','nome','telefone','email','servico','mensalidade_centavos','vencimento_dia','status','criado_em'];
-   rows=q.rows.map(r=>[r.id,r.internal_code,r.name,r.phone,r.email,r.service_name,
+   hasMore=q.rows.length>b.limit;
+   rows=q.rows.slice(0,b.limit).map(r=>[r.id,r.internal_code,r.name,r.phone,r.email,r.service_name,
     r.monthly_fee_cents,r.preferred_due_day,r.status,r.created_at?.toISOString?.()??r.created_at]);
   }else{
    const q=await pool.query(
     'SELECT ch.id,cl.name AS client_name,ch.description,ch.amount_cents::text,ch.discount_cents::text,'+
     'ch.paid_cents::text,ch.refunded_cents::text,ch.status,ch.provider,ch.due_date::text,ch.created_at '+
     'FROM charges ch JOIN clients cl ON cl.id=ch.client_id AND cl.organization_id=ch.organization_id '+
-    'WHERE ch.organization_id=$1 ORDER BY ch.created_at DESC,ch.id DESC LIMIT $2 OFFSET $3',
-    [p.orgId,b.limit,b.offset]);
+    'WHERE ch.organization_id=$1 AND ($4::text IS NULL OR ch.status=$4) '+
+    'ORDER BY ch.created_at DESC,ch.id DESC LIMIT $2 OFFSET $3',
+    [p.orgId,b.limit+1,b.offset,status]);
    headers=['id','cliente','descricao','valor_centavos','desconto_centavos','pago_centavos',
     'estornado_centavos','status','ambiente_provedor','vencimento','criado_em'];
-   rows=q.rows.map(r=>[r.id,r.client_name,r.description,r.amount_cents,r.discount_cents,
+   hasMore=q.rows.length>b.limit;
+   rows=q.rows.slice(0,b.limit).map(r=>[r.id,r.client_name,r.description,r.amount_cents,r.discount_cents,
     r.paid_cents,r.refunded_cents,r.status,r.provider,r.due_date,r.created_at?.toISOString?.()??r.created_at]);
   }
   const exportId=randomUUID();
   await transaction(async db=>{
    await audit(db,p,'CSV_EXPORT_GENERATED','report_export',exportId,{
-    dataset,rows:rows.length,limit:b.limit,offset:b.offset,containsPersonalData:dataset==='clients'});
+    dataset,rows:rows.length,limit:b.limit,offset:b.offset,status,
+    hasMore,containsPersonalData:dataset==='clients'});
   });
   const date=new Date().toISOString().slice(0,10),filename='cobraflux-'+dataset+'-'+date+'.csv';
   res.setHeader('Content-Type','text/csv; charset=utf-8');
   res.setHeader('Content-Disposition','attachment; filename="'+filename+'"');
   res.setHeader('X-Content-Type-Options','nosniff');
   res.setHeader('Cache-Control','private, no-store');
+  res.setHeader('X-Export-Offset',String(b.offset));
+  res.setHeader('X-Export-Limit',String(b.limit));
+  res.setHeader('X-Export-Count',String(rows.length));
+  res.setHeader('X-Export-Has-More',String(hasMore));
   res.status(200).send(csvRows(headers,rows));
  }));
 }

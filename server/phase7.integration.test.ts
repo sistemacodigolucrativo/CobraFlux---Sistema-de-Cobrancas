@@ -94,6 +94,59 @@ test('Phase 7 platform admin, audited exports, financial segregation, ticket tri
   assert.match(String(chargesCsv.body),/'@SUM\(1,2\)/);
   assert.doesNotMatch(String(chargesCsv.body),/public_token|pix_payload|access_token_ciphertext/);
 
+
+  // BL-008 increment #6: export preview is count-only and owner-scoped; CSV pages are bounded.
+  const previewPath='/reports/exports/clients/preview';
+  assert.equal((await call(previewPath)).status,401);
+  assert.equal((await call(previewPath,'GET',undefined,b)).status,200);
+  assert.equal((await call(previewPath+'?status=other','GET',undefined,a)).status,400);
+  assert.equal((await call(previewPath+'?status=pending','GET',undefined,a)).status,400);
+  assert.equal((await call('/reports/exports/charges/preview?status=active','GET',undefined,a)).status,400);
+  assert.equal((await call('/reports/exports/secrets/preview','GET',undefined,a)).status,400);
+  assert.equal((await call(previewPath+'?unexpected=1','GET',undefined,a)).status,400);
+  const clientPreview=await call(previewPath,'GET',undefined,a);
+  assert.equal(clientPreview.status,200);
+  assert.equal(clientPreview.body.total,1);
+  assert.equal(clientPreview.body.maxRowsPerFile,1000);
+  assert.equal(clientPreview.body.exportIsSnapshot,false);
+  assert.doesNotMatch(JSON.stringify(clientPreview.body),/owner7@example/);
+  assert.match(clientPreview.headers.get('cache-control')??'',/no-store/);
+  const previewEmpty=await call(previewPath+'?status=archived','GET',undefined,a);
+  assert.equal(previewEmpty.body.total,0);
+  assert.equal((await call(previewPath,'GET',undefined,b)).body.total,0);
+  assert.equal((await call('/reports/exports/charges/preview?status=draft','GET',undefined,a)).body.total,1);
+  const secondClient=await call('/clients','POST',
+   {name:'Segundo para paginação',phone:'+5511999998013',email:'second7@example.com'},a);
+  assert.equal(secondClient.status,201,JSON.stringify(secondClient.body));
+  assert.equal((await call(previewPath,'GET',undefined,a)).body.total,2);
+  const firstPage=await call('/reports/exports/clients','POST',{limit:1,offset:0,status:'active'},a,true);
+  assert.equal(firstPage.status,200);
+  assert.equal(firstPage.headers.get('x-export-count'),'1');
+  assert.equal(firstPage.headers.get('x-export-has-more'),'true');
+  assert.equal(firstPage.headers.get('x-export-offset'),'0');
+  const lastPage=await call('/reports/exports/clients','POST',{limit:1,offset:1,status:'active'},a,true);
+  assert.equal(lastPage.status,200);
+  assert.equal(lastPage.headers.get('x-export-count'),'1');
+  assert.equal(lastPage.headers.get('x-export-has-more'),'false');
+  assert.equal(lastPage.headers.get('x-export-offset'),'1');
+  assert.equal((await call('/reports/exports/clients','POST',
+   {limit:1000,offset:2,status:'active'},a,true)).headers.get('x-export-count'),'0');
+  assert.equal((await call('/reports/exports/clients','POST',
+   {limit:1,offset:0,status:'archived'},a,true)).headers.get('x-export-count'),'0');
+  assert.equal((await call('/reports/exports/clients','POST',
+   {limit:1,offset:0,status:'paid'},a)).status,400);
+  assert.equal((await call('/reports/exports/charges','POST',
+   {limit:1,offset:0,status:'active'},a)).status,400);
+  assert.equal((await call('/reports/exports/clients','POST',
+   {limit:1001,offset:0},a)).status,400);
+  assert.equal((await call('/reports/exports/clients','POST',
+   {limit:1,offset:100001},a)).status,400);
+  assert.equal((await call('/reports/exports/clients','POST',
+   {limit:1,offset:0,unrecognized:'a'},a)).status,400);
+  assert.equal((await call('/reports/exports/clients','POST',
+   {limit:1,offset:0},b,true)).headers.get('x-export-count'),'0');
+  assert.equal((await call('/reports/exports/clients','POST',
+   {limit:1,offset:0},{cookie:a.cookie,csrf:''})).status,403);
   const auditA=await call('/reports/audit','GET',undefined,a);
   assert.equal(auditA.status,200);
   assert.ok(auditA.body.items.some((item:{action:string})=>item.action==='CSV_EXPORT_GENERATED'));
