@@ -79,3 +79,17 @@ Este é um **incremento inicial**, não a conclusão integral da fase. Ainda é 
 5. Validação do fluxo de bloqueio/reativação em staging HTTPS, testes externos e revisão independente de segurança; não liberar a PR draft sem esses gates.
 
 **Não implantado:** envio de e-mail administrativo, pagamentos reais, exclusão automática de dados, processamento financeiro ou deploy. \`main\` permanece intacta.
+
+## Incremento seguinte — respostas de suporte no portal (F7, implementação incremental)
+
+**Escopo técnico:** resposta do superadministrador a chamados criados na área autenticada do profissional, com histórico auditável e leitura limitada à organização vinculada ao chamado. Isto **não** fecha todos os requisitos de suporte (SLA, anexos, notificações e entrega de e-mail continuam pendentes).
+
+- Migração incremental `017_support_portal_replies.sql`: respostas em PostgreSQL, relação com ticket, organização e autor, histórico append-only e `client_request_id` único por chamado.
+- `GET /api/admin/support/tickets/:id/replies`: histórico paginado para superadmin com sessão/MFA.
+- `POST /api/admin/support/tickets/:id/replies`: cria resposta no portal, apenas superadmin, com CSRF, validação Zod, transação com lock, trilha de auditoria sem corpo da mensagem e idempotência por UUID. Repetir a mesma chave/corpo não duplica registros; reutilizar chave com conteúdo diferente retorna conflito. Ticket encerrado não aceita novas respostas.
+- `GET /api/support/tickets/:id/replies`: leitura autenticada com vínculo à organização da sessão; tickets de outros tenants e contatos públicos não autenticados retornam 404.
+- Admin: editor de resposta e histórico por chamado; Conta do profissional: visualização autenticada das respostas. Não utiliza dados demonstrativos/IndexedDB.
+- **Limite operacional explícito:** `delivery_state=portal_only`, `emailSent=false`; nenhuma mensagem é enviada ou confirmada como lida por e-mail/WhatsApp. Contatos públicos exigem verificação de identidade e canal autorizado antes de receber resposta.
+- Teste de integração ampliado para papéis, CSRF, isolamento de tenants, chave idempotente, ticket público, ticket encerrado, persistência e ausência de alegação de entrega externa.
+
+**Aceite técnico:** executar lint/TS, testes do servidor e integração PostgreSQL, migrações (incluindo 017) em banco descartável, builds e Playwright; confirmar GitHub Actions verde no **HEAD** correspondente. Até essa prova, tratar a entrega como *implementada — não validada*. A revisão independente de segurança, LGPD/retention policy, SLA, acessibilidade aprofundada e homologação externa permanecem gates.
