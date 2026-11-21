@@ -171,12 +171,76 @@ test('Phase 7 platform admin, audited exports, financial segregation, ticket tri
    'unchanged deadline must not generate duplicate evidence');
   const slaList=await call('/admin/support/tickets','GET',undefined,root);
   assert.equal(slaList.body.items.find((x:{id:string})=>x.id===support.body.id).sla_overdue,false);
+
+  // F7 #5: in-panel alert inbox, no auto-send. Current SLA revision binds any acknowledgement.
+  const alertPath='/admin/support/sla-alerts';
+  const ackPath=alertPath+'/'+support.body.id+'/acknowledge';
+  const ackInput={reason:'Ciência interna do alerta de vencimento, sem contato externo.'};
+  assert.equal((await call(alertPath)).status,401);
+  assert.equal((await call(alertPath,'GET',undefined,a)).status,403);
+  assert.equal((await call(alertPath,'GET',undefined,b)).status,403);
+  assert.equal((await call(alertPath+'?state=invalid','GET',undefined,root)).status,400);
+  assert.equal((await call(alertPath+'?limit=0','GET',undefined,root)).status,400);
+  assert.equal((await call(ackPath,'POST',ackInput,a)).status,403);
+  assert.equal((await call(ackPath,'POST',ackInput,b)).status,403);
+  assert.equal((await call(ackPath,'POST',ackInput,{cookie:root.cookie,csrf:''})).status,403);
+  assert.equal((await call(ackPath,'POST',{reason:'curto'},root)).status,400);
+  assert.equal((await call(ackPath,'POST',{...ackInput,extra:true},root)).status,400);
+  assert.equal((await call('/admin/support/sla-alerts/'+randomUUID()+'/acknowledge',
+   'POST',ackInput,root)).status,404);
+  const freshAlertList=await call(alertPath,'GET',undefined,root);
+  assert.equal(freshAlertList.status,200);
+  assert.equal(freshAlertList.body.internalOnly,true);
+  assert.equal(freshAlertList.body.automaticSlaPolicy,false);
+  assert.equal(freshAlertList.body.externalNotificationSent,false);
+  assert.match(freshAlertList.headers.get('cache-control')??'',/no-store/);
+  assert.equal((await call(ackPath,'POST',ackInput,root)).status,409,
+   'no overdue alert must not be acknowledged');
   const overdueSet=await call(slaPath,'PATCH',
    {dueAt:pastSla,reason:'Revisão manual de prazo com histórico preservado.'},root);
   assert.equal(overdueSet.status,200,JSON.stringify(overdueSet.body));
   const overdue=await call('/admin/support/tickets?sla=overdue','GET',undefined,root);
   assert.equal(overdue.status,200);
   assert.ok(overdue.body.items.some((x:{id:string})=>x.id===support.body.id));
+
+  const openAlerts=await call(alertPath,'GET',undefined,root);
+  assert.equal(openAlerts.status,200);
+  const currentAlert=openAlerts.body.items.find((x:{ticket_id:string})=>x.ticket_id===support.body.id);
+  assert.ok(currentAlert,'overdue ticket must show in admin-only inbox');
+  assert.equal(currentAlert.acknowledgement_id,null);
+  assert.equal(JSON.stringify(currentAlert).includes('owner7@example.com'),false);
+  assert.equal(JSON.stringify(currentAlert).includes('O cadastro precisa de conferência'),false,
+   'alert inbox must not copy ticket message');
+  const firstRevision=BigInt(currentAlert.sla_revision);
+  assert.equal((await call(alertPath+'?state=acknowledged','GET',undefined,root)).body.items.some(
+   (x:{ticket_id:string})=>x.ticket_id===support.body.id),false);
+  const acknowledged=await call(ackPath,'POST',ackInput,root);
+  assert.equal(acknowledged.status,201,JSON.stringify(acknowledged.body));
+  assert.equal(acknowledged.body.internalOnly,true);
+  assert.equal(acknowledged.body.externalNotificationSent,false);
+  assert.equal((await call(ackPath,'POST',ackInput,root)).status,409,
+   'same alert cannot be acknowledged twice');
+  assert.equal((await call(alertPath,'GET',undefined,root)).body.items.some(
+   (x:{ticket_id:string})=>x.ticket_id===support.body.id),false);
+  const acknowledgements=await call(alertPath+'?state=acknowledged','GET',undefined,root);
+  assert.equal(acknowledgements.status,200);
+  assert.ok(acknowledgements.body.items.some((x:{ticket_id:string})=>x.ticket_id===support.body.id));
+  assert.equal((await call(alertPath+'?state=all&limit=1','GET',undefined,root)).status,200);
+  assert.equal((await pool.query('SELECT count(*)::int AS n FROM support_ticket_sla_alert_ack WHERE ticket_id=$1',
+   [support.body.id])).rows[0].n,1);
+  await assert.rejects(()=>pool.query('DELETE FROM support_ticket_sla_alert_ack WHERE ticket_id=$1',
+   [support.body.id]),/support SLA alert acknowledgements are append-only/);
+  // Changing an already-overdue due date creates a fresh alert version, not a false lasting ack.
+  const anotherPastSla=new Date(Date.now()-2*3600_000).toISOString();
+  assert.equal((await call(slaPath,'PATCH',
+   {dueAt:anotherPastSla,reason:'Novo prazo interno para reavaliar alerta já reconhecido.'},root)).status,200);
+  const reraised=await call(alertPath,'GET',undefined,root);
+  const newAlert=reraised.body.items.find((x:{ticket_id:string})=>x.ticket_id===support.body.id);
+  assert.ok(newAlert);
+  assert.ok(BigInt(newAlert.sla_revision)>firstRevision);
+  assert.equal(newAlert.acknowledgement_id,null);
+  assert.equal((await pool.query('SELECT count(*)::int AS n FROM support_ticket_sla_alert_ack WHERE ticket_id=$1',
+   [support.body.id])).rows[0].n,1,'old ack is preserved for evidence');
   const noDeadline=await call('/admin/support/tickets?sla=without_deadline','GET',undefined,root);
   assert.ok(!noDeadline.body.items.some((x:{id:string})=>x.id===support.body.id));
   assert.equal((await call('/admin/support/tickets?sla=invalid','GET',undefined,root)).status,400);
@@ -188,10 +252,10 @@ test('Phase 7 platform admin, audited exports, financial segregation, ticket tri
   assert.equal((await call('/admin/support/tickets/'+randomUUID()+'/sla/events','GET',undefined,root)).status,404);
   const slaTimeline=await call(slaEventsPath,'GET',undefined,root);
   assert.equal(slaTimeline.status,200,JSON.stringify(slaTimeline.body));
-  assert.equal(slaTimeline.body.items.length,2);
+  assert.equal(slaTimeline.body.items.length,3);
   assert.equal(slaTimeline.body.auditOnly,true);
   assert.equal(slaTimeline.body.externalNotificationSent,false);
-  assert.equal(slaTimeline.body.items[0].new_due_at,pastSla);
+  assert.equal(slaTimeline.body.items[0].new_due_at,anotherPastSla);
   assert.match(slaTimeline.headers.get('cache-control')??'',/no-store/);
   assert.equal((await call(slaEventsPath+'?limit=1','GET',undefined,root)).body.hasMore,true);
   await assert.rejects(()=>pool.query('DELETE FROM support_ticket_sla_events WHERE ticket_id=$1',
@@ -205,7 +269,10 @@ test('Phase 7 platform admin, audited exports, financial segregation, ticket tri
   assert.equal((await call('/admin/support/tickets?sla=overdue','GET',undefined,root)).body.items.some(
    (x:{id:string})=>x.id===support.body.id),false);
   assert.equal((await pool.query('SELECT count(*)::int AS n FROM support_ticket_sla_events WHERE ticket_id=$1',
-   [support.body.id])).rows[0].n,3);
+   [support.body.id])).rows[0].n,4);
+  assert.equal((await call(alertPath,'GET',undefined,root)).body.items.some(
+   (x:{ticket_id:string})=>x.ticket_id===support.body.id),false,
+   'clearing the deadline must also clear the current in-panel alert');
   // Fase 7: resposta persistida apenas no portal autenticado, sem entrega externa.
   const key=randomUUID();
   const answer={message:'A equipe validou seu chamado. Acompanhe esta resposta neste painel.',clientRequestId:key};
@@ -245,6 +312,8 @@ test('Phase 7 platform admin, audited exports, financial segregation, ticket tri
   const closing=await call('/admin/support/tickets/'+support.body.id,'PATCH',
    {status:'closed',reason:'Acompanhamento de suporte encerrado e documentado.'},root);
   assert.equal(closing.status,200);
+  assert.equal((await call(ackPath,'POST',ackInput,root)).status,409,
+   'closed ticket does not yield an actionable internal alert');
   assert.equal((await call(slaPath,'PATCH',slaInput,root)).status,409,
    'closed ticket cannot have its internal deadline silently revised');
   assert.equal((await call('/admin/support/tickets/'+support.body.id+'/replies','POST',

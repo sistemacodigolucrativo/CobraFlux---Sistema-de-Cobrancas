@@ -115,6 +115,16 @@ export type Phase7AdminTicket={
  email:string;subject:string;message:string;status:'open'|'in_progress'|'closed';created_at:string;
  sla_due_at:string|null;sla_overdue:boolean;
 };
+export type Phase7OverdueAlert={
+ ticket_id:string;subject:string;status:'open'|'in_progress';
+ organization_name:string|null;due_at:string;sla_revision:string;
+ acknowledgement_id:string|null;acknowledged_at:string|null;
+ acknowledged_by_name:string|null;
+};
+export type Phase7OverdueAlertPage={
+ items:Phase7OverdueAlert[];hasMore:boolean;
+ internalOnly:true;externalNotificationSent:false;automaticSlaPolicy:false;
+};
 export type Phase7SupportSlaEvent={
  id:string;previous_due_at:string|null;new_due_at:string|null;reason:string;
  created_at:string;actor_name:string;
@@ -275,6 +285,12 @@ export const productionApi={
       '/admin/organizations/'+encode(id)+'/status','PATCH',{status,reason}),
   phase7AdminTickets:(status?:Phase7AdminTicket['status'],sla?:'overdue'|'without_deadline')=>
     request<{items:Phase7AdminTicket[]}>('/admin/support/tickets'+qs({status,sla,limit:50})),
+  phase7AdminOverdueAlerts:(state:'open'|'acknowledged'|'all'='open',offset=0)=>
+    request<Phase7OverdueAlertPage>('/admin/support/sla-alerts'+qs({state,limit:50,offset})),
+  phase7AdminAcknowledgeOverdue:(id:string,reason:string)=>
+    request<{id:string;ticketId:string;slaRevision:string;acknowledged:true;internalOnly:true;
+      externalNotificationSent:false}>('/admin/support/sla-alerts/'+encode(id)+'/acknowledge',
+      'POST',{reason}),
   phase7AdminSetTicketSla:(id:string,dueAt:string|null,reason:string)=>
     request<{ticketId:string;dueAt:string|null;configured:boolean;automaticSlaPolicy:false;
       externalNotificationSent:false}>('/admin/support/tickets/'+encode(id)+'/sla',

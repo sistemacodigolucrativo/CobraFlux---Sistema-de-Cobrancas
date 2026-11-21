@@ -208,7 +208,8 @@ export function registerPhase7Routes(app:Express,{sessions,csrf,who,route,rateLi
    await db.query(
     'INSERT INTO support_ticket_sla(ticket_id,due_at,updated_by) VALUES($1,$2,$3) '+
     'ON CONFLICT(ticket_id) DO UPDATE SET due_at=EXCLUDED.due_at,'+
-    'updated_by=EXCLUDED.updated_by,updated_at=now()',
+    'updated_by=EXCLUDED.updated_by,updated_at=now(),'+
+    'revision=support_ticket_sla.revision+1',
     [id,next,p.userId]);
    await db.query(
     'INSERT INTO support_ticket_sla_events(id,ticket_id,organization_id,actor_id,'+
@@ -236,6 +237,60 @@ export function registerPhase7Routes(app:Express,{sessions,csrf,who,route,rateLi
   res.setHeader('Cache-Control','private, no-store');
   res.json({items:events.rows.slice(0,q.limit),hasMore:events.rows.length>q.limit,
    auditOnly:true,externalNotificationSent:false});
+ }));
+ // Internal in-panel alerts are computed from PostgreSQL time, not pushed to the tenant.
+ // Only current overdue *open* tickets are eligible; each acknowledgement is tied to a SLA revision.
+ app.get('/api/admin/support/sla-alerts',sessions,route(async(req,res)=>{
+  const p=who(req);if(!requireAdmin(p,res))return;
+  const q=page.extend({state:z.enum(['open','acknowledged','all']).default('open')}).parse(req.query);
+  const alerts=await pool.query(
+   'SELECT t.id AS ticket_id,t.subject,t.status,o.name AS organization_name,'+
+   's.due_at,s.revision AS sla_revision,a.id AS acknowledgement_id,'+
+   'a.acknowledged_at,u.name AS acknowledged_by_name '+
+   'FROM support_ticket_sla s JOIN support_tickets t ON t.id=s.ticket_id '+
+   'LEFT JOIN organizations o ON o.id=t.organization_id '+
+   'LEFT JOIN support_ticket_sla_alert_ack a ON a.ticket_id=t.id AND a.sla_revision=s.revision '+
+   'LEFT JOIN users u ON u.id=a.actor_id '+
+   "WHERE s.due_at IS NOT NULL AND s.due_at<NOW() AND t.status<>'closed' "+
+   "AND ($1='all' OR ($1='open' AND a.id IS NULL) OR "+
+   "($1='acknowledged' AND a.id IS NOT NULL)) "+
+   'ORDER BY s.due_at ASC,t.id ASC LIMIT $2 OFFSET $3',
+   [q.state,q.limit+1,q.offset]);
+  res.setHeader('Cache-Control','private, no-store');
+  res.json({items:alerts.rows.slice(0,q.limit),hasMore:alerts.rows.length>q.limit,
+   internalOnly:true,externalNotificationSent:false,automaticSlaPolicy:false});
+ }));
+ app.post('/api/admin/support/sla-alerts/:id/acknowledge',sessions,csrf,route(async(req,res)=>{
+  const p=who(req);if(!requireAdmin(p,res))return;
+  const {id}=identifier.parse(req.params);
+  const b=z.object({reason:z.string().trim().min(10).max(1000)}).strict().parse(req.body);
+  const result=await transaction(async db=>{
+   // Lock order matches the SLA update and status transition endpoints.
+   const ticket=await db.query('SELECT organization_id,status FROM support_tickets WHERE id=$1 FOR UPDATE',[id]);
+   if(!ticket.rowCount)return {error:'ticket_not_found',code:404};
+   if(ticket.rows[0].status==='closed')return {error:'ticket_closed',code:409};
+   const sla=await db.query('SELECT due_at,revision FROM support_ticket_sla WHERE ticket_id=$1',[id]);
+   if(!sla.rowCount||sla.rows[0].due_at===null||
+    new Date(sla.rows[0].due_at).getTime()>=Date.now())
+    return {error:'no_current_overdue_alert',code:409};
+   const version=sla.rows[0].revision;
+   const existing=await db.query(
+    'SELECT id FROM support_ticket_sla_alert_ack WHERE ticket_id=$1 AND sla_revision=$2',
+    [id,version]);
+   if(existing.rowCount)return {error:'alert_already_acknowledged',code:409};
+   const ackId=randomUUID();
+   await db.query(
+    'INSERT INTO support_ticket_sla_alert_ack(id,ticket_id,sla_revision,organization_id,actor_id,reason) '+
+    'VALUES($1,$2,$3,$4,$5,$6)',
+    [ackId,id,version,ticket.rows[0].organization_id,p.userId,b.reason]);
+   await audit(db,p,'ADMIN_SUPPORT_OVERDUE_ALERT_ACKNOWLEDGED','support_ticket',id,
+    {slaRevision:String(version),internalOnly:true},ticket.rows[0].organization_id);
+   return {id:ackId,ticketId:id,slaRevision:String(version),
+    acknowledged:true,internalOnly:true,externalNotificationSent:false};
+  });
+  if('error' in result){res.status(result.code??409).json({error:result.error});return;}
+  res.setHeader('Cache-Control','private, no-store');
+  res.status(201).json(result);
  }));
  // Status history is administrative evidence, not a notification/delivery channel.
  app.get('/api/admin/support/tickets/:id/events',sessions,route(async(req,res)=>{

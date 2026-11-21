@@ -1,7 +1,7 @@
 import React,{useCallback,useEffect,useState} from 'react';
 import {Button,Card,Input} from '../../components/ui/Primitives';
 import {productionApi,type Phase7AdminOverview,type Phase7AdminOrg,
- type Phase7AdminTicket,type Phase7PrivacyRequest,type Phase7AuditEntry,type Phase7SupportReply,type Phase7SupportStatusEvent,type Phase7SupportSlaEvent} from '../../services/productionApi';
+ type Phase7AdminTicket,type Phase7PrivacyRequest,type Phase7AuditEntry,type Phase7SupportReply,type Phase7SupportStatusEvent,type Phase7SupportSlaEvent,type Phase7OverdueAlert} from '../../services/productionApi';
 
 const money=(cents:string|number)=>new Intl.NumberFormat('pt-BR',{
  style:'currency',currency:'BRL'}).format(Number(cents)/100);
@@ -30,6 +30,11 @@ export function AdminOperationsView(){
  const [ticketStatusEvents,setTicketStatusEvents]=useState<Phase7SupportStatusEvent[]>([]);
  const [slaEvents,setSlaEvents]=useState<Phase7SupportSlaEvent[]>([]);
  const [slaFilter,setSlaFilter]=useState<'all'|'overdue'|'without_deadline'>('all');
+ const [overdueAlerts,setOverdueAlerts]=useState<Phase7OverdueAlert[]>([]);
+ const [alertHasMore,setAlertHasMore]=useState(false);
+ const [alertView,setAlertView]=useState<'open'|'acknowledged'>('open');
+ const [acknowledgeTicketId,setAcknowledgeTicketId]=useState('');
+ const [acknowledgeReason,setAcknowledgeReason]=useState('');
  const [slaDate,setSlaDate]=useState('');
  const [slaReason,setSlaReason]=useState('');
  const [ticketReplyMessage,setTicketReplyMessage]=useState('');
@@ -37,16 +42,18 @@ export function AdminOperationsView(){
  const [privacyId,setPrivacyId]=useState(''),[privacyStatus,setPrivacyStatus]=useState<'in_review'|'awaiting_evidence'|'closed_rejected'>('in_review');
  const [privacyReason,setPrivacyReason]=useState('');
  const load=useCallback(async(filter='')=>{
-  const [summary,orgs,support,requests,events]=await Promise.all([
+  const [summary,orgs,support,requests,events,alerts]=await Promise.all([
    productionApi.phase7AdminOverview(),
    productionApi.phase7AdminOrganizations(filter),
    productionApi.phase7AdminTickets(undefined,slaFilter==='all'?undefined:slaFilter),
    productionApi.phase7AdminPrivacy(),
-   productionApi.phase7AdminAudit()
+   productionApi.phase7AdminAudit(),
+   productionApi.phase7AdminOverdueAlerts(alertView)
   ]);
   setOverview(summary);setOrganizations(orgs.items);setTickets(support.items);
   setPrivacy(requests.items);setAudit(events.items);
- },[slaFilter]);
+  setOverdueAlerts(alerts.items);setAlertHasMore(alerts.hasMore);
+ },[slaFilter,alertView]);
  useEffect(()=>{setLoading(true);void load().catch(e=>setError(e instanceof Error?e.message:'Administração indisponível.'))
   .finally(()=>setLoading(false));},[load]);
  useEffect(()=>{
@@ -149,6 +156,55 @@ export function AdminOperationsView(){
      Confirmar alteração com auditoria
     </Button>
    </form>}
+  </Card>
+  <Card className="p-5 space-y-3">
+   <h3 className="font-semibold">Alertas internos de prazos vencidos</h3>
+   <p className="text-xs text-[#B8BFCD]">
+    Sinalizações calculadas quando esta tela é consultada, somente com prazos manuais vencidos.
+    Reconhecer um alerta registra ciência interna; não encerra o chamado e não envia mensagem.
+   </p>
+   <label className="text-sm block">Visualizar alertas
+    <select aria-label="Situação dos alertas internos" value={alertView}
+     onChange={e=>{setAlertView(e.target.value as typeof alertView);setAcknowledgeTicketId('');}}
+     className="block mt-2 w-full p-3 bg-[#0B0D12] border border-white/20 rounded-lg">
+     <option value="open">Pendentes de ciência</option>
+     <option value="acknowledged">Reconhecidos nesta versão do prazo</option>
+    </select>
+   </label>
+   {overdueAlerts.length===0
+    ?<p className="text-xs text-[#B8BFCD]">Nenhum alerta interno nesta situação.</p>
+    :<div className="space-y-2 max-h-72 overflow-y-auto">{overdueAlerts.map(a=>
+     <div key={a.ticket_id} className="border border-white/10 rounded-lg p-3 space-y-2">
+      <p className="text-sm font-semibold break-words">{a.subject}</p>
+      <p className="text-xs text-[#B8BFCD]">
+       {a.organization_name??'Contato público'} · Prazo vencido:
+       {' '}{new Date(a.due_at).toLocaleString('pt-BR')}
+      </p>
+      {a.acknowledgement_id
+       ?<p className="text-xs text-[#B8BFCD]">
+        Ciência registrada por {a.acknowledged_by_name??'Administrador'} em
+        {' '}{a.acknowledged_at?new Date(a.acknowledged_at).toLocaleString('pt-BR'):'data indisponível'}
+       </p>
+       :<button type="button" className="text-xs underline text-[#E2BE72]"
+        onClick={()=>{setAcknowledgeTicketId(x=>x===a.ticket_id?'':a.ticket_id);setAcknowledgeReason('');}}>
+        {acknowledgeTicketId===a.ticket_id?'Cancelar reconhecimento':'Registrar ciência interna'}
+       </button>}
+      {acknowledgeTicketId===a.ticket_id&&!a.acknowledgement_id&&
+       <form className="space-y-2" onSubmit={e=>{e.preventDefault();void action(async()=>{
+        await productionApi.phase7AdminAcknowledgeOverdue(a.ticket_id,acknowledgeReason);
+        setAcknowledgeTicketId('');setAcknowledgeReason('');
+       },'Alerta reconhecido internamente, sem notificação externa.');}}>
+        <Input label="Justificativa da ciência (mín. 10 caracteres)"
+         value={acknowledgeReason} onChange={e=>setAcknowledgeReason(e.target.value)}/>
+        <Button size="sm" type="submit" disabled={busy||acknowledgeReason.trim().length<10}>
+         Registrar ciência auditável
+        </Button>
+       </form>}
+     </div>)}</div>}
+   {alertHasMore&&<p className="text-xs text-[#B8BFCD]">
+    Exibidos os primeiros 50 alertas por prazo mais antigo; a API oferece paginação.
+   </p>}
+   <p className="text-xs text-[#B8BFCD]">Sem alertas push, e-mail ou WhatsApp; somente visualização neste painel.</p>
   </Card>
   <Card className="p-5 space-y-3">
    <h3 className="font-semibold">Atendimento e triagem de tickets</h3>
