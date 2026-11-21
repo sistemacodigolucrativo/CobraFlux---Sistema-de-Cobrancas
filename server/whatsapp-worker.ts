@@ -100,7 +100,7 @@ export async function whatsappQueuedCount(){
   const q=await pool.query("SELECT count(*)::int AS count FROM whatsapp_outbox WHERE state='queued'");
   return Number(q.rows[0].count);
 }
-export async function runWhatsAppBatch(limit=10):Promise<WhatsAppBatch>{
+export async function runWhatsAppBatch(limit=10,clock:Date=new Date()):Promise<WhatsAppBatch>{
   if(!Number.isInteger(limit)||limit<1||limit>50)throw new Error('invalid_whatsapp_batch_limit');
   if(process.env.WHATSAPP_SEND_ENABLED!=='true')throw new Error('whatsapp_send_disabled');
   if(!whatsappSecretsReady())throw new Error('whatsapp_master_key_missing');
@@ -108,7 +108,7 @@ export async function runWhatsAppBatch(limit=10):Promise<WhatsAppBatch>{
   await markExpiredAmbiguities();
   await pool.query("DELETE FROM whatsapp_callback_buffer WHERE created_at<now()-interval '7 days'");
   // No sending at night or on Sundays. CLI returns without POST or consuming a lease.
-  if(!inBusinessHours(new Date()))return stats;
+  if(!inBusinessHours(clock))return stats;
   for(let i=0;i<limit;i++){
     const row=await claim();
     if(!row)break;
