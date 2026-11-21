@@ -263,7 +263,7 @@ export function registerPhase7Routes(app:Express,{sessions,csrf,who,route,rateLi
     {delivery:'portal_only'},ticket.organization_id);
    return {id:replyId,ticketId:id,deliveryState:'portal_only',emailSent:false,duplicate:false};
   });
-  if('error' in result){res.status(result.code).json({error:result.error});return;}
+  if('error' in result){res.status(result.code??409).json({error:result.error});return;}
   res.status(result.duplicate?200:201).json(result);
  }));
  app.get('/api/privacy/requests',sessions,route(async(req,res)=>{
