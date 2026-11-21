@@ -69,18 +69,13 @@ export function registerRecurrences(app:Express,{sessions,csrf,who,route}:Deps):
   }));
   app.get('/api/recurrences/overview',sessions,route(async(req,res)=>{
     const p=who(req);
-    const [summary,runs]=await Promise.all([
-      pool.query("SELECT count(*)::int AS total, count(*) FILTER (WHERE state='active')::int AS active,"+
+    const summary=await pool.query("SELECT count(*)::int AS total, count(*) FILTER (WHERE state='active')::int AS active,"+
         "count(*) FILTER (WHERE state='paused')::int AS paused,"+
         "count(*) FILTER (WHERE state='active' AND next_due_date<=($2::date))::int AS due,"+
         'coalesce(sum(generated_count),0)::int AS generated '+
-        'FROM recurrence_plans WHERE organization_id=$1',[p.orgId,localBillingDate()]),
-      pool.query('SELECT id,through_date::text,started_at,completed_at,generated,failed '+
-        'FROM recurrence_worker_runs ORDER BY started_at DESC LIMIT 5')
-    ]);
+        'FROM recurrence_plans WHERE organization_id=$1',[p.orgId,localBillingDate()]);
     res.json({summary:summary.rows[0],workerEnabled:false,
-      schedulerRequired:true,financialProviderCalls:0,
-      recentRuns:runs.rows});
+      schedulerRequired:true,financialProviderCalls:0});
   }));
   app.post('/api/recurrences/preview',sessions,csrf,route(async(req,res)=>{
     const b=z.object({
