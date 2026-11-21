@@ -100,7 +100,7 @@ test('Phase 7 platform admin, audited exports, financial segregation, ticket tri
   assert.equal(auditA.body.metadataRedacted,true);
   assert.equal(JSON.stringify(auditA.body).includes('owner7@example.com'),false);
   assert.equal((await call('/reports/audit','GET',undefined,b)).body.items.some(
-   (e:{action:string})=>e.action==='CSV_EXPORT_GENERATED'&&e.entity_id===c.body.id),false);
+   (e:{action:string;entity_id:string|null})=>e.action==='CSV_EXPORT_GENERATED'&&e.entity_id===c.body.id),false);
   await assert.rejects(()=>pool.query('DELETE FROM audit_logs WHERE organization_id=$1',[a.orgId]),
     /audit_logs are append-only/);
 
