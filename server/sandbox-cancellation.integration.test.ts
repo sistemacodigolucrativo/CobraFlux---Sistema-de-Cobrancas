@@ -173,7 +173,7 @@ test('cancelamento Pix no sandbox: segurança, validação PSP, timeout, corrida
   const {reconcileSandboxBatch}=await import('./sandbox-reconciliation-worker');
   await pool.query("UPDATE sandbox_issuances SET reconcile_due_at=now()-interval '1 minute' WHERE charge_id=$1",
     [pending.id]);
-  const worker=await reconcileSandboxBatch(10);
+  const worker=await reconcileSandboxBatch(10,a.org);
   assert.ok(worker.reconciled>=1,JSON.stringify(worker));
   assert.equal((await request('/public/charges/'+pending.public_token)).body.status,'cancelled');
   assert.equal(deletes,countBeforeWorker,'reconciler must not make DELETE requests');

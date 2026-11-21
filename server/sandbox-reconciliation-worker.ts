@@ -7,15 +7,15 @@ type Candidate={chargeId:string;organizationId:string;attempts:number};
 export type WorkerSummary={
   examined:number;reconciled:number;failed:number;manualReview:number;sandboxOnly:true;
 };
-async function claimNext():Promise<Candidate|null>{
+async function claimNext(organizationId?:string):Promise<Candidate|null>{
   return transaction(async db=>{
     const result=await db.query(
       'SELECT si.charge_id,si.organization_id,si.reconcile_attempts '+
       'FROM sandbox_issuances si JOIN sandbox_payment_accounts sp ON sp.id=si.account_id '+
-      'WHERE si.state=$1 AND sp.enabled=true AND si.reconcile_due_at<=now() '+
+      'WHERE si.state=$1 AND ($2::uuid IS NULL OR si.organization_id=$2) AND sp.enabled=true AND si.reconcile_due_at<=now() '+
       'AND (si.reconcile_lease_until IS NULL OR si.reconcile_lease_until<=now()) '+
       'ORDER BY si.reconcile_due_at,si.created_at FOR UPDATE OF si SKIP LOCKED LIMIT 1',
-      ['ready']
+      ['ready',organizationId??null]
     );
     if(!result.rowCount)return null;
     const row=result.rows[0];
@@ -43,12 +43,12 @@ async function finish(candidate:Candidate,success:boolean,resultStatus:string|nu
     [candidate.chargeId,candidate.organizationId,intervalMinutes,success,errorCode]
   );
 }
-export async function reconcileSandboxBatch(limit=20):Promise<WorkerSummary>{
+export async function reconcileSandboxBatch(limit=20,organizationId?:string):Promise<WorkerSummary>{
   if(!Number.isInteger(limit)||limit<1||limit>50)throw new Error('invalid_sandbox_batch_size');
   if(!credentialsReady())throw new Error('payment_credentials_key_not_configured');
   const stats:WorkerSummary={examined:0,reconciled:0,failed:0,manualReview:0,sandboxOnly:true};
   for(let i=0;i<limit;i++){
-    const candidate=await claimNext();
+    const candidate=await claimNext(organizationId);
     if(!candidate)break;
     stats.examined++;
     try{

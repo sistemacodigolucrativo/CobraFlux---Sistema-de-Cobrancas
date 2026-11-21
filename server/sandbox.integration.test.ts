@@ -184,7 +184,7 @@ test('Asaas sandbox: encrypted tenant config, safe issuance, webhook replay, ref
   payment.status='PARTIALLY_REFUNDED';
   const {reconcileSandboxBatch,sandboxReconciliationDueCount}=await import('./sandbox-reconciliation-worker');
   assert.ok((await sandboxReconciliationDueCount())>=1);
-  const scheduled=await reconcileSandboxBatch(10);
+  const scheduled=await reconcileSandboxBatch(10,a.org);
   assert.ok(scheduled.reconciled>=1,JSON.stringify(scheduled));
   assert.equal(scheduled.failed,0,JSON.stringify(scheduled));
   const autoState=await pool.query('SELECT status,refunded_cents FROM charges WHERE id=$1',[draftA.id]);
