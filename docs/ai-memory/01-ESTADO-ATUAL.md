@@ -6,20 +6,28 @@
 | --- | --- |
 | Repositório | https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas |
 | Branch permitida | feat/production-foundation |
-| **Último commit de código validado** | [a157e6f832f5180f7824d3836394b6fabbde5677](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/a157e6f832f5180f7824d3836394b6fabbde5677) |
+| **Último commit de código validado** | [e88ddfe8c2792dbd8d7806c046a14a8a3ff4b7d2](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/e88ddfe8c2792dbd8d7806c046a14a8a3ff4b7d2) |
 | Base main verificada | 95aba9c27c363c8b24c2f34c65a28c2f3b011b3b — não alterada por esses incrementos |
 | PR #2 | Aberta, em draft, não mesclada no último exame |
 | Fase atual | **7 — Administração e Relatórios** |
-| Último incremento concluído tecnicamente | Fase 7 nº 06: exportações CSV filtradas/paginadas, preservados incrementos 1–5 |
-| Backend/integração/migrações | [Actions #44930963112](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44930963112) — success para commit a157e6f |
-| Browser desktop/mobile | [Actions #44930963010](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44930963010) — success para commit a157e6f |
+| Último incremento concluído tecnicamente | Fase 7 nº 07: exportações CSV por cursor assinado, preservados incrementos 1–6 |
+| Backend/integração/migrações | [Actions #44935128670](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44935128670) — success para commit e88ddfe |
+| Browser desktop/mobile | [Actions #44935128826](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44935128826) — success para commit e88ddfe |
 | Release/merge/deploy | **Nenhum** |
 | PSP live/Meta live | **Não habilitados nem homologados** |
-| Próximo marco | Fase 7 — LGPD jurídica, exportação de volumes altos consistente, relatórios, política SLA/notificações externas, governança e paridade |
+| Próximo marco | Fase 7 — teste de carga/exportações consistentes sob mutações, LGPD jurídica, relatórios, política SLA/notificações externas, governança e paridade |
 
 **Atenção:** commits posteriores podem alterar só documentação e mudar o HEAD; isso não apaga o SHA do último **incremento de código** com CI verde. O próximo agente precisa verificar ambos.
 
-## O que a última entrega adicionou — incremento F7 #6
+## O que a última entrega adicionou — incremento F7 #7
+
+- Exportação adicional por cursor HMAC assinado, vinculado ao tenant, dataset e filtro, com 30 minutos de validade e sem limite de offset, mantendo a exportação anterior compatível.
+- Paginação por `(created_at,id)` preservando microssegundos do PostgreSQL e corte temporal inicial; UI de lotes com navegação e download individual.
+- CI: [backend #44935128670](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44935128670), [Chromium #44935128826](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44935128826) e [memória #44935128710](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44935128710) aprovados no commit e88ddfe8c2792dbd8d7806c046a14a8a3ff4b7d2.
+- **Falha histórica:** no commit 2c94972 um teste da rota usou GET em vez de POST e falhou; corrigido em e88ddfe8c2792dbd8d7806c046a14a8a3ff4b7d2.
+- **Limite:** não é snapshot de dados durante edições/exclusões, ainda há rate limit de 12 arquivos/hora, e testes de carga grandes não foram realizados. Fase 7 continua aberta.
+
+## Incremento anterior — F7 #6
 
 - Exportação CSV de clientes/cobranças com filtro por status e navegação manual de páginas de 100/250/1000 registros.
 - Prévia **somente de contagem** por organização, sem dados pessoais; proteção por papel, sessão, CSRF no download, rate limit, sanitização CSV e auditoria.
@@ -55,7 +63,7 @@
 
 ## Não esquecer
 - O núcleo da Fase 6 está tecnicamente implementado, mas **não há checkout financeiro live do SaaS**, aprovação comercial, tributação ou cobrança homologada.
-- O núcleo da Fase 7 está **incompleto**, apesar de seis incrementos de código testados.
+- O núcleo da Fase 7 está **incompleto**, apesar de sete incrementos de código testados.
 - Homologação externa foi **adiada para antes do lançamento**, não dispensada; existem dívidas de Fases 0–7.
 - A base de conhecimento não substitui revisões de código, segurança, política legal nem licença para mexer na main.
 

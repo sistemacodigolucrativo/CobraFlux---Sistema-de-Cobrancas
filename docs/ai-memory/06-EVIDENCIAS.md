@@ -2,7 +2,14 @@
 
 Este registro separa **evidência do código no GitHub** de homologação externa. O estado de um workflow pertence ao SHA executado; um sucesso antigo não prova que um commit novo passou.
 
-## Último incremento F7 validado — exportação CSV filtrada e paginada (21/11/2026)
+## Último incremento validado — exportação keyset/cursor assinado (21/11/2026)
+
+- **SHA final:** [e88ddfe8c2792dbd8d7806c046a14a8a3ff4b7d2](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/e88ddfe8c2792dbd8d7806c046a14a8a3ff4b7d2); [backend/PG #44935128670](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44935128670), [browser #44935128826](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44935128826), [memória #44935128710](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44935128710) — todos **success** no mesmo commit.
+- **Testado:** MFA/RBAC via sessão/owner, CSRF, cursor assinado HMAC, tentativa de uso cross-tenant, filtros e datasets diferentes, adulteração de token, paginação com timestamp idêntico (precisão µs), exclusão de novos inserts após corte.
+- **Registro de falha:** commit 2c94972131cf337c5a96ef83add784f8ac7a0f79: [CI backend #44934990819](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44934990819) **failure** em teste de autenticação com GET indevido retornando 404 no lugar de 401; corrigido em e88ddfe8c2792dbd8d7806c046a14a8a3ff4b7d2 com GET=404 e POST anônimo=401, CI verde posterior.
+- **Lacunas:** sem snapshot de dados modificados/excluídos, sem teste de carga 100 mil+, limite de export 12/h e token expira 30 minutos; sem deploy.
+
+## Incremento anterior — CSV filtrada e paginada (21/11/2026)
 - Commit [a157e6f832f5180f7824d3836394b6fabbde5677](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/a157e6f832f5180f7824d3836394b6fabbde5677), [backend/PostgreSQL #44930963112](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44930963112), [Chromium #44930963010](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44930963010) e [memória #44930963018](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44930963018), todos **success** no mesmo SHA.
 - Cobertura: prévia contagem por organização sem PII, owner/superadmin, filtro válido/inválido, 400/401/403, limite 1000, offset máximo, dois lotes distintos, metadados de página e CSRF.
 - Não comprova snapshot entre páginas, processamento de volumes acima de 100000 de offset, homologação financeira ou infra externa.

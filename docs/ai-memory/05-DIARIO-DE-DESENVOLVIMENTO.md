@@ -24,6 +24,8 @@
 
 | 2026-11-21 F7 incremento 6 | Exportação CSV filtrada/paginada e prévia de contagem por tenant | [Código a157e6f](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/a157e6f832f5180f7824d3836394b6fabbde5677), [backend #44930963112](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44930963112), [browser #44930963010](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44930963010), [memória #44930963018](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44930963018) — success | IMPLEMENTADA — TESTADA; sem snapshot entre páginas, offset limitado; F7 aberta |
 
+| 2026-11-21 F7 incremento 7 | Exportação CSV por cursor HMAC/keyset, corte temporal e navegação de lotes | [Código e88ddfe](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/e88ddfe8c2792dbd8d7806c046a14a8a3ff4b7d2), [backend #44935128670](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44935128670), [browser #44935128826](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44935128826), [memória #44935128710](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44935128710) — success | IMPLEMENTADA — TESTADA. Execução inicial 2c94972 falhou por método errado em teste de autenticação, corrigido no commit final; sem snapshot MVCC nem teste 100k+, F7 aberta |
+
 ## Rastro adicional da segunda entrega F7
 - 2c79532: migração 017;
 - 1d609d6: rotas seguras do portal;

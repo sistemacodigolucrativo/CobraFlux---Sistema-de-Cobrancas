@@ -5,7 +5,7 @@
   "source": "GitHub PR #2 / Issue #3 / GitHub Actions / handoff local de 21-11",
   "repository": "sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas",
   "authorizedBranch": "feat/production-foundation",
-  "lastVerifiedCodeCommit": "a157e6f832f5180f7824d3836394b6fabbde5677",
+  "lastVerifiedCodeCommit": "e88ddfe8c2792dbd8d7806c046a14a8a3ff4b7d2",
   "mainReferenceCommit": "95aba9c27c363c8b24c2f34c65a28c2f3b011b3b",
   "pullRequest": {
     "number": 2,
@@ -16,20 +16,20 @@
   "currentPhase": 7,
   "totalPhases": 10,
   "phase7Status": "EM DESENVOLVIMENTO",
-  "lastCompletedIncrement": "Fase 7 incremento 6: exportacao CSV filtrada e navegavel em paginas 100/250/1000 com contagem por tenant, metadados e CSRF/auditoria; sem snapshot ou exportacao ilimitada",
+  "lastCompletedIncrement": "F7 incremento 7: CSV export por keyset cursor assinado/HMAC, org+dataset+status vinculados, TTL 30min e timestamp de corte; sem snapshot e sem teste de carga",
   "lastValidatedCi": [
     {
-      "id": 44930963112,
+      "id": 44935128670,
       "result": "success",
-      "scope": "backend/typecheck/domain/security/migrations twice/integration/builds"
+      "scope": "backend/TypeScript/security/migrations twice/integration multi-tenant/builds"
     },
     {
-      "id": 44930963010,
+      "id": 44935128826,
       "result": "success",
       "scope": "Chromium desktop/mobile E2E"
     },
     {
-      "id": 44930963018,
+      "id": 44935128710,
       "result": "success",
       "scope": "AI memory integrity"
     }
@@ -38,9 +38,9 @@
   "financialLiveApproved": false,
   "externalHomologationCompleted": false,
   "nextApprovedScope": [
-    "F7: exportacoes keyset/consistencia e provas de carga (BL-008/031)",
-    "F7: LGPD ponta a ponta com revisao juridica (BL-007)",
-    "F7: paridade e acessibilidade de relatorios (BL-012)"
+    "F7 BL-008/031: testes de carga de exportação, avaliação de índice/performance, sem alegar snapshot consistente",
+    "F7 BL-007: fluxo LGPD completo com revisão jurídica",
+    "F7 BL-012: revisão de paridade e acessibilidade em relatórios"
   ],
   "sourceArchive": "CobraFlux-Knowledge-Handoff-2026-11-21.zip",
   "sourceArchiveUploadedToRepository": false,
@@ -59,5 +59,10 @@
   "exportCsvFiltered": true,
   "exportCsvManualPageNavigation": true,
   "exportCsvStableSnapshot": false,
-  "exportCsvMaximumOffset": 100000
+  "exportCsvMaximumOffset": 100000,
+  "exportCsvKeysetAvailable": true,
+  "exportCsvKeysetCursorSigned": true,
+  "exportCsvKeysetCursorTtlMinutes": 30,
+  "exportCsvKeysetNotSnapshot": true,
+  "exportCsvLoadTest100kCompleted": false
 }
