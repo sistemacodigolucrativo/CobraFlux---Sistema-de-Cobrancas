@@ -206,6 +206,66 @@ export function registerPhase7Routes(app:Express,{sessions,csrf,who,route,rateLi
   if('error' in result){res.status(409).json(result);return;}
   res.json(result);
  }));
+ // Respostas ao suporte são entregues SOMENTE na área autenticada do tenant,
+ // e nunca a contatos públicos sem identidade validada; não enviar e-mail implicitamente.
+ app.get('/api/admin/support/tickets/:id/replies',sessions,route(async(req,res)=>{
+  const p=who(req);if(!requireAdmin(p,res))return;
+  const {id}=identifier.parse(req.params),q=page.parse(req.query);
+  const ticket=await pool.query('SELECT id FROM support_tickets WHERE id=$1',[id]);
+  if(!ticket.rowCount){res.status(404).json({error:'ticket_not_found'});return;}
+  const replies=await pool.query(
+   'SELECT r.id,r.ticket_id,r.message,r.delivery_state,r.created_at,u.name AS author_name '+
+   'FROM support_ticket_replies r JOIN users u ON u.id=r.actor_id '+
+   'WHERE r.ticket_id=$1 ORDER BY r.created_at ASC,r.id ASC LIMIT $2 OFFSET $3',
+   [id,q.limit+1,q.offset]);
+  res.setHeader('Cache-Control','private, no-store');
+  res.json({items:replies.rows.slice(0,q.limit),hasMore:replies.rows.length>q.limit,
+   delivery:'portal_only',emailSent:false});
+ }));
+ app.get('/api/support/tickets/:id/replies',sessions,route(async(req,res)=>{
+  const p=who(req),{id}=identifier.parse(req.params),q=page.parse(req.query);
+  const ticket=await pool.query('SELECT id FROM support_tickets WHERE id=$1 AND organization_id=$2',[id,p.orgId]);
+  if(!ticket.rowCount){res.status(404).json({error:'ticket_not_found'});return;}
+  const replies=await pool.query(
+   'SELECT r.id,r.ticket_id,r.message,r.delivery_state,r.created_at,u.name AS author_name '+
+   'FROM support_ticket_replies r JOIN users u ON u.id=r.actor_id '+
+   'WHERE r.ticket_id=$1 AND r.organization_id=$2 ORDER BY r.created_at ASC,r.id ASC LIMIT $3 OFFSET $4',
+   [id,p.orgId,q.limit+1,q.offset]);
+  res.setHeader('Cache-Control','private, no-store');
+  res.json({items:replies.rows.slice(0,q.limit),hasMore:replies.rows.length>q.limit,
+   delivery:'portal_only',emailSent:false});
+ }));
+ app.post('/api/admin/support/tickets/:id/replies',sessions,csrf,route(async(req,res)=>{
+  const p=who(req);if(!requireAdmin(p,res))return;
+  const {id}=identifier.parse(req.params);
+  const b=z.object({message:z.string().trim().min(10).max(3000),
+   clientRequestId:z.uuid()}).strict().parse(req.body);
+  const result=await transaction(async db=>{
+   const locked=await db.query('SELECT organization_id,status FROM support_tickets WHERE id=$1 FOR UPDATE',[id]);
+   if(!locked.rowCount)return {error:'ticket_not_found',code:404};
+   const ticket=locked.rows[0];
+   if(!ticket.organization_id)return {error:'public_contact_requires_verified_delivery_channel',code:409};
+   const existing=await db.query(
+    'SELECT id,message FROM support_ticket_replies WHERE ticket_id=$1 AND client_request_id=$2',
+    [id,b.clientRequestId]);
+   if(existing.rowCount){
+    if(existing.rows[0].message!==b.message)return {error:'idempotency_key_reused',code:409};
+    return {id:existing.rows[0].id,ticketId:id,deliveryState:'portal_only',
+     emailSent:false,duplicate:true};
+   }
+   if(ticket.status==='closed')return {error:'ticket_closed',code:409};
+   const replyId=randomUUID();
+   await db.query(
+    'INSERT INTO support_ticket_replies(id,ticket_id,organization_id,actor_id,client_request_id,message) '+
+    'VALUES($1,$2,$3,$4,$5,$6)',
+    [replyId,id,ticket.organization_id,p.userId,b.clientRequestId,b.message]);
+   await audit(db,p,'ADMIN_SUPPORT_PORTAL_REPLY_CREATED','support_ticket',id,
+    {delivery:'portal_only'},ticket.organization_id);
+   return {id:replyId,ticketId:id,deliveryState:'portal_only',emailSent:false,duplicate:false};
+  });
+  if('error' in result){res.status(result.code).json({error:result.error});return;}
+  res.status(result.duplicate?200:201).json(result);
+ }));
  app.get('/api/privacy/requests',sessions,route(async(req,res)=>{
   const p=who(req);if(!requireOwner(p,res))return;
   const rows=await pool.query(
