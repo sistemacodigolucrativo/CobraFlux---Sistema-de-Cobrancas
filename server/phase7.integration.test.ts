@@ -122,6 +122,48 @@ test('Phase 7 platform admin, audited exports, financial segregation, ticket tri
   const event=await pool.query('SELECT actor_id,old_status,new_status FROM support_ticket_events WHERE ticket_id=$1',[support.body.id]);
   assert.equal(event.rowCount,1);
   assert.equal(event.rows[0].new_status,'in_progress');
+  // Fase 7: resposta persistida apenas no portal autenticado, sem entrega externa.
+  const key=randomUUID();
+  const answer={message:'A equipe validou seu chamado. Acompanhe esta resposta neste painel.',clientRequestId:key};
+  assert.equal((await call('/admin/support/tickets/'+support.body.id+'/replies','POST',answer,a)).status,403);
+  assert.equal((await call('/admin/support/tickets/'+support.body.id+'/replies','POST',answer,
+   {cookie:root.cookie,csrf:''})).status,403,'CSRF required for replies');
+  assert.equal((await call('/admin/support/tickets/'+support.body.id+'/replies','GET',undefined,a)).status,403);
+  assert.equal((await call('/support/tickets/'+support.body.id+'/replies','GET',undefined,b)).status,404,
+   'another tenant must not read replies');
+  const reply=await call('/admin/support/tickets/'+support.body.id+'/replies','POST',answer,root);
+  assert.equal(reply.status,201,JSON.stringify(reply.body));
+  assert.equal(reply.body.deliveryState,'portal_only');
+  assert.equal(reply.body.emailSent,false);
+  const duplicate=await call('/admin/support/tickets/'+support.body.id+'/replies','POST',answer,root);
+  assert.equal(duplicate.status,200);
+  assert.equal(duplicate.body.id,reply.body.id);
+  assert.equal(duplicate.body.duplicate,true);
+  assert.equal((await call('/admin/support/tickets/'+support.body.id+'/replies','POST',
+    {...answer,message:'Tentativa com chave reutilizada e conteúdo diferente.'},root)).status,409);
+  const customerHistory=await call('/support/tickets/'+support.body.id+'/replies','GET',undefined,a);
+  assert.equal(customerHistory.status,200);
+  assert.equal(customerHistory.body.items.length,1);
+  assert.equal(customerHistory.body.items[0].message,answer.message);
+  assert.equal(customerHistory.body.delivery,'portal_only');
+  assert.equal(customerHistory.body.emailSent,false);
+  const adminHistory=await call('/admin/support/tickets/'+support.body.id+'/replies','GET',undefined,root);
+  assert.equal(adminHistory.status,200);
+  assert.equal(adminHistory.body.items.length,1);
+  assert.equal((await pool.query('SELECT count(*)::int AS n FROM support_ticket_replies WHERE ticket_id=$1',
+   [support.body.id])).rows[0].n,1,'idempotency must prevent duplicate replies');
+  const publicTicketId=randomUUID();
+  await pool.query('INSERT INTO support_tickets(id,name,email,subject,message) VALUES($1,$2,$3,$4,$5)',
+   [publicTicketId,'Contato público','public7@example.com','Acesso público','Mensagem de contato sem sessão']);
+  assert.equal((await call('/admin/support/tickets/'+publicTicketId+'/replies','POST',
+   {...answer,clientRequestId:randomUUID()},root)).status,409,'public contact needs verified channel');
+  assert.equal((await call('/support/tickets/'+publicTicketId+'/replies','GET',undefined,a)).status,404);
+  const closing=await call('/admin/support/tickets/'+support.body.id,'PATCH',
+   {status:'closed',reason:'Acompanhamento de suporte encerrado e documentado.'},root);
+  assert.equal(closing.status,200);
+  assert.equal((await call('/admin/support/tickets/'+support.body.id+'/replies','POST',
+   {...answer,clientRequestId:randomUUID()},root)).status,409,'closed ticket cannot receive new reply');
+
 
   const privacy=await call('/privacy/requests','POST',{kind:'erasure',
    reason:'Desejo consultar os requisitos legais para a exclusão da empresa.'},a);
