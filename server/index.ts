@@ -26,7 +26,7 @@ const prod = process.env.NODE_ENV === 'production';
 const origin = process.env.APP_ORIGIN;
 if (prod && (!origin || !origin.startsWith('https://'))) throw new Error('APP_ORIGIN must be an HTTPS origin in production.');
 app.use(express.json({limit:'256kb',verify:(req,_res,bytes)=>{
-  if(req.path==='/api/webhooks/meta-whatsapp'){
+  if(req.url?.split('?')[0]==='/api/webhooks/meta-whatsapp'){
     (req as Request & {metaRawBody?:Buffer}).metaRawBody=Buffer.from(bytes);
   }
 }}));
