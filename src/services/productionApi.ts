@@ -110,6 +110,15 @@ export const productionApi={
   connectAsaasSandbox:(apiKey:string,webhookToken:string)=>request<{configured:boolean;webhookPath:string;sandboxOnly:true}>('/sandbox/connection','PUT',{apiKey,webhookToken}),
   issueSandboxPix:(id:string)=>request<{id:string;status:string;sandboxOnly:true}>('/sandbox/charges/'+encode(id)+'/issue','POST',{}),
   reconcileSandboxPix:(id:string)=>request<{id:string;status:string;sandboxOnly:true}>('/sandbox/charges/'+encode(id)+'/reconcile','POST',{}),
+  requestSandboxCancellation:(id:string,reason:string)=>request<{
+    id:string;state:string;chargeStatus:string;sandboxOnly:true;providerDeleteRetried:false
+  }>('/sandbox/charges/'+encode(id)+'/cancellation','POST',{reason}),
+  reconcileSandboxCancellation:(id:string)=>request<{
+    id:string;state:string;chargeStatus:string;sandboxOnly:true;providerDeleteRetried:false
+  }>('/sandbox/charges/'+encode(id)+'/cancellation/reconcile','POST',{}),
+  sandboxCancellationStatus:(id:string)=>request<{
+    id:string;state:string;reason:string;last_error:string|null;created_at:string;sandboxOnly:true
+  }>('/sandbox/charges/'+encode(id)+'/cancellation'),
   sandboxQr:(token:string)=>request<{payload:string;encodedImage?:string;sandboxOnly:true}>('/public/charges/'+encode(token)+'/sandbox-qr'),
   sandboxPaymentReceipt:(id:string)=>request<{receiptUrl:string;sandboxOnly:true}>('/sandbox/charges/'+encode(id)+'/payment-receipt'),
   sandboxReconciliationOverview:()=>request<{sandboxOnly:true;automated:false;schedulerRequired:true;
