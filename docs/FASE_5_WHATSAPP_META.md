@@ -77,3 +77,26 @@ A execução recorrente exige cron externo, observabilidade, alertas e kill swit
 - Cloud API: https://developers.facebook.com/documentation/business-messaging/whatsapp/overview/
 - Webhook Graph e assinatura SHA256: https://developers.facebook.com/docs/graph-api/webhooks/getting-started/
 - Consulta de estado de templates: https://developers.facebook.com/docs/graph-api/reference/whats-app-business-account/message_templates/
+
+
+## Complemento — geração automática de lembretes de vencimento, sem envio
+
+- Migração \`014_whatsapp_due_reminders.sql\`: o titular escolhe explicitamente o modelo padrão via \`POST /api/whatsapp/default-template\`, com template UTILITY aprovado, três variáveis e consulta Meta recente. Um modelo não aprovado ou não selecionado impede a geração.
+- O processo \`server/whatsapp-enqueue.ts\` percorre cobranças \`pending\` ou \`overdue\` do próprio tenant, com vencimento entre 1 dia anterior e 3 dias posteriores à data civil de São Paulo. Não toca cobranças pagas, canceladas ou ainda rascunho.
+- Só considera cliente ativo com consentimento documentado vigente para o mesmo telefone, conta Meta habilitada, template padrão aprovado e organização ativa.
+- \`UNIQUE(organization_id,charge_id,kind)\` deduplica cada lembrete de vencimento, incluindo reexecuções concorrentes. Registro de auditoria comprova que a operação apenas **enfileirou**.
+- A fila e o envio são **dois processos distintos**, ambos desativados sem consentimento operacional explícito. O enfileirador nunca chama Meta, PSP ou e-mail; o worker de envio exige todas as condições já descritas neste documento.
+
+Visualização segura:
+
+\`\`\`bash
+npm run whatsapp:enqueue -- --dry-run
+\`\`\`
+
+Enfileiramento pontual, somente após configuração de ambiente e auditoria operacional:
+
+\`\`\`bash
+WHATSAPP_ENQUEUE_ENABLED=true npm run whatsapp:enqueue -- --once --limit=100
+\`\`\`
+
+Nenhum cron nem variável de envio foram ativados na infraestrutura. A automação de vencimentos só é considerada operacional depois dos testes externos com telefones autorizados, revisão de templates e mecanismos de interrupção.
