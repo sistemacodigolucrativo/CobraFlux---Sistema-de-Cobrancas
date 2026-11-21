@@ -1,7 +1,7 @@
 import React,{useCallback,useEffect,useState} from 'react';
 import {Button,Card,Input} from '../../components/ui/Primitives';
 import {productionApi,type Phase7AdminOverview,type Phase7AdminOrg,
- type Phase7AdminTicket,type Phase7PrivacyRequest,type Phase7AuditEntry} from '../../services/productionApi';
+ type Phase7AdminTicket,type Phase7PrivacyRequest,type Phase7AuditEntry,type Phase7SupportReply} from '../../services/productionApi';
 
 const money=(cents:string|number)=>new Intl.NumberFormat('pt-BR',{
  style:'currency',currency:'BRL'}).format(Number(cents)/100);
@@ -21,6 +21,9 @@ export function AdminOperationsView(){
  const [orgReason,setOrgReason]=useState('');
  const [ticketId,setTicketId]=useState(''),[ticketStatus,setTicketStatus]=useState<Phase7AdminTicket['status']>('in_progress');
  const [ticketReason,setTicketReason]=useState('');
+ const [ticketReplies,setTicketReplies]=useState<Phase7SupportReply[]>([]);
+ const [ticketReplyMessage,setTicketReplyMessage]=useState('');
+ const [replyKey,setReplyKey]=useState('');
  const [privacyId,setPrivacyId]=useState(''),[privacyStatus,setPrivacyStatus]=useState<'in_review'|'awaiting_evidence'|'closed_rejected'>('in_review');
  const [privacyReason,setPrivacyReason]=useState('');
  const load=useCallback(async(filter='')=>{
@@ -36,6 +39,15 @@ export function AdminOperationsView(){
  },[]);
  useEffect(()=>{setLoading(true);void load().catch(e=>setError(e instanceof Error?e.message:'Administração indisponível.'))
   .finally(()=>setLoading(false));},[load]);
+ useEffect(()=>{
+  if(!ticketId){setTicketReplies([]);return;}
+  let current=true;
+  setTicketReplies([]);
+  void productionApi.phase7AdminTicketReplies(ticketId).then(r=>{
+   if(current)setTicketReplies(r.items);
+  }).catch(e=>{if(current)setError(e instanceof Error?e.message:'Falha ao consultar respostas.');});
+  return ()=>{current=false;};
+ },[ticketId]);
  async function action(fn:()=>Promise<unknown>,success:string){
   setBusy(true);setError('');setNotice('');
   try{await fn();await load(search);setNotice(success);}
@@ -131,7 +143,7 @@ export function AdminOperationsView(){
    </p>
    <div className="max-h-72 overflow-auto space-y-2">
     {tickets.map(t=><button type="button" key={t.id} onClick={()=>{
-     setTicketId(t.id);setTicketReason('');setTicketStatus(t.status==='open'?'in_progress':'closed');
+     setTicketId(t.id);setTicketReason('');setTicketReplyMessage('');setReplyKey('');setTicketStatus(t.status==='open'?'in_progress':'closed');
     }} className={'w-full text-left border rounded-lg p-3 '+
       (ticketId===t.id?'border-[#E2BE72]':'border-white/10')}>
      <span className="block text-sm font-semibold">{t.subject} · {t.status}</span>
@@ -157,6 +169,42 @@ export function AdminOperationsView(){
     </Button>
    </form>}
   </Card>
+  {selectedTicket&&<div className="space-y-3 border-t border-white/10 pt-3">
+   <p className="font-semibold text-sm">Histórico de respostas no painel</p>
+   <p className="text-xs text-[#B8BFCD]">
+    Respostas ficam disponíveis somente para usuários autenticados da organização.
+    Não há envio de e-mail ou confirmação de leitura.
+   </p>
+   {ticketReplies.length===0
+    ?<p className="text-xs text-[#B8BFCD]">Nenhuma resposta registrada.</p>
+    :<div className="max-h-48 overflow-y-auto space-y-2">{ticketReplies.map(r=>
+     <div key={r.id} className="p-3 rounded-lg border border-white/10 space-y-1">
+      <p className="text-xs text-[#B8BFCD]">{r.author_name} · {new Date(r.created_at).toLocaleString('pt-BR')}</p>
+      <p className="text-sm whitespace-pre-wrap break-words">{r.message}</p>
+     </div>)}</div>}
+   {selectedTicket.organization_id
+    ?<form className="space-y-2" onSubmit={e=>{e.preventDefault();void action(async()=>{
+      const key=replyKey||crypto.randomUUID();
+      if(!replyKey)setReplyKey(key);
+      await productionApi.phase7AdminTicketReply(ticketId,ticketReplyMessage,key);
+      const replies=await productionApi.phase7AdminTicketReplies(ticketId);
+      setTicketReplies(replies.items);setTicketReplyMessage('');setReplyKey('');
+     },'Resposta registrada no painel da organização, sem envio de e-mail.');}}>
+      <label className="block text-sm">Responder no portal (mín. 10 caracteres)
+       <textarea rows={3} minLength={10} maxLength={3000}
+        value={ticketReplyMessage} onChange={e=>{setTicketReplyMessage(e.target.value);setReplyKey('');}}
+        className="block mt-2 w-full p-3 bg-[#0B0D12] border border-white/20 rounded-lg"/>
+      </label>
+      <Button size="sm" type="submit" disabled={busy||ticketReplyMessage.trim().length<10||selectedTicket.status==='closed'}>
+       Registrar resposta no painel
+      </Button>
+      {selectedTicket.status==='closed'&&
+       <p className="text-xs text-[#B8BFCD]">Reabra o chamado antes de registrar uma nova resposta.</p>}
+     </form>
+    :<p className="text-xs text-[#E2BE72]">
+      Contato público: responder exige canal autenticado e verificação de identidade.
+     </p>}
+  </div>}
   <Card className="p-5 space-y-3">
    <h3 className="font-semibold">Solicitações de privacidade — triagem LGPD</h3>
    <p className="text-xs text-[#B8BFCD]">
