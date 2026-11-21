@@ -29,6 +29,10 @@ async function audit(db:{query:Function},p:Principal,action:string,entityId:stri
     [randomUUID(),p.orgId,p.userId,action,'team',entityId,JSON.stringify(details)]);
 }
 async function acceptInvitation(db:{query:Function},token:string,email:string,userId:string):Promise<Accepted|null>{
+  // Lock the organization before invitation rows, consistent with invite-creation quota checks.
+  const pre=await db.query('SELECT organization_id,email FROM team_invitations WHERE token_hash=$1',[sha256(token)]);
+  if(!pre.rowCount||pre.rows[0].email!==email)return null;
+  await enforceSaasQuota(db,pre.rows[0].organization_id,'members');
   const q=await db.query(
     "SELECT i.id,i.organization_id,i.email,o.name AS organization_name FROM team_invitations i " +
     "JOIN organizations o ON o.id=i.organization_id WHERE i.token_hash=$1 AND i.accepted_at IS NULL " +
@@ -38,7 +42,6 @@ async function acceptInvitation(db:{query:Function},token:string,email:string,us
   if(!q.rowCount)return null;
   const entry=q.rows[0];
   if(entry.email!==email)return null;
-  await enforceSaasQuota(db,entry.organization_id,'members');
   const inserted=await db.query(
     "INSERT INTO memberships(user_id,organization_id,role) VALUES($1,$2,'operator') ON CONFLICT DO NOTHING RETURNING user_id",
     [userId,entry.organization_id]

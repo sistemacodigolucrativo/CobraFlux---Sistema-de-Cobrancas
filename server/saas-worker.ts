@@ -12,7 +12,7 @@ async function claimAndUpdate(asOf:string):Promise<Changed|null>{
    "AND i.status='pending' AND i.due_date<$1::date) AS has_overdue_invoice "+
    "FROM saas_subscriptions s WHERE s.plan_code<>'free' AND ( "+
    "(s.cancel_at_period_end=true AND s.current_period_end<=$1::date AND s.status IN('active','trialing')) OR "+
-   "(s.status='past_due' AND s.grace_until<$1::date) OR "+
+   "(s.status='past_due' AND (s.grace_until IS NULL OR s.grace_until<$1::date)) OR "+
    "(s.status IN('active','trialing') AND (s.current_period_end<$1::date OR "+
    "EXISTS(SELECT 1 FROM saas_invoices i WHERE i.organization_id=s.organization_id "+
    "AND i.status='pending' AND i.due_date<$1::date))) "+
@@ -69,7 +69,7 @@ export async function pendingBillingTransitions(asOf=localBillingDate()):Promise
  const q=await pool.query(
   "SELECT count(*)::int AS total FROM saas_subscriptions s WHERE s.plan_code<>'free' AND ("+
   "(s.cancel_at_period_end=true AND s.current_period_end<=$1::date AND s.status IN('active','trialing')) OR "+
-  "(s.status='past_due' AND s.grace_until<$1::date) OR "+
+  "(s.status='past_due' AND (s.grace_until IS NULL OR s.grace_until<$1::date)) OR "+
   "(s.status IN('active','trialing') AND (s.current_period_end<$1::date OR "+
   "EXISTS(SELECT 1 FROM saas_invoices i WHERE i.organization_id=s.organization_id "+
   "AND i.status='pending' AND i.due_date<$1::date))))",[asOf]);
