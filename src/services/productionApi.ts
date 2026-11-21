@@ -46,6 +46,20 @@ export type ServiceInput={
 export type ChargeInput={
   clientId:string;serviceId?:string;description:string;amountCents:number;discountCents?:number;dueDate:string;
 };
+export type RecurrencePlan={
+ id:string;client_id:string;service_id:string|null;client_name:string;description:string;
+ amount_cents:string;discount_cents:string;frequency:'monthly'|'weekly';anchor_day:number;
+ first_due_date:string;next_due_date:string;state:'active'|'paused'|'cancelled';
+ generated_count:number;attempts:number;last_error:string|null;created_at:string;updated_at:string;
+};
+export type RecurrenceInput={
+ clientId:string;description:string;amountCents:number;discountCents?:number;
+ frequency:'monthly'|'weekly';anchorDay?:number;firstDueDate:string;
+};
+export type RecurrenceCycle={
+ id:string;cycle_key:string;due_date:string;charge_id:string;charge_status:string;
+ amount_cents:string;discount_cents:string;created_at:string;
+};
 export type OrganizationChoice={id:string;name:string;role:'owner'|'operator'|'super_admin'};
 export type TeamMember={id:string;name:string;email:string;role:'owner'|'operator'|'super_admin';organization_id:string};
 export type TeamInvitation={
@@ -144,6 +158,22 @@ export const productionApi={
   activateInvite:(token:string,name:string,password:string)=>
     request<{ok:boolean;organizationId:string;organizationName:string;email:string}>('/team/activate','POST',{token,name,password}),
   acceptInvite:(token:string)=>request<{ok:boolean;organizationId:string;organizationName:string}>('/team/accept','POST',{token}),
+
+  recurrenceOverview:()=>request<{summary:{total:number;active:number;paused:number;due:number;generated:number};
+    workerEnabled:false;schedulerRequired:true;financialProviderCalls:0}>('/recurrences/overview'),
+  recurrences:(state?:'active'|'paused'|'cancelled')=>
+    request<{items:RecurrencePlan[];total:number}>('/recurrences'+qs({state})),
+  previewRecurrence:(input:{firstDueDate:string;frequency:'monthly'|'weekly';anchorDay:number;count?:number})=>
+    request<{dates:string[];draftOnly:true}>('/recurrences/preview','POST',input),
+  createRecurrence:(data:RecurrenceInput)=>
+    request<{id:string;state:string;next_due_date:string;draftOnly:true}>('/recurrences','POST',data),
+  updateRecurrence:(id:string,changes:Partial<Pick<RecurrenceInput,'description'|'amountCents'|'discountCents'>>)=>
+    request<RecurrencePlan>('/recurrences/'+encode(id),'PATCH',changes),
+  pauseRecurrence:(id:string)=>request<{id:string;state:string}>('/recurrences/'+encode(id)+'/pause','POST',{}),
+  resumeRecurrence:(id:string,mode:'skip_missed'|'catch_up'='skip_missed')=>
+    request<{id:string;state:string;nextDueDate:string;skippedCycles:number}>('/recurrences/'+encode(id)+'/resume','POST',{mode}),
+  cancelRecurrence:(id:string)=>request<{id:string;state:string}>('/recurrences/'+encode(id)+'/cancel','POST',{}),
+  recurrenceCycles:(id:string)=>request<{items:RecurrenceCycle[]}>('/recurrences/'+encode(id)+'/cycles'),
 
   clients:(filter:{search?:string;status?:'active'|'archived';limit?:number;offset?:number}={})=>
     request<{items:Client[];total:number}>('/clients'+qs(filter)),
