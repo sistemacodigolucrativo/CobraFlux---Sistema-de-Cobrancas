@@ -161,7 +161,8 @@ test('Phase 7 platform admin, audited exports, financial segregation, ticket tri
   await pool.query("UPDATE clients SET created_at='2026-11-20T12:00:00.123456Z' WHERE id=ANY($1::uuid[])",
    [cursorClients.map(x=>x.body.id)]);
   const exportCursorPath='/reports/exports/clients/keyset';
-  assert.equal((await call(exportCursorPath)).status,401);
+  assert.equal((await call(exportCursorPath)).status,404,'GET is not a keyset download route');
+  assert.equal((await call(exportCursorPath,'POST',{limit:1})).status,401);
   assert.equal((await call(exportCursorPath,'POST',{limit:1},
    {cookie:cursorUser.cookie,csrf:''})).status,403);
   assert.equal((await call('/reports/exports/secrets/keyset','POST',{},cursorUser)).status,400);
