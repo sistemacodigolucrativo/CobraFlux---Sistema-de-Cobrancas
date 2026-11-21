@@ -6,20 +6,26 @@
 | --- | --- |
 | Repositório | https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas |
 | Branch permitida | feat/production-foundation |
-| **Último commit de código validado** | [96e58848cb696489560fa14fcbceaf19357d2566](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/96e58848cb696489560fa14fcbceaf19357d2566) |
+| **Último commit de código validado** | [472b0bd84885e1463c5c5b660bb800bf498994d8](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/472b0bd84885e1463c5c5b660bb800bf498994d8) |
 | Base main verificada | 95aba9c27c363c8b24c2f34c65a28c2f3b011b3b — não alterada por esses incrementos |
 | PR #2 | Aberta, em draft, não mesclada no último exame |
 | Fase atual | **7 — Administração e Relatórios** |
-| Último incremento concluído tecnicamente | Fase 7: timeline administrativa de status de tickets (histórico de respostas no portal continua disponível) |
-| Backend/integração/migrações | [Actions #44920626498](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44920626498) — success para commit 96e58848 |
-| Browser desktop/mobile | [Actions #44920626428](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44920626428) — success para commit 96e58848 |
+| Último incremento concluído tecnicamente | Fase 7 nº 04: prazos internos manuais, filtros de vencimento e histórico, preservados incrementos 2/3 |
+| Backend/integração/migrações | [Actions #44922044208](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044208) — success para commit 472b0bd |
+| Browser desktop/mobile | [Actions #44922044209](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044209) — success para commit 472b0bd |
 | Release/merge/deploy | **Nenhum** |
 | PSP live/Meta live | **Não habilitados nem homologados** |
-| Próximo marco | Fase 7 — suporte incompleto (SLA/notificações), fluxo LGPD com revisão jurídica, relatórios/exportação, governança, auditoria de paridade |
+| Próximo marco | Fase 7 — política SLA/alertas pendentes, LGPD sob revisão jurídica, relatórios/exportação, governança e paridade |
 
 **Atenção:** commits posteriores podem alterar só documentação e mudar o HEAD; isso não apaga o SHA do último **incremento de código** com CI verde. O próximo agente precisa verificar ambos.
 
-## O que a última entrega adicionou — incremento F7 #3
+## O que a última entrega adicionou — incremento F7 #4
+- Migração **018**: prazo de atendimento opcional com histórico imutável e justificativa.
+- Administração (MFA/CSRF) define/remove prazo, filtra vencidos/sem prazo e visualiza auditoria. Ausência de prazo NÃO é SLA cumprido.
+- Backend [#44922044208](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044208), navegador [#44922044209](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044209) e integridade [#44922044232](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044232) aprovados no código 472b0bd84885e1463c5c5b660bb800bf498994d8.
+- **Não há SLA automático, política comercial, alertas, envio de e-mail/Meta nem deploy. F7 aberta.**
+
+## Entrega anterior — incremento F7 #3
 - API de histórico de mudanças de estado: GET /api/admin/support/tickets/:id/events, somente super_admin com MFA, paginação Zod, campos minimizados e no-store.
 - Interface administrativa exibe ator, mudança de status, data e justificativa, separados das respostas visíveis ao profissional.
 - Testes negativos de 401, 403, 404, 400 e paginação/privacidade; CI backend #44920626498 e navegador #44920626428 verdes no commit 96e58848cb696489560fa14fcbceaf19357d2566.
@@ -35,7 +41,7 @@
 
 ## Não esquecer
 - O núcleo da Fase 6 está tecnicamente implementado, mas **não há checkout financeiro live do SaaS**, aprovação comercial, tributação ou cobrança homologada.
-- O núcleo da Fase 7 está **incompleto**, apesar de três incrementos de código testados.
+- O núcleo da Fase 7 está **incompleto**, apesar de quatro incrementos de código testados.
 - Homologação externa foi **adiada para antes do lançamento**, não dispensada; existem dívidas de Fases 0–7.
 - A base de conhecimento não substitui revisões de código, segurança, política legal nem licença para mexer na main.
 

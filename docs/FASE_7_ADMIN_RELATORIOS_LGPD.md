@@ -103,3 +103,15 @@ Este é um **incremento inicial**, não a conclusão integral da fase. Ainda é 
 - AdminOperationsView mostra timeline com autor/motivo e diferencia evento interno de resposta externa.
 - Cobertura nova PostgreSQL: 401, 403, 404, 400, status e ator, no-store; sem criar nova migração porque support_ticket_events já existe na 016.
 - Continua **pendente:** SLA, alertas/notificações, anexos, atendimento LGPD integral, governança, UX fina, staging/PSP/Meta e revisão legal. Nada enviado ao cliente por esse histórico.
+
+## Incremento 4 — gestão de prazos internos de suporte (BL-006)
+
+**Commit:** [472b0bd84885e1463c5c5b660bb800bf498994d8](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/472b0bd84885e1463c5c5b660bb800bf498994d8). **CI:** [backend #44922044208](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044208), [browser #44922044209](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044209), [memória #44922044232](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044232) — **success** no commit de código.
+
+- Migração `018_support_sla_management.sql`: prazo opcional por ticket e eventos append-only (ator, justificativa, data, anterior/novo); sem SLA padrão.
+- `GET /api/admin/support/tickets` retorna `sla_due_at`, `sla_overdue` e filtra `sla=overdue|without_deadline`. Encerrado não é atraso.
+- `PATCH /api/admin/support/tickets/:id/sla` requer superadmin com MFA, CSRF, UUID, Zod ISO com timezone explícito e justificativa; transação/lock; remove com `dueAt:null`, recusa mudança repetida e ticket fechado.
+- `GET /api/admin/support/tickets/:id/sla/events` retorna histórico paginado apenas ao admin, sem mensagem do cliente, no-store.
+- Painel admin: filtro, definição/remoção com motivo e linha do tempo. Integração PostgreSQL cobre permissão 401/403, CSRF, 400/404/409, vencimento, filtros, remoção, eventos imutáveis e fechamento.
+
+**Limites:** não há política comercial automática de SLA, cálculo de dias úteis, alertas, e-mail/Meta, comprovantes de entrega ou homologação externa. O prazo é **referência interna manual**, sem prometer notificação ou resposta ao usuário. F7 e BL-006 continuam abertos.

@@ -4,6 +4,7 @@ Cada incremento precisa de um documento individual baseado em [09-MODELO-DE-REGI
 
 - [2026-11-21 — Fase 7: respostas de suporte no portal](2026-11-21-f7-respostas-suporte.md).
 - [2026-11-21 — Fase 7: timeline administrativa de status](2026-11-21-f7-timeline-status.md).
+- [2026-11-21 — Fase 7: gestão manual de SLA](2026-11-21-f7-sla-interno.md).
 - [2026-11-21 — Implantação da memória persistente](2026-11-21-criacao-memoria.md).
 
 **Ordem confiável:** commit e CI vinculados ao SHA > documento de entrega > diário > resumo de conversa. Nenhum registro cria permissão para deploy, lançamento live ou merge.

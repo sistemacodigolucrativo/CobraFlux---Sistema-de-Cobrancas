@@ -1,21 +1,21 @@
 # Fase 7 — Administração, relatórios, suporte e LGPD
 
-**Estado documental em 21/11/2026:** EM DESENVOLVIMENTO — TRÊS INCREMENTOS TESTADOS
+**Estado documental em 21/11/2026:** EM DESENVOLVIMENTO — QUATRO INCREMENTOS TESTADOS
 
 ## Implementação identificada
-Migração 016: administração MFA, organizações e bloqueios, auditoria, triagem, privacidade, MRR≠GPV, relatórios/CSV e UI; migração 017: respostas no portal autenticado, histórico de suporte append-only, CSRF, idempotência. Incremento 3: leitura da timeline de support_ticket_events, exclusivamente superadmin MFA, sem migração.
+Migração 016: administração MFA, organizações e bloqueios, auditoria, triagem, privacidade, MRR≠GPV, relatórios/CSV e UI; migração 017: respostas no portal autenticado, histórico de suporte append-only, CSRF, idempotência. Incremento 3: leitura da timeline de support_ticket_events, exclusivamente superadmin MFA, sem migração. Incremento 4: migração 018, prazo SLA manual e histórico imutável sob MFA/CSRF.
 
 ## Evidência de verificação
-Primeiro incremento 9c854473... com CI 44910490191/44910490168; segundo 4dcbb80f2ebfa817b3d512c94502d697d4077842 com CI backend 44915970990 e browser 44915971125; terceiro 96e58848cb696489560fa14fcbceaf19357d2566 com backend #44920626498 e browser #44920626428, todos aprovados.
+Primeiro incremento 9c854473... com CI 44910490191/44910490168; segundo 4dcbb80f2ebfa817b3d512c94502d697d4077842 com CI backend 44915970990 e browser 44915971125; terceiro 96e58848cb696489560fa14fcbceaf19357d2566 com backend #44920626498 e browser #44920626428, todos aprovados. Quarto incremento 472b0bd84885e1463c5c5b660bb800bf498994d8, CI backend #44922044208, browser #44922044209, memória #44922044232 — aprovados.
 
 ## Pendências (ainda NÃO entregues)
-SLA, notificações/e-mail, anexos seguros; atendimento LGPD integral com revisão legal; filtros/exportações completas, acessibilidade, observabilidade, revisão independente e staging.
+Política comercial/automática SLA, alertas, notificações/e-mail verificáveis, anexos seguros; atendimento LGPD integral com revisão legal; filtros/exportações completas, acessibilidade, observabilidade, revisão independente e staging.
 
 ## Próxima ação autorizada ou necessária
 Continuar BL-006/007/008/012 com teste multi-tenant e documentação por incremento, sem declarar F7 concluída.
 
 ## Risco de interpretação
-Resposta no portal não é entrega externa. Pedido LGPD não é apagamento efetuado.
+Resposta no portal não é entrega externa. Prazo SLA é interno/manual, não promessa de resposta ou envio. Pedido LGPD não é apagamento efetuado.
 
 ## Fonte técnica primária
 docs/FASE_7_ADMIN_RELATORIOS_LGPD.md

@@ -5,7 +5,7 @@
   "source": "GitHub PR #2 / Issue #3 / GitHub Actions / handoff local de 21-11",
   "repository": "sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas",
   "authorizedBranch": "feat/production-foundation",
-  "lastVerifiedCodeCommit": "96e58848cb696489560fa14fcbceaf19357d2566",
+  "lastVerifiedCodeCommit": "472b0bd84885e1463c5c5b660bb800bf498994d8",
   "mainReferenceCommit": "95aba9c27c363c8b24c2f34c65a28c2f3b011b3b",
   "pullRequest": {
     "number": 2,
@@ -16,20 +16,20 @@
   "currentPhase": 7,
   "totalPhases": 10,
   "phase7Status": "EM DESENVOLVIMENTO",
-  "lastCompletedIncrement": "Fase 7 incremento 3: timeline interna de estados de chamados em painel superadmin com MFA e testes de RBAC; sem notificacoes externas",
+  "lastCompletedIncrement": "F7 incremento 4: prazos internos manuais, filtros de atraso e historico auditavel; sem SLA automatico nem notificacoes",
   "lastValidatedCi": [
     {
-      "id": 44920626498,
+      "id": 44922044208,
       "result": "success",
-      "scope": "backend/typecheck/domain/security/migrations/integration/builds"
+      "scope": "backend/typecheck/security/migrations twice/integration/builds"
     },
     {
-      "id": 44920626428,
+      "id": 44922044209,
       "result": "success",
       "scope": "Chromium desktop/mobile E2E"
     },
     {
-      "id": 44920626521,
+      "id": 44922044232,
       "result": "success",
       "scope": "AI memory integrity"
     }
@@ -38,9 +38,9 @@
   "financialLiveApproved": false,
   "externalHomologationCompleted": false,
   "nextApprovedScope": [
-    "F7: SLA/gestao de suporte e avisos internos seguros",
-    "F7: LGPD com verificacao/revisao legal",
-    "F7: relatórios, exports e paridade"
+    "F7: politica SLA e alertas internos sem entrega presumida",
+    "F7: LGPD com revisao juridica",
+    "F7: relatorios, exports e paridade"
   ],
   "sourceArchive": "CobraFlux-Knowledge-Handoff-2026-11-21.zip",
   "sourceArchiveUploadedToRepository": false,
@@ -49,5 +49,8 @@
   "sourceDocumentsUploadedToRepository": true,
   "sourceDocumentsVerifiedExactGitBlobs": 12,
   "sourceDocumentsGitCommit": "2b60a089d0cf47186fcc51befdec3b0bd8608b3e",
-  "sourceDocumentsDirectory": "docs/ai-memory/originais"
+  "sourceDocumentsDirectory": "docs/ai-memory/originais",
+  "supportSlaManuallyConfigurable": true,
+  "supportSlaAutomaticPolicyConfigured": false,
+  "supportSlaExternalNotificationsEnabled": false
 }

@@ -5,7 +5,7 @@
 ## Fase 7: tarefas de desenvolvimento ainda em aberto
 | ID histórico | Assunto | Situação em 21/11/2026 | Próximo aceite técnico |
 | --- | --- | --- | --- |
-| BL-006 | Respostas, SLA e suporte | **Parcial:** resposta/histórico no portal TESTADOS em 4dcbb80; timeline interna de status TESTADA em 96e58848; e-mail, SLA, anexos e notificações ausentes | Definir/implementar SLA no DB, painel, notificações sem falsa entrega, testes permissão e atraso |
+| BL-006 | Respostas, SLA e suporte | **Parcial:** resposta/histórico no portal TESTADOS em 4dcbb80; timeline interna de status TESTADA em 96e58848; prazo SLA interno manual TESTADO em 472b0bd; e-mail, SLA automático, anexos e notificações ausentes | Definir política aprovada, alertas e entrega verificável sem simulação; manter testes permissão e atraso |
 | BL-007 | Direitos LGPD ponta a ponta | Triagem existente, atendimento legal ainda **não concluído** | Evidência/revisão, portabilidade integral, retenção sob parecer jurídico |
 | BL-008 | Relatórios/exportações completos | Métricas e CSV limitados implementados | Filtragem, paginação integral, integridade de números e segurança de dados |
 | BL-012 | Paridade da interface F7 | Primeiro incremento testado | Verificar demo vs operação, papéis, estados de erro, acessibilidade, mobile |
@@ -27,6 +27,6 @@
 BL-034 fornecedor/preço checkout SaaS; BL-035 hosting/domínio; BL-036 refatoração IGoldenBillingService; BL-037 PSPs alternativos; BL-038 Universal Build. **Não implementar por conta própria.**
 
 ## Próximo incremento recomendado, ainda F7
-Escolher um recorte **já aprovado** de BL-006/007/008/012. Prioridade sugerida: **SLA e organização do atendimento interno**, aproveitando a migração 017 e os testes atuais, sem alegar envio de e-mail. Antes de codar: verificar código e decisões, definir critérios mensuráveis, testar erro/CSRF/MFA/cross-tenant, atualizar docs após CI.
+Escolher um recorte **já aprovado** de BL-006/007/008/012. Prioridade sugerida: **regras aprovadas de SLA e alertas internos**, ou LGPD/exportações, aproveitando migrações 017–018 e testes, sem alegar envio externo. Antes de codar: verificar código e decisões, definir critérios mensuráveis, testar erro/CSRF/MFA/cross-tenant, atualizar docs após CI.
 
 **Status não é binário:** PLANEJADA, EM DESENVOLVIMENTO, IMPLEMENTADA NÃO VALIDADA, IMPLEMENTADA TESTADA, HOMOLOGAÇÃO PENDENTE e OPERACIONAL são dimensões distintas. Não converter esta lista em percentual de conclusão.

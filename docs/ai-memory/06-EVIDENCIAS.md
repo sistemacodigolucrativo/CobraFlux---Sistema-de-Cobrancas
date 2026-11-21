@@ -2,7 +2,12 @@
 
 Este registro separa **evidência do código no GitHub** de homologação externa. O estado de um workflow pertence ao SHA executado; um sucesso antigo não prova que um commit novo passou.
 
-## Último incremento F7 validado — timeline interna de status
+## Último incremento F7 validado — SLA interno manual (21/11/2026)
+- Código [472b0bd84885e1463c5c5b660bb800bf498994d8](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/472b0bd84885e1463c5c5b660bb800bf498994d8) com backend [#44922044208](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044208), browser [#44922044209](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044209) e memória [#44922044232](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044232), todos **success** e vinculados ao SHA.
+- Testado: MFA/RBAC, 401/403/404/400/409, CSRF, ISO com fuso, filtros, prazo vencido, remoção, imutabilidade de eventos e ticket encerrado.
+- Limites: prazos configurados manualmente sem SLA padrão, sem alertas/entrega externa e sem homologação operacional.
+
+## Incremento F7 anterior — timeline interna de status
 - Código: [96e58848cb696489560fa14fcbceaf19357d2566](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/96e58848cb696489560fa14fcbceaf19357d2566).
 - GitHub Actions backend/Postgres/integration/builds: [#44920626498](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44920626498) — **success**.
 - GitHub Actions browser Chromium desktop/mobile: [#44920626428](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44920626428) — **success**.

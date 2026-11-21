@@ -18,6 +18,8 @@
 
 | 2026-11-21 F7 incremento 3 | Timeline administrativa de status dos tickets | [Commit 96e58848](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/96e58848cb696489560fa14fcbceaf19357d2566), [backend #44920626498](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44920626498) e [browser #44920626428](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44920626428) — success | RBAC e motivos auditáveis; sem notificação externa nem SLA; F7 aberta |
 
+| 2026-11-21 F7 incremento 4 | Gestão manual de prazo SLA, filtro vencidos, eventos imutáveis | [Código 472b0bd](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/472b0bd84885e1463c5c5b660bb800bf498994d8); [backend #44922044208](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044208), [browser #44922044209](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044209), [memória #44922044232](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044232) — success | Implementado e testado; sem política SLA automática, alertas, e-mail nem deploy; F7 aberta |
+
 ## Rastro adicional da segunda entrega F7
 - 2c79532: migração 017;
 - 1d609d6: rotas seguras do portal;
