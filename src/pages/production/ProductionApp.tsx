@@ -9,6 +9,8 @@ import { ChargesOperationsView } from './ChargesOperationsView';
 import { RecurrencesOperationsView } from './RecurrencesOperationsView';
 import { WhatsAppOperationsView } from './WhatsAppOperationsView';
 import { SaasBillingView } from './SaasBillingView';
+import { ReportsOperationsView } from './ReportsOperationsView';
+import { AdminOperationsView } from './AdminOperationsView';
 import { ServicesOperationsView } from './ServicesOperationsView';
 import { AccountOperationsView } from './AccountOperationsView';
 
@@ -163,6 +165,8 @@ export function ProductionApp(){
           {tab==='recorrencias'&&<RecurrencesOperationsView key={session.organizationId} canManage={session.user.role!=='operator'} onChanged={refresh}/>}
           {tab==='whatsapp'&&<WhatsAppOperationsView key={session.organizationId} canManage={session.user.role!=='operator'}/>}
           {tab==='assinatura'&&<SaasBillingView key={session.organizationId} canManage={session.user.role!=='operator'} isPlatformAdmin={session.user.role==='super_admin'}/>}
+          {tab==='relatorios'&&<ReportsOperationsView key={session.organizationId} canManage={session.user.role!=='operator'}/>}
+          {tab==='admin'&&session.user.role==='super_admin'&&<AdminOperationsView key={session.organizationId}/>}
           {tab==='equipe'&&<TeamOperationsView key={session.organizationId} session={session}/>}
           {tab==='configuracoes'&&<AccountOperationsView key={session.organizationId} session={session} onSessionChange={setSession}/>}
   </ProductionShell>;

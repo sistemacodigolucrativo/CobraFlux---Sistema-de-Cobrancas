@@ -1,12 +1,12 @@
 import React,{useEffect,useState} from 'react';
 import {
   CreditCard,Home,LogOut,Menu,Settings,ShieldCheck,Users,UserRoundCheck,
-  X,Layers,CalendarClock,MessageCircle,WalletCards
+  X,Layers,CalendarClock,MessageCircle,WalletCards,BarChart3,ShieldAlert
 } from 'lucide-react';
 import { GoldenLogo } from '../../components/ui/Primitives';
 import type { OrganizationChoice,Session } from '../../services/productionApi';
 
-export type ProductionTab='inicio'|'clientes'|'cobrancas'|'recorrencias'|'whatsapp'|'assinatura'|'servicos'|'equipe'|'sessoes'|'configuracoes';
+export type ProductionTab='inicio'|'clientes'|'cobrancas'|'recorrencias'|'whatsapp'|'assinatura'|'relatorios'|'admin'|'servicos'|'equipe'|'sessoes'|'configuracoes';
 type NavItem={id:ProductionTab;label:string;icon:React.ComponentType<{className?:string}>};
 const NAV_ITEMS:NavItem[]=[
   {id:'inicio',label:'Início',icon:Home},
@@ -15,6 +15,8 @@ const NAV_ITEMS:NavItem[]=[
   {id:'recorrencias',label:'Recorrências',icon:CalendarClock},
   {id:'whatsapp',label:'WhatsApp Business',icon:MessageCircle},
   {id:'assinatura',label:'Meu Plano',icon:WalletCards},
+  {id:'relatorios',label:'Relatórios',icon:BarChart3},
+  {id:'admin',label:'Administração',icon:ShieldAlert},
   {id:'servicos',label:'Serviços',icon:Layers},
   {id:'equipe',label:'Equipe e permissões',icon:UserRoundCheck},
   {id:'sessoes',label:'Sessões e segurança',icon:ShieldCheck},
@@ -26,7 +28,9 @@ export function ProductionShell({session,organizations,tab,onTabChange,onSwitch,
   children:React.ReactNode;
 }){
   const [menuOpen,setMenuOpen]=useState(false);
-  const allowed=NAV_ITEMS.filter(item=>item.id!=='equipe'||session.user.role!=='operator');
+  const allowed=NAV_ITEMS.filter(item=>
+    (item.id!=='equipe'||session.user.role!=='operator')&&
+    (item.id!=='admin'||session.user.role==='super_admin'));
   useEffect(()=>{setMenuOpen(false);},[tab,session.organizationId]);
   useEffect(()=>{
     if(!menuOpen)return;

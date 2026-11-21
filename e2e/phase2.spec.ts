@@ -63,6 +63,10 @@ test('desktop: login, client records, service catalog, charge draft and team acc
   await nav.getByRole('button',{name:'Equipe e permissões'}).click();
   await expect(page.getByRole('heading',{name:'Equipe e permissões'})).toBeVisible();
   await expect(page.getByText(owner.email)).toBeVisible();
+  await nav.getByRole('button',{name:'Relatórios'}).click();
+  await expect(page.getByRole('heading',{name:'Relatórios e auditoria'})).toBeVisible();
+  await expect(page.getByText(/Valores reais, testes de sandbox e assinaturas SaaS/)).toBeVisible();
+  await expect(nav.getByRole('button',{name:'Administração'})).toHaveCount(0);
   await nav.getByRole('button',{name:'Meu Plano'}).click();
   await expect(page.getByRole('heading',{name:'Assinatura CobraFlux'})).toBeVisible();
   await expect(page.getByText(/Faturamento da plataforma separado das cobranças/)).toBeVisible();
@@ -93,6 +97,10 @@ test('mobile: bottom navigation, accessible drawer and owner-only team menu',asy
   await drawer.getByRole('button',{name:'Recorrências'}).click();
   await expect(page.getByRole('heading',{name:'Recorrências'})).toBeVisible();
   await page.getByRole('button',{name:'Abrir menu completo'}).click();
+  await drawer.getByRole('button',{name:'Relatórios'}).click();
+  await expect(page.getByRole('heading',{name:'Relatórios e auditoria'})).toBeVisible();
+  await page.getByRole('button',{name:'Abrir menu completo'}).click();
+  await expect(drawer.getByRole('button',{name:'Administração'})).toHaveCount(0);
   await drawer.getByRole('button',{name:'Meu Plano'}).click();
   await expect(page.getByRole('heading',{name:'Assinatura CobraFlux'})).toBeVisible();
   await page.getByRole('button',{name:'Abrir menu completo'}).click();
