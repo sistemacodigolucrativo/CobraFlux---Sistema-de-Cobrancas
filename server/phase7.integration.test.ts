@@ -122,6 +122,26 @@ test('Phase 7 platform admin, audited exports, financial segregation, ticket tri
   const event=await pool.query('SELECT actor_id,old_status,new_status FROM support_ticket_events WHERE ticket_id=$1',[support.body.id]);
   assert.equal(event.rowCount,1);
   assert.equal(event.rows[0].new_status,'in_progress');
+  // Administrative status history: RBAC, anonymous denial, safe pagination and no delivery claims.
+  assert.equal((await call('/admin/support/tickets/'+support.body.id+'/events')).status,401);
+  assert.equal((await call('/admin/support/tickets/'+support.body.id+'/events','GET',undefined,a)).status,403);
+  assert.equal((await call('/admin/support/tickets/'+support.body.id+'/events','GET',undefined,b)).status,403);
+  const history=await call('/admin/support/tickets/'+support.body.id+'/events','GET',undefined,root);
+  assert.equal(history.status,200,JSON.stringify(history.body));
+  assert.equal(history.body.auditOnly,true);
+  assert.equal(history.body.externalNotificationSent,false);
+  assert.equal(history.body.items.length,1);
+  assert.equal(history.body.items[0].old_status,'open');
+  assert.equal(history.body.items[0].new_status,'in_progress');
+  assert.equal(history.body.items[0].reason,'Acompanhamento administrativo registrado.');
+  assert.ok(history.body.items[0].actor_name);
+  assert.match(history.headers.get('cache-control')??'',/no-store/);
+  assert.equal((await call('/admin/support/tickets/'+randomUUID()+'/events','GET',undefined,root)).status,404);
+  assert.equal((await call('/admin/support/tickets/'+support.body.id+'/events?limit=0','GET',undefined,root)).status,400);
+  const one=await call('/admin/support/tickets/'+support.body.id+'/events?limit=1','GET',undefined,root);
+  assert.equal(one.status,200);
+  assert.equal(one.body.hasMore,false);
+
   // Fase 7: resposta persistida apenas no portal autenticado, sem entrega externa.
   const key=randomUUID();
   const answer={message:'A equipe validou seu chamado. Acompanhe esta resposta neste painel.',clientRequestId:key};

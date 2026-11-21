@@ -183,6 +183,21 @@ export function registerPhase7Routes(app:Express,{sessions,csrf,who,route,rateLi
    [q.status??null,q.limit,q.offset]);
   res.json({items:rows.rows,clientMessagesContainPersonalData:true});
  }));
+ // Status history is administrative evidence, not a notification/delivery channel.
+ app.get('/api/admin/support/tickets/:id/events',sessions,route(async(req,res)=>{
+  const p=who(req);if(!requireAdmin(p,res))return;
+  const {id}=identifier.parse(req.params),q=page.parse(req.query);
+  const ticket=await pool.query('SELECT id FROM support_tickets WHERE id=$1',[id]);
+  if(!ticket.rowCount){res.status(404).json({error:'ticket_not_found'});return;}
+  const history=await pool.query(
+   'SELECT e.id,e.old_status,e.new_status,e.reason,e.created_at,u.name AS actor_name '+
+   'FROM support_ticket_events e JOIN users u ON u.id=e.actor_id '+
+   'WHERE e.ticket_id=$1 ORDER BY e.created_at DESC,e.id DESC LIMIT $2 OFFSET $3',
+   [id,q.limit+1,q.offset]);
+  res.setHeader('Cache-Control','private, no-store');
+  res.json({items:history.rows.slice(0,q.limit),hasMore:history.rows.length>q.limit,
+   auditOnly:true,externalNotificationSent:false});
+ }));
  app.patch('/api/admin/support/tickets/:id',sessions,csrf,route(async(req,res)=>{
   const p=who(req);if(!requireAdmin(p,res))return;
   const {id}=identifier.parse(req.params);

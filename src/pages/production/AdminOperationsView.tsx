@@ -1,7 +1,7 @@
 import React,{useCallback,useEffect,useState} from 'react';
 import {Button,Card,Input} from '../../components/ui/Primitives';
 import {productionApi,type Phase7AdminOverview,type Phase7AdminOrg,
- type Phase7AdminTicket,type Phase7PrivacyRequest,type Phase7AuditEntry,type Phase7SupportReply} from '../../services/productionApi';
+ type Phase7AdminTicket,type Phase7PrivacyRequest,type Phase7AuditEntry,type Phase7SupportReply,type Phase7SupportStatusEvent} from '../../services/productionApi';
 
 const money=(cents:string|number)=>new Intl.NumberFormat('pt-BR',{
  style:'currency',currency:'BRL'}).format(Number(cents)/100);
@@ -22,6 +22,7 @@ export function AdminOperationsView(){
  const [ticketId,setTicketId]=useState(''),[ticketStatus,setTicketStatus]=useState<Phase7AdminTicket['status']>('in_progress');
  const [ticketReason,setTicketReason]=useState('');
  const [ticketReplies,setTicketReplies]=useState<Phase7SupportReply[]>([]);
+ const [ticketStatusEvents,setTicketStatusEvents]=useState<Phase7SupportStatusEvent[]>([]);
  const [ticketReplyMessage,setTicketReplyMessage]=useState('');
  const [replyKey,setReplyKey]=useState('');
  const [privacyId,setPrivacyId]=useState(''),[privacyStatus,setPrivacyStatus]=useState<'in_review'|'awaiting_evidence'|'closed_rejected'>('in_review');
@@ -40,12 +41,15 @@ export function AdminOperationsView(){
  useEffect(()=>{setLoading(true);void load().catch(e=>setError(e instanceof Error?e.message:'Administração indisponível.'))
   .finally(()=>setLoading(false));},[load]);
  useEffect(()=>{
-  if(!ticketId){setTicketReplies([]);return;}
+  if(!ticketId){setTicketReplies([]);setTicketStatusEvents([]);return;}
   let current=true;
-  setTicketReplies([]);
-  void productionApi.phase7AdminTicketReplies(ticketId).then(r=>{
-   if(current)setTicketReplies(r.items);
-  }).catch(e=>{if(current)setError(e instanceof Error?e.message:'Falha ao consultar respostas.');});
+  setTicketReplies([]);setTicketStatusEvents([]);
+  void Promise.all([
+   productionApi.phase7AdminTicketReplies(ticketId),
+   productionApi.phase7AdminTicketEvents(ticketId)
+  ]).then(([replies,history])=>{
+   if(current){setTicketReplies(replies.items);setTicketStatusEvents(history.items);}
+  }).catch(e=>{if(current)setError(e instanceof Error?e.message:'Falha ao consultar histórico do chamado.');});
   return ()=>{current=false;};
  },[ticketId]);
  async function action(fn:()=>Promise<unknown>,success:string){
@@ -181,6 +185,20 @@ export function AdminOperationsView(){
       <p className="text-xs text-[#B8BFCD]">{r.author_name} · {new Date(r.created_at).toLocaleString('pt-BR')}</p>
       <p className="text-sm whitespace-pre-wrap break-words">{r.message}</p>
      </div>)}</div>}
+   <div className="space-y-2 pt-2 border-t border-white/10">
+    <p className="text-sm font-semibold">Histórico de alteração de status (auditoria interna)</p>
+    {ticketStatusEvents.length===0
+     ?<p className="text-xs text-[#B8BFCD]">Sem mudanças de status registradas.</p>
+     :<div className="max-h-48 overflow-y-auto space-y-2">{ticketStatusEvents.map(ev=>
+      <div key={ev.id} className="p-3 rounded-lg border border-white/10 space-y-1">
+       <p className="text-xs text-[#B8BFCD]">{ev.actor_name} · {new Date(ev.created_at).toLocaleString('pt-BR')}</p>
+       <p className="text-xs">{ev.old_status} → {ev.new_status}</p>
+       <p className="text-xs whitespace-pre-wrap break-words">{ev.reason}</p>
+      </div>)}</div>}
+    <p className="text-xs text-[#B8BFCD]">
+     Uso interno da administração; não representa mensagem enviada ao titular.
+    </p>
+   </div>
    {selectedTicket.organization_id
     ?<form className="space-y-2" onSubmit={e=>{e.preventDefault();void action(async()=>{
       const key=replyKey||crypto.randomUUID();

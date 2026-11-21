@@ -114,6 +114,13 @@ export type Phase7AdminTicket={
  id:string;organization_id:string|null;organization_name:string|null;name:string;
  email:string;subject:string;message:string;status:'open'|'in_progress'|'closed';created_at:string;
 };
+export type Phase7SupportStatusEvent={
+ id:string;old_status:'open'|'in_progress'|'closed';new_status:'open'|'in_progress'|'closed';
+ reason:string;actor_name:string;created_at:string;
+};
+export type Phase7SupportEventPage={
+ items:Phase7SupportStatusEvent[];hasMore:boolean;auditOnly:true;externalNotificationSent:false;
+};
 export type Phase7SupportReply={
   id:string;ticket_id:string;message:string;delivery_state:'portal_only';
   created_at:string;author_name:string;
@@ -263,6 +270,9 @@ export const productionApi={
   phase7AdminTicketReview:(id:string,status:Phase7AdminTicket['status'],reason:string)=>
     request<{id:string;status:string;replySent:false}>('/admin/support/tickets/'+encode(id),
       'PATCH',{status,reason}),
+  phase7AdminTicketEvents:(id:string,offset=0)=>
+    request<Phase7SupportEventPage>(
+      '/admin/support/tickets/'+encode(id)+'/events'+qs({limit:50,offset})),
   phase7AdminTicketReplies:(id:string,offset=0)=>
     request<Phase7SupportReplyPage>('/admin/support/tickets/'+encode(id)+'/replies'+qs({limit:50,offset})),
   phase7AdminTicketReply:(id:string,message:string,clientRequestId:string)=>
