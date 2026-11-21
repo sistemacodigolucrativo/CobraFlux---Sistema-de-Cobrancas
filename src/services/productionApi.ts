@@ -159,6 +159,24 @@ export const productionApi={
     request<{ok:boolean;organizationId:string;organizationName:string;email:string}>('/team/activate','POST',{token,name,password}),
   acceptInvite:(token:string)=>request<{ok:boolean;organizationId:string;organizationName:string}>('/team/accept','POST',{token}),
 
+  whatsappConnection:()=>request<{configured:boolean;enabled:boolean;wabaId:string|null;phoneNumberId:string|null;
+    lastTemplateSyncAt:string|null;deliveryEnabled:boolean;schedulerRequired:true}>('/whatsapp/connection'),
+  configureWhatsApp:(payload:{wabaId:string;phoneNumberId:string;accessToken:string})=>
+    request<{configured:true;enabled:false}>('/whatsapp/connection','PUT',payload),
+  verifyWhatsAppTemplates:()=>request<{verified:number;approvedUtilityTemplates:Array<{name:string;language:string}>}>('/whatsapp/templates/sync','POST',{}),
+  whatsappTemplates:()=>request<{items:Array<{id:string;name:string;language:string;approved:boolean;verified_at:string}>}>('/whatsapp/templates'),
+  enableWhatsApp:()=>request<{enabled:true;deliveryEnabled:boolean}>('/whatsapp/connection/enable','POST',{}),
+  disableWhatsApp:()=>request<{enabled:false}>('/whatsapp/connection/disable','POST',{}),
+  whatsappConsents:()=>request<{items:Array<{client_id:string;name:string;phone:string;client_status:string;
+    granted:boolean;version:number;phone_snapshot:string|null;source:string|null;updated_at:string|null}>}>('/whatsapp/consents'),
+  recordWhatsAppConsent:(clientId:string,body:{action:'grant'|'revoke';source:'signed_form'|'web_form'|'documented_request'|'client_request';
+    evidenceReference?:string;acknowledged?:boolean})=>
+    request<{clientId:string;granted:boolean;version:number}>('/whatsapp/clients/'+encode(clientId)+'/consent','POST',body),
+  whatsappOutbox:()=>request<{items:Array<{id:string;charge_id:string;client_name:string;state:string;
+    template_name:string;attempts:number;last_error:string|null;sent_at:string|null;created_at:string}>;
+    deliveryEnabled:boolean;acceptedIsNotDelivered:true}>('/whatsapp/outbox'),
+  queueWhatsAppReminder:(chargeId:string,templateId:string)=>
+    request<{id:string;state:string;alreadyQueued:boolean;sendEnabled:false}>('/whatsapp/messages/queue','POST',{chargeId,templateId}),
   recurrenceOverview:()=>request<{summary:{total:number;active:number;paused:number;due:number;generated:number};
     workerEnabled:false;schedulerRequired:true;financialProviderCalls:0}>('/recurrences/overview'),
   recurrences:(state?:'active'|'paused'|'cancelled')=>
