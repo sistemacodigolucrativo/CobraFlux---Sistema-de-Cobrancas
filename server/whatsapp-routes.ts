@@ -2,6 +2,7 @@ import {randomUUID} from 'node:crypto';
 import type {Express,Request,Response,RequestHandler} from 'express';
 import {z} from 'zod';
 import {pool,transaction} from './db';
+import {enforceSaasQuota} from './saas-domain';
 import {WhatsAppCloud,encryptWhatsAppToken,decryptWhatsAppToken,whatsappSecretsReady} from './whatsapp-cloud';
 
 type Principal={userId:string;orgId:string;role:string};
@@ -233,6 +234,7 @@ export function registerWhatsApp(app:Express,{sessions,csrf,who,route}:Deps){
       const duplicate=await db.query('SELECT id,state FROM whatsapp_outbox WHERE organization_id=$1 AND charge_id=$2 AND kind=$3',
         [p.orgId,b.chargeId,'due_reminder']);
       if(duplicate.rowCount)return {...duplicate.rows[0],alreadyQueued:true};
+      await enforceSaasQuota(db,p.orgId,'messages_month');
       const id=randomUUID();
       await db.query(
         "INSERT INTO whatsapp_outbox(id,organization_id,client_id,charge_id,template_id,kind,consent_version,target_phone,created_by) "+
