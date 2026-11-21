@@ -14,6 +14,8 @@ import { registerSandboxRefunds } from './sandbox-refunds';
 import { registerSandboxCancellation } from './sandbox-cancellation';
 import { registerRecurrences } from './recurrences';
 import { registerWhatsApp } from './whatsapp-routes';
+import { registerSaasRoutes } from './saas-routes';
+import { SaasQuotaError } from './saas-domain';
 import { registerMetaWebhook } from './whatsapp-webhook';
 import { csrfForSession, getCookie, normalizeEmail, passwordHash, passwordMatches, randomSecret, secureEquals, sha256 } from './security';
 
@@ -316,6 +318,7 @@ registerSandboxCancellation(app, { sessions, csrf, route, who });
 registerRecurrences(app, { sessions, csrf, route, who });
 registerWhatsApp(app, { sessions, csrf, route, who });
 registerMetaWebhook(app);
+registerSaasRoutes(app, { sessions, csrf, route, who });
 
 app.get('/api/public/charges/:publicToken', route(async (req,res)=>{
   if (req.params.publicToken.length<20 || req.params.publicToken.length>120) { res.status(404).json({error:'not_found'}); return; }
@@ -365,6 +368,7 @@ app.get('*', (_req,res) => {
   res.sendFile(htmlPath);
 });
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  if (err instanceof SaasQuotaError) {res.status(409).json({error:'saas_quota_exceeded',resource:err.resource,used:err.current,limit:err.limit});return;}
   if (err instanceof ZodError) { res.status(400).json({error:'validation_error',issues:err.issues}); return; }
   if (typeof err === 'object' && err !== null && 'code' in err) {
     const code = (err as {code?:string}).code;
