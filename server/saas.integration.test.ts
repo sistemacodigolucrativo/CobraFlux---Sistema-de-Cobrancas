@@ -86,6 +86,12 @@ test('SaaS separate ledger, fail-closed plan checkout, tenant permissions, quota
    planCode:'business',clientRequestId:key
   },a)).status,409);
   assert.equal((await call('/saas/change-requests','POST',{
+   planCode:'starter',clientRequestId:key
+  },a)).status,409,'a reused idempotency key may not change the coupon');
+  assert.equal((await call('/admin/saas/plans/starter','PATCH',{
+   monthlyPriceCents:100,published:true
+  },a)).status,403,'tenant owner must never change global platform pricing');
+  assert.equal((await call('/saas/change-requests','POST',{
    planCode:'starter',clientRequestId:randomUUID()
   },a)).status,409,'only one pending platform checkout per organization');
   const invoice=await call('/saas/invoices','GET',undefined,a);
@@ -150,6 +156,35 @@ test('SaaS separate ledger, fail-closed plan checkout, tenant permissions, quota
   assert.equal((await call('/saas/subscription','GET',undefined,a)).body.subscription.status,'restricted');
   const history=await pool.query("SELECT action FROM saas_subscription_history WHERE organization_id=$1",[a.orgId]);
   assert.ok(history.rows.some((x:{action:string})=>x.action==='SAAS_GRACE_EXPIRED'));
+  const couponUse=await pool.query('SELECT redeemed_count FROM saas_coupons WHERE code=$1',[couponCode]);
+  assert.equal(couponUse.rows[0].redeemed_count,0,'no coupon consumption without verified payment');
+  // Cancellation at a verified period end never deletes the organization's data.
+  await pool.query("UPDATE saas_subscriptions SET plan_code='starter',status='active',"+
+    "current_period_end=current_date,cancel_at_period_end=true,provider='ci_fixture',"+
+    "provider_subscription_id=$2 WHERE organization_id=$1",[b.orgId,'ci-sub-'+randomUUID()]);
+  const ended=await reconcileSaasBilling(10,localBillingDate());
+  assert.ok(ended.cancelled>=1);
+  const bState=await call('/saas/subscription','GET',undefined,b);
+  assert.equal(bState.body.effectivePlan,'free');
+  assert.equal(bState.body.subscription.status,'free');
+  assert.equal((await call('/clients','GET',undefined,b)).body.items.length,1,
+    'paid period expiry must not delete merchant customers');
+  // Dunning: a pending SaaS invoice may become past_due and restricted without an external payment event.
+  await pool.query("UPDATE saas_subscriptions SET plan_code='starter',status='active',"+
+    "current_period_end=current_date+interval '30 days',cancel_at_period_end=false,"+
+    "provider='ci_fixture',provider_subscription_id=$2 WHERE organization_id=$1",[b.orgId,'ci-sub-'+randomUUID()]);
+  const pendingInvoice=randomUUID();
+  await pool.query(
+    "INSERT INTO saas_invoices(id,organization_id,plan_code,base_amount_cents,discount_cents,"+
+    "period_start,period_end,due_date,status) VALUES($1,$2,'starter',18990,0,"+
+    "current_date-interval '30 days',current_date+interval '30 days',"+
+    "current_date-interval '9 days','pending')",[pendingInvoice,b.orgId]);
+  const overdue=await reconcileSaasBilling(10,localBillingDate());
+  assert.ok(overdue.overdue>=1,'past-due SaaS invoice should be classified');
+  assert.ok(overdue.restricted>=1,'expired seven-day grace requires Free limits');
+  const late=await pool.query('SELECT status FROM saas_invoices WHERE id=$1',[pendingInvoice]);
+  assert.equal(late.rows[0].status,'past_due');
+  assert.equal((await call('/saas/subscription','GET',undefined,b)).body.effectivePlan,'free');
  }catch(e){
   throw e;
  }finally{

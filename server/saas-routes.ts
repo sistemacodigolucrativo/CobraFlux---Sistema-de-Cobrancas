@@ -89,11 +89,15 @@ export function registerSaasRoutes(app:Express,{sessions,csrf,who,route}:Deps){
    clientRequestId:z.uuid()}).strict().parse(req.body);
   const result=await transaction(async db=>{
    await db.query('SELECT id FROM organizations WHERE id=$1 FOR UPDATE',[p.orgId]);
-   const existing=await db.query('SELECT r.id,r.state,r.invoice_id,r.requested_plan '+
-    'FROM saas_change_requests r WHERE r.organization_id=$1 AND r.client_request_id=$2',
+   const existing=await db.query('SELECT r.id,r.state,r.invoice_id,r.requested_plan,c.code AS coupon_code '+
+    'FROM saas_change_requests r JOIN saas_invoices i ON i.id=r.invoice_id '+
+    'LEFT JOIN saas_coupons c ON c.id=i.coupon_id '+
+    'WHERE r.organization_id=$1 AND r.client_request_id=$2',
     [p.orgId,b.clientRequestId]);
    if(existing.rowCount){
-    if(existing.rows[0].requested_plan!==b.planCode)return {error:'idempotency_key_reused_for_other_plan'};
+    if(existing.rows[0].requested_plan!==b.planCode||
+       (existing.rows[0].coupon_code??null)!==(b.couponCode??null))
+      return {error:'idempotency_key_reused_with_different_details'};
     return {...existing.rows[0],alreadyRequested:true};
    }
    const sub=await db.query('SELECT plan_code,status FROM saas_subscriptions WHERE organization_id=$1 FOR UPDATE',[p.orgId]);
