@@ -60,6 +60,32 @@ export type RecurrenceCycle={
  id:string;cycle_key:string;due_date:string;charge_id:string;charge_status:string;
  amount_cents:string;discount_cents:string;created_at:string;
 };
+export type SaaSResource='clients'|'services'|'charges_month'|'recurrences'|'members'|'messages_month';
+export type SaaSPlan={
+ code:'free'|'starter'|'business';label:string;monthly_price_cents:string|null;currency:'BRL';
+ clients_limit:number;services_limit:number;charges_month_limit:number;recurrences_limit:number;
+ members_limit:number;messages_month_limit:number;published:boolean;
+};
+export type SaaSSubscription={
+ subscription:{plan_code:string;status:string;grace_until:string|null;current_period_end:string|null;
+   current_period_start:string;cancel_at_period_end:boolean};
+ effectivePlan:string;limits:Record<SaaSResource,number>;usage:Record<SaaSResource,number>;
+ pendingPaymentDoesNotActivate:true;realCheckoutEnabled:false;
+};
+export type SaaSInvoice={
+ id:string;plan_code:string;base_amount_cents:string;discount_cents:string;total_cents:string;
+ status:string;period_start:string;period_end:string;due_date:string;payment_verified_at:string|null;
+ created_at:string;
+};
+export type SaaSChangeRequest={
+ id:string;client_request_id:string;requested_plan:string;state:string;created_at:string;
+ invoice_id:string;invoice_status:string;total_cents:string;
+};
+export type SaaSQuote={
+ planCode:string;label:string;priceConfigured:boolean;currency:'BRL';
+ baseCents:number|null;discountCents:number;totalCents:number|null;couponCode:string|null;
+ requiresVerifiedPlatformPayment:true;
+};
 export type OrganizationChoice={id:string;name:string;role:'owner'|'operator'|'super_admin'};
 export type TeamMember={id:string;name:string;email:string;role:'owner'|'operator'|'super_admin';organization_id:string};
 export type TeamInvitation={
@@ -159,6 +185,22 @@ export const productionApi={
     request<{ok:boolean;organizationId:string;organizationName:string;email:string}>('/team/activate','POST',{token,name,password}),
   acceptInvite:(token:string)=>request<{ok:boolean;organizationId:string;organizationName:string}>('/team/accept','POST',{token}),
 
+  saasPlans:()=>request<{items:SaaSPlan[];billingProviderConfigured:false;realCheckoutEnabled:false}>('/saas/plans'),
+  saasSubscription:()=>request<SaaSSubscription>('/saas/subscription'),
+  saasInvoices:()=>request<{items:SaaSInvoice[];ledger:'platform_saas';excludedFromMerchantCashflow:true}>('/saas/invoices'),
+  saasChangeRequests:()=>request<{items:SaaSChangeRequest[]}>('/saas/change-requests'),
+  saasQuote:(planCode:'starter'|'business',couponCode?:string)=>
+    request<SaaSQuote>('/saas/quote','POST',{planCode,...(couponCode?{couponCode}:{})}),
+  saasRequestUpgrade:(planCode:'starter'|'business',clientRequestId:string,couponCode?:string)=>
+    request<{id:string;invoice_id:string;state:string;amountCents:number;
+      alreadyRequested:boolean;subscriptionActivated:false;platformPaymentVerified:false}>('/saas/change-requests',
+      'POST',{planCode,clientRequestId,...(couponCode?{couponCode}:{})}),
+  saasCancelUpgrade:(id:string)=>request<{id:string;state:string}>('/saas/change-requests/'+encode(id)+'/cancel','POST',{}),
+  saasCancelAtPeriodEnd:(value:boolean)=>request<{cancelAtPeriodEnd:boolean;noProrationOrRefundTriggered:true}>(
+    '/saas/cancellation','POST',{cancelAtPeriodEnd:value}),
+  saasAdminSetPlan:(code:'starter'|'business',monthlyPriceCents:number,published:boolean)=>
+    request<{code:string;monthly_price_cents:string;published:boolean;realCheckoutEnabled:false}>(
+      '/admin/saas/plans/'+code,'PATCH',{monthlyPriceCents,published}),
   whatsappConnection:()=>request<{configured:boolean;enabled:boolean;wabaId:string|null;phoneNumberId:string|null;
     lastTemplateSyncAt:string|null;defaultTemplateId:string|null;deliveryEnabled:boolean;schedulerRequired:true}>('/whatsapp/connection'),
   configureWhatsApp:(payload:{wabaId:string;phoneNumberId:string;accessToken:string})=>
