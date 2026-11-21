@@ -87,7 +87,7 @@ export function RecurrencesOperationsView({canManage,onChanged}:{canManage:boole
       <h3 className="font-semibold">Criar regra de recorrência</h3>
       <form className="grid grid-cols-1 sm:grid-cols-2 gap-3" onSubmit={e=>{e.preventDefault();void perform(submit,'Regra cadastrada para gerar rascunhos nos vencimentos.');}}>
         <label className="text-sm">Cliente
-          <select required value={form.clientId} onChange={e=>selectClient(e.target.value)} className="block w-full mt-2 p-3 rounded-lg bg-[#0B0D12] border border-white/20">
+          <select aria-label="Cliente recorrente" required value={form.clientId} onChange={e=>selectClient(e.target.value)} className="block w-full mt-2 p-3 rounded-lg bg-[#0B0D12] border border-white/20">
             <option value="">Selecione</option>{clients.map(c=><option value={c.id} key={c.id}>{c.name}</option>)}
           </select>
         </label>

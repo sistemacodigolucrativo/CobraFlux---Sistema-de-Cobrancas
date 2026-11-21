@@ -46,7 +46,7 @@ test('desktop: login, client records, service catalog, charge draft and team acc
   await nav.getByRole('button',{name:'Recorrências'}).click();
   await expect(page.getByRole('heading',{name:'Recorrências'})).toBeVisible();
   await page.getByRole('button',{name:'Nova recorrência'}).click();
-  await page.getByLabel('Cliente',{exact:true}).selectOption({label:'Cliente Playwright'});
+  await page.getByRole('combobox',{name:'Cliente recorrente'}).selectOption({label:'Cliente Playwright'});
   await page.getByRole('button',{name:'Prévia de 6 ciclos'}).click();
   await expect(page.getByText(/Calendário conferido/)).toBeVisible();
   await page.getByRole('button',{name:'Salvar regra'}).click();
