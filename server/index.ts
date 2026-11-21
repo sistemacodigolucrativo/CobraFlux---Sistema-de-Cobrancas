@@ -15,6 +15,7 @@ import { registerSandboxCancellation } from './sandbox-cancellation';
 import { registerRecurrences } from './recurrences';
 import { registerWhatsApp } from './whatsapp-routes';
 import { registerSaasRoutes } from './saas-routes';
+import { registerPhase7Routes } from './phase7-routes';
 import { SaasQuotaError } from './saas-domain';
 import { registerMetaWebhook } from './whatsapp-webhook';
 import { csrfForSession, getCookie, normalizeEmail, passwordHash, passwordMatches, randomSecret, secureEquals, sha256 } from './security';
@@ -319,6 +320,7 @@ registerRecurrences(app, { sessions, csrf, route, who });
 registerWhatsApp(app, { sessions, csrf, route, who });
 registerMetaWebhook(app);
 registerSaasRoutes(app, { sessions, csrf, route, who });
+registerPhase7Routes(app, { sessions, csrf, route, who, rateLimit });
 
 app.get('/api/public/charges/:publicToken', route(async (req,res)=>{
   if (req.params.publicToken.length<20 || req.params.publicToken.length>120) { res.status(404).json({error:'not_found'}); return; }
