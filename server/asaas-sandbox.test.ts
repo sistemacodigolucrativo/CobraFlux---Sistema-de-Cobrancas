@@ -62,6 +62,9 @@ test('Asaas adapter uses only official sandbox host and maps payer/payment/QR en
  assert.equal((await client.getPayment('pay_0001')).billingType,'PIX');
  assert.equal((await client.getRefunds('pay_0001'))[0].status,'DONE');
  await client.requestRefund('pay_0001',550,'CobraFlux sandbox refund ref abc');
+ await client.deleteUnpaidPayment('pay_0001');
+ assert.ok(calls.some(c=>c.url.endsWith('/payments/pay_0001')&&c.method==='DELETE'));
+
  assert.ok(calls.some(c=>c.url.endsWith('/payments/pay_0001/refund')&&c.method==='POST' &&
    (c.body as {value:number}).value===5.5));
 

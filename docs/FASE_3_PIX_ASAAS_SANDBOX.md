@@ -124,3 +124,33 @@ Referências oficiais (conferidas para este incremento):
 - Nem o comprovante de teste nem o histórico de sandbox são documento fiscal, NFSe ou evidência de liquidação bancária comercial.
 
 Fonte: https://docs.asaas.com/docs/webhook-para-cobrancas — campo `transactionReceiptUrl` em cobranças.
+
+
+## Fase 3 — Cancelamento seguro de Pix já emitido (somente sandbox)
+
+**Diferença fundamental:** excluir uma cobrança ainda não recebida pelo Asaas não é um estorno. Esta etapa implementa \`DELETE /v3/payments/{id}\` **somente** para um Pix de testes não recebido, com o host do sandbox fixado no adapter. Um pagamento recebido exige conciliação e, quando cabível, estorno; jamais exclusão local fingindo devolução.
+
+### Fluxo transacional
+
+1. O titular solicita o cancelamento de uma cobrança com situação local \`pending\` ou \`overdue\`, sem recebimentos ou devoluções contabilizados, sem solicitação de estorno em andamento. A API exige sessão autenticada e CSRF; operadores não podem cancelar Pix emitido.
+2. O PostgreSQL cria uma intenção única na tabela \`sandbox_cancellation_requests\`, inclui motivo, autor, dados da organização e identificador de pagamento do PSP; bloqueia imediatamente o Pix na página pública alterando o estado local para \`cancel_pending\`. O histórico não é apagado.
+3. Antes da única requisição \`DELETE\`, a API consulta \`GET /payments/{id}\` e confere exatamente ID externo, \`externalReference\`, valor e \`billingType=PIX\`. Só prossegue se o estado do PSP ainda é \`PENDING\` ou \`OVERDUE\`.
+4. Após o DELETE, a API consulta novamente o PSP. O estado local só vira \`cancelled\` quando \`GET\` confirma \`DELETED\`; HTTP 200 do DELETE e webhook \`PAYMENT_DELETED\` isoladamente nunca são usados como prova suficiente.
+5. Se a conexão falhar, a intenção passa a \`reconcile_required\`, o código Pix continua indisponível e nenhuma outra solicitação poderá repetir a exclusão. A verificação manual ou worker agendável faz **somente GET**.
+6. Se o PSP informar \`RECEIVED\`, \`REFUNDED\` ou \`PARTIALLY_REFUNDED\` durante a tentativa, o cancelamento é rejeitado, o incidente \`cancellation_race_received\` fica registrado e a rotina financeira independente verifica o recebimento e os estornos. Nunca se afirma que dinheiro recebido foi cancelado.
+7. Eventos atrasados e conflitantes não alteram contabilização sem análise: pagamentos recebidos depois de status \`cancelled\` geram incidente e conciliação, não uma baixa silenciosa.
+8. Somente os estados do sandbox são alterados. Não existe configuração de host de produção, dinheiro real ou cancelamento automático de contratos de recorrência.
+
+### Endpoints
+
+| Método | Rota | Restrição |
+| --- | --- | --- |
+| POST | /api/sandbox/charges/:id/cancellation | Titular/admin + CSRF, uma única solicitação |
+| GET | /api/sandbox/charges/:id/cancellation | Titular/admin, consulta da intenção |
+| POST | /api/sandbox/charges/:id/cancellation/reconcile | Titular/admin + CSRF, verificação exclusivamente GET |
+
+**Migração:** \`010_sandbox_pix_cancellation.sql\`. **Interface:** opção **Cancelar Pix SANDBOX** para cobranças emitidas não recebidas e **Verificar cancelamento** para status inconclusivo. **CI:** teste de integração isolado com PSP mockado simula confirmação, DELETE duplicado, erro de rede, webhook \`PAYMENT_DELETED\`, corrida de pagamento recebido, isolamento entre organizações e operador sem autorização.
+
+**Pendências pré-lançamento:** homologar o DELETE real com credenciais de testes no Asaas, eventos chegando por HTTPS, respostas 404 ao consultar remoção, métricas e alertas de exceção. A execução em modo live permanece bloqueada.
+
+Fonte oficial: [Excluir cobrança — API Asaas](https://docs.asaas.com/reference/excluir-cobranca) e [Eventos de cobrança Asaas](https://docs.asaas.com/docs/webhook-para-cobrancas).
