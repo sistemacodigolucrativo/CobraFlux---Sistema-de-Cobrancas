@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "project": "CobraFlux — Sistema de Cobranças",
+  "snapshotDate": "2026-11-21",
+  "source": "GitHub PR #2 / Issue #3 / GitHub Actions / handoff local de 21-11",
+  "repository": "sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas",
+  "authorizedBranch": "feat/production-foundation",
+  "lastVerifiedCodeCommit": "e88ddfe8c2792dbd8d7806c046a14a8a3ff4b7d2",
+  "mainReferenceCommit": "95aba9c27c363c8b24c2f34c65a28c2f3b011b3b",
+  "pullRequest": {
+    "number": 2,
+    "draft": true,
+    "merged": false
+  },
+  "roadmapIssue": 3,
+  "currentPhase": 7,
+  "totalPhases": 10,
+  "phase7Status": "EM DESENVOLVIMENTO",
+  "lastCompletedIncrement": "F7 incremento 7: CSV export por keyset cursor assinado/HMAC, org+dataset+status vinculados, TTL 30min e timestamp de corte; sem snapshot e sem teste de carga",
+  "lastValidatedCi": [
+    {
+      "id": 44935128670,
+      "result": "success",
+      "scope": "backend/TypeScript/security/migrations twice/integration multi-tenant/builds"
+    },
+    {
+      "id": 44935128826,
+      "result": "success",
+      "scope": "Chromium desktop/mobile E2E"
+    },
+    {
+      "id": 44935128710,
+      "result": "success",
+      "scope": "AI memory integrity"
+    }
+  ],
+  "productionDeployed": false,
+  "financialLiveApproved": false,
+  "externalHomologationCompleted": false,
+  "nextApprovedScope": [
+    "F7 BL-008/031: testes de carga de exportação, avaliação de índice/performance, sem alegar snapshot consistente",
+    "F7 BL-007: fluxo LGPD completo com revisão jurídica",
+    "F7 BL-012: revisão de paridade e acessibilidade em relatórios"
+  ],
+  "sourceArchive": "CobraFlux-Knowledge-Handoff-2026-11-21.zip",
+  "sourceArchiveUploadedToRepository": false,
+  "caution": "Snapshot historico; reverificar HEAD, PR, issue e CI antes de alterar.",
+  "sourceArchiveZipInRepository": false,
+  "sourceDocumentsUploadedToRepository": true,
+  "sourceDocumentsVerifiedExactGitBlobs": 12,
+  "sourceDocumentsGitCommit": "2b60a089d0cf47186fcc51befdec3b0bd8608b3e",
+  "sourceDocumentsDirectory": "docs/ai-memory/originais",
+  "supportSlaManuallyConfigurable": true,
+  "supportSlaAutomaticPolicyConfigured": false,
+  "supportSlaExternalNotificationsEnabled": false,
+  "supportSlaInPanelOverdueAlertsAvailable": true,
+  "supportSlaAcknowledgementAuditAvailable": true,
+  "supportSlaAutomatedNotificationsEnabled": false,
+  "exportCsvFiltered": true,
+  "exportCsvManualPageNavigation": true,
+  "exportCsvStableSnapshot": false,
+  "exportCsvMaximumOffset": 100000,
+  "exportCsvKeysetAvailable": true,
+  "exportCsvKeysetCursorSigned": true,
+  "exportCsvKeysetCursorTtlMinutes": 30,
+  "exportCsvKeysetNotSnapshot": true,
+  "exportCsvLoadTest100kCompleted": false
+}

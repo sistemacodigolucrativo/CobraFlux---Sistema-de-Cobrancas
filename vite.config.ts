@@ -14,8 +14,8 @@ export default defineConfig(() => {
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg'],
         manifest: {
           id: '/',
-          name: 'Golden Billing SaaS',
-          short_name: 'GoldenBill',
+          name: 'CobraFlux',
+          short_name: 'CobraFlux',
           description:
             'Plataforma Premium de gestão financeira, cobranças recorrentes e lembretes para profissionais autônomos.',
           theme_color: '#0B0D12',
@@ -90,6 +90,7 @@ export default defineConfig(() => {
       },
     },
     server: {
+      proxy: { '/api': { target: 'http://localhost:8080', changeOrigin: false } },
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },

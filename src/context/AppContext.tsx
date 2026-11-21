@@ -358,3 +358,8 @@ export function useApp(): AppContextValue {
   if (!ctx) throw new Error('useApp deve ser usado dentro de AppProvider');
   return ctx;
 }
+
+/** Optional context for UI primitives shared by demo and production. */
+export function useOptionalApp(): AppContextValue | null {
+  return useContext(AppContext);
+}

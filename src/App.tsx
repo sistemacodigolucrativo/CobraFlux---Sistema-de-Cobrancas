@@ -1,4 +1,5 @@
 import React from 'react';
+import { ProductionApp } from './pages/production/ProductionApp';
 import {
   ErrorState,
   OfflineIndicator,
@@ -56,6 +57,7 @@ const AppRouter: React.FC = () => {
 };
 
 export default function App() {
+  if (import.meta.env.VITE_APP_MODE === 'production') return <ProductionApp />;
   return (
     <AppProvider>
       <AppRouter />
