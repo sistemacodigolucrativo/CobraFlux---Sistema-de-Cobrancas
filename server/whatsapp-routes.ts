@@ -33,12 +33,12 @@ async function audit(db:{query:Function},p:Principal,action:string,kind:string,e
 export function registerWhatsApp(app:Express,{sessions,csrf,who,route}:Deps){
   app.get('/api/whatsapp/connection',sessions,route(async(req,res)=>{
     const p=who(req);if(!isOwner(p,res))return;
-    const q=await pool.query('SELECT waba_id,phone_number_id,enabled,last_template_sync_at '+
+    const q=await pool.query('SELECT waba_id,phone_number_id,enabled,last_template_sync_at,default_template_id '+
       'FROM whatsapp_accounts WHERE organization_id=$1',[p.orgId]);
     const a=q.rows[0];
     res.json({configured:!!a,enabled:a?.enabled??false,
       wabaId:a?.waba_id??null,phoneNumberId:a?.phone_number_id??null,
-      lastTemplateSyncAt:a?.last_template_sync_at??null,
+      lastTemplateSyncAt:a?.last_template_sync_at??null,defaultTemplateId:a?.default_template_id??null,
       deliveryEnabled:process.env.WHATSAPP_SEND_ENABLED==='true',
       schedulerRequired:true});
   }));
@@ -58,7 +58,9 @@ export function registerWhatsApp(app:Express,{sessions,csrf,who,route}:Deps){
         'waba_id=excluded.waba_id,phone_number_id=excluded.phone_number_id,'+
         'access_token_ciphertext=excluded.access_token_ciphertext,enabled=false,updated_at=now(),'+
         'last_template_sync_at=CASE WHEN whatsapp_accounts.waba_id=excluded.waba_id AND '+
-        'whatsapp_accounts.phone_number_id=excluded.phone_number_id THEN whatsapp_accounts.last_template_sync_at ELSE NULL END',
+        'whatsapp_accounts.phone_number_id=excluded.phone_number_id THEN whatsapp_accounts.last_template_sync_at ELSE NULL END,'+
+        'default_template_id=CASE WHEN whatsapp_accounts.waba_id=excluded.waba_id AND '+
+        'whatsapp_accounts.phone_number_id=excluded.phone_number_id THEN whatsapp_accounts.default_template_id ELSE NULL END',
         [p.orgId,body.wabaId,body.phoneNumberId,encrypted]);
       if(changed){
         await db.query('UPDATE whatsapp_templates SET approved=false WHERE organization_id=$1',[p.orgId]);
@@ -101,6 +103,24 @@ export function registerWhatsApp(app:Express,{sessions,csrf,who,route}:Deps){
       'SELECT id,name,language,category,parameter_count,approved,verified_at FROM whatsapp_templates '+
       'WHERE organization_id=$1 ORDER BY name,language LIMIT 100',[p.orgId]);
     res.json({items:q.rows});
+  }));
+  app.post('/api/whatsapp/default-template',sessions,csrf,route(async(req,res)=>{
+    const p=who(req);if(!isOwner(p,res))return;
+    const b=z.object({templateId:z.uuid()}).strict().parse(req.body);
+    const result=await transaction(async db=>{
+      const account=await db.query('SELECT organization_id FROM whatsapp_accounts WHERE organization_id=$1 FOR UPDATE',[p.orgId]);
+      if(!account.rowCount)return false;
+      const template=await db.query('SELECT id FROM whatsapp_templates WHERE id=$1 AND organization_id=$2 '+
+        "AND approved=true AND category='UTILITY' AND parameter_count=3 "+
+        "AND verified_at>now()-interval '24 hours'",[b.templateId,p.orgId]);
+      if(!template.rowCount)return false;
+      await db.query('UPDATE whatsapp_accounts SET default_template_id=$2,updated_at=now() WHERE organization_id=$1',
+        [p.orgId,b.templateId]);
+      await audit(db,p,'WHATSAPP_DEFAULT_TEMPLATE_SELECTED','organization',p.orgId,{templateId:b.templateId});
+      return true;
+    });
+    if(!result){res.status(409).json({error:'verified_utility_template_required'});return;}
+    res.json({defaultTemplateId:b.templateId});
   }));
   app.post('/api/whatsapp/connection/enable',sessions,csrf,route(async(req,res)=>{
     const p=who(req);if(!isOwner(p,res))return;

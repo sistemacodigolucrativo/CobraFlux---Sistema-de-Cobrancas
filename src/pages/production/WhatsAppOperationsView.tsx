@@ -17,6 +17,7 @@ export function WhatsAppOperationsView({canManage}:{canManage:boolean}){
  const [clientId,setClientId]=useState(''),[source,setSource]=useState<'signed_form'|'web_form'|'documented_request'>('signed_form');
  const [evidence,setEvidence]=useState(''),[ack,setAck]=useState(false);
  const [chargeId,setChargeId]=useState(''),[templateId,setTemplateId]=useState('');
+ const [defaultId,setDefaultId]=useState('');
  async function load(){
    const [conn,t,c,j,ch]=await Promise.all([
      canManage?productionApi.whatsappConnection():Promise.resolve(null),
@@ -25,7 +26,7 @@ export function WhatsAppOperationsView({canManage}:{canManage:boolean}){
      canManage?productionApi.charges({limit:200}):Promise.resolve({items:[] as Charge[],total:0})
    ]);
    setConnection(conn);setTemplates(t.items);setConsents(c.items);setJobs(j.items);setCharges(ch.items);
-   if(conn){setWaba(conn.wabaId??'');setPhoneId(conn.phoneNumberId??'');}
+   if(conn){setWaba(conn.wabaId??'');setPhoneId(conn.phoneNumberId??'');setDefaultId(conn.defaultTemplateId??'');}
  }
  useEffect(()=>{void load().catch(e=>setError(String(e)));},[canManage]);
  async function act(fn:()=>Promise<unknown>,message:string){
@@ -68,6 +69,15 @@ export function WhatsAppOperationsView({canManage}:{canManage:boolean}){
      </form>}
      <p className="text-xs text-[#B8BFCD]">Modelos UTILITY aprovados com três variáveis: {approved.length}</p>
      {templates.map(t=><p className="text-xs" key={t.id}>{t.name} · {t.language} · {t.approved?'Aprovado':'Indisponível'}</p>)}
+     <label className="text-xs block">Modelo padrão para lembretes automáticos (com 3 variáveis)
+       <select aria-label="Modelo padrão de cobrança" value={defaultId} onChange={e=>setDefaultId(e.target.value)}
+         className="mt-2 block w-full p-3 bg-[#0B0D12] border border-white/20 rounded-lg">
+         <option value="">Nenhum</option>
+         {approved.map(t=><option value={t.id} key={t.id}>{t.name} · {t.language}</option>)}
+       </select></label>
+     <Button size="sm" variant="secondary" disabled={!defaultId||busy} onClick={()=>void act(
+       ()=>productionApi.selectWhatsAppDefaultTemplate(defaultId),'Modelo padrão definido; agendador continua desligado.'
+     )}>Definir modelo padrão</Button>
    </Card>}
    <Card className="p-5 space-y-3">
      <h3 className="font-semibold">Consentimentos documentados</h3>
