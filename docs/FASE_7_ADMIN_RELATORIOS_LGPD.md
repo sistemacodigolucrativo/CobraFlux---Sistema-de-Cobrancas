@@ -128,3 +128,15 @@ Este é um **incremento inicial**, não a conclusão integral da fase. Ainda é 
 - Testes PostgreSQL de 401/403/404/400/409, MFA/CSRF, validação, ausência de alerta antes do vencimento, reconhecimento, repetição, revisão, isolamento de payload e imutabilidade.
 
 **Delimitação:** os alertas surgem **apenas ao abrir/atualizar o painel administrativo**, e uma ciência interna **não é atendimento, entrega, solução do ticket ou cumprimento contratual**. Não há política comercial automatizada, notificações externas, agendamento, cron ou homologação fora do CI. BL-006 e F7 permanecem abertos.
+
+## Incremento 6 — filtros e paginação de exportações CSV (BL-008)
+
+**Código validado:** [a157e6f832f5180f7824d3836394b6fabbde5677](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/a157e6f832f5180f7824d3836394b6fabbde5677). **CI vinculada ao SHA:** [backend/PostgreSQL #44930963112](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44930963112), [Chromium desktop/mobile #44930963010](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44930963010), [integridade de memória #44930963018](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44930963018) — **success**.
+
+- `GET /api/reports/exports/:dataset/preview?status=...`: contagem dos registros de clientes/cobranças **somente na organização da sessão**, sem PII. Role owner/superadmin, validação por lista de status permitidos, limite de chamadas, `Cache-Control: private, no-store`.
+- `POST /api/reports/exports/:dataset`: continua exigindo sessão, owner/superadmin, CSRF, rate limit e CSV sanitizado. Aceita `status` opcional, `limit` (1–1000) e `offset` (0–100000), usa ordenação `created_at DESC,id DESC` e consulta mais um registro para sinalizar `hasMore`.
+- Metadados de página enviados apenas nos headers `X-Export-Offset`, `X-Export-Limit`, `X-Export-Count`, `X-Export-Has-More`; auditoria registra filtro, offset e quantidade **sem conteúdo pessoal**.
+- `ReportsOperationsView`: dataset, status, lotes de 100/250/1000, prévia do total, página anterior/próxima e nome de arquivo com número de página. Não faz download de todos os registros em uma única resposta.
+- Testes ampliados em `server/phase7.integration.test.ts`: validação de filtros, PII fora da prévia, separação entre tenants, limites, paginação de um registro, hasMore/contagem e CSRF.
+
+**Limites:** navegação de exportações é **offset-based**, com máximo de 100000 e lotes de 1000; não oferece snapshot consistente entre downloads, nem exportação de volumes ilimitados, nem paginação keyset. Registros alterados durante múltiplos downloads podem causar lacunas/duplicidade. Ainda faltam integração de lotes extensos, testes de carga, política de retenção LGPD, demais filtros de relatório e homologação externa. A Fase 7 e o BL-008 continuam abertos.

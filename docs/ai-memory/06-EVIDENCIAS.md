@@ -2,7 +2,12 @@
 
 Este registro separa **evidência do código no GitHub** de homologação externa. O estado de um workflow pertence ao SHA executado; um sucesso antigo não prova que um commit novo passou.
 
-## Último incremento F7 validado — alertas internos e ciência auditável (21/11/2026)
+## Último incremento F7 validado — exportação CSV filtrada e paginada (21/11/2026)
+- Commit [a157e6f832f5180f7824d3836394b6fabbde5677](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/a157e6f832f5180f7824d3836394b6fabbde5677), [backend/PostgreSQL #44930963112](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44930963112), [Chromium #44930963010](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44930963010) e [memória #44930963018](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44930963018), todos **success** no mesmo SHA.
+- Cobertura: prévia contagem por organização sem PII, owner/superadmin, filtro válido/inválido, 400/401/403, limite 1000, offset máximo, dois lotes distintos, metadados de página e CSRF.
+- Não comprova snapshot entre páginas, processamento de volumes acima de 100000 de offset, homologação financeira ou infra externa.
+
+## Incremento F7 anterior — alertas internos e ciência auditável (21/11/2026)
 - Código [42f7eecf6aa5ee25adb3d135930d73befbeaa6b8](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/42f7eecf6aa5ee25adb3d135930d73befbeaa6b8) com CI [backend/PostgreSQL #44928047228](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44928047228), [Chromium #44928047306](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44928047306), [memória #44928047281](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44928047281): **success** no mesmo SHA.
 - Testado: autorização admin/MFA, CSRF, 401/403/404/400/409, ausência de alertas antecipados, reconhecimento de atraso, versão de prazo, repetição bloqueada, evento imutável, não exposição do corpo de tickets, retorno no-store e ausência de alegação de entrega externa.
 - Limites: consulta sob demanda no painel, sem push/cron/comunicação externa, política SLA comercial ou homologação de produção.

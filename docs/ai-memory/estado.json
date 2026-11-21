@@ -5,7 +5,7 @@
   "source": "GitHub PR #2 / Issue #3 / GitHub Actions / handoff local de 21-11",
   "repository": "sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas",
   "authorizedBranch": "feat/production-foundation",
-  "lastVerifiedCodeCommit": "42f7eecf6aa5ee25adb3d135930d73befbeaa6b8",
+  "lastVerifiedCodeCommit": "a157e6f832f5180f7824d3836394b6fabbde5677",
   "mainReferenceCommit": "95aba9c27c363c8b24c2f34c65a28c2f3b011b3b",
   "pullRequest": {
     "number": 2,
@@ -16,20 +16,20 @@
   "currentPhase": 7,
   "totalPhases": 10,
   "phase7Status": "EM DESENVOLVIMENTO",
-  "lastCompletedIncrement": "Fase 7 incremento 5: caixa de alertas de SLA manual vencido calculada em consulta, com reconhecimento por revisao e auditoria imutavel; sem push/e-mail/WhatsApp",
+  "lastCompletedIncrement": "Fase 7 incremento 6: exportacao CSV filtrada e navegavel em paginas 100/250/1000 com contagem por tenant, metadados e CSRF/auditoria; sem snapshot ou exportacao ilimitada",
   "lastValidatedCi": [
     {
-      "id": 44928047228,
+      "id": 44930963112,
       "result": "success",
       "scope": "backend/typecheck/domain/security/migrations twice/integration/builds"
     },
     {
-      "id": 44928047306,
+      "id": 44930963010,
       "result": "success",
       "scope": "Chromium desktop/mobile E2E"
     },
     {
-      "id": 44928047281,
+      "id": 44930963018,
       "result": "success",
       "scope": "AI memory integrity"
     }
@@ -38,9 +38,9 @@
   "financialLiveApproved": false,
   "externalHomologationCompleted": false,
   "nextApprovedScope": [
-    "F7: politica SLA e notificacoes comprovaveis (externas ainda desligadas)",
-    "F7: LGPD completa com revisao juridica",
-    "F7: relatorios e exports paginados e paridade UI"
+    "F7: exportacoes keyset/consistencia e provas de carga (BL-008/031)",
+    "F7: LGPD ponta a ponta com revisao juridica (BL-007)",
+    "F7: paridade e acessibilidade de relatorios (BL-012)"
   ],
   "sourceArchive": "CobraFlux-Knowledge-Handoff-2026-11-21.zip",
   "sourceArchiveUploadedToRepository": false,
@@ -55,5 +55,9 @@
   "supportSlaExternalNotificationsEnabled": false,
   "supportSlaInPanelOverdueAlertsAvailable": true,
   "supportSlaAcknowledgementAuditAvailable": true,
-  "supportSlaAutomatedNotificationsEnabled": false
+  "supportSlaAutomatedNotificationsEnabled": false,
+  "exportCsvFiltered": true,
+  "exportCsvManualPageNavigation": true,
+  "exportCsvStableSnapshot": false,
+  "exportCsvMaximumOffset": 100000
 }
