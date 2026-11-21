@@ -5,7 +5,7 @@
 ## Fase 7: tarefas de desenvolvimento ainda em aberto
 | ID histórico | Assunto | Situação em 21/11/2026 | Próximo aceite técnico |
 | --- | --- | --- | --- |
-| BL-006 | Respostas, SLA e suporte | **Parcial:** resposta e histórico no portal TESTADOS em 4dcbb80; e-mail, SLA, anexos e notificações ausentes | Definir/implementar SLA no DB, painel, notificações sem falsa entrega, testes permissão e atraso |
+| BL-006 | Respostas, SLA e suporte | **Parcial:** resposta/histórico no portal TESTADOS em 4dcbb80; timeline interna de status TESTADA em 96e58848; e-mail, SLA, anexos e notificações ausentes | Definir/implementar SLA no DB, painel, notificações sem falsa entrega, testes permissão e atraso |
 | BL-007 | Direitos LGPD ponta a ponta | Triagem existente, atendimento legal ainda **não concluído** | Evidência/revisão, portabilidade integral, retenção sob parecer jurídico |
 | BL-008 | Relatórios/exportações completos | Métricas e CSV limitados implementados | Filtragem, paginação integral, integridade de números e segurança de dados |
 | BL-012 | Paridade da interface F7 | Primeiro incremento testado | Verificar demo vs operação, papéis, estados de erro, acessibilidade, mobile |

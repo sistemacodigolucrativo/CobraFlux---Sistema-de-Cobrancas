@@ -93,3 +93,13 @@ Este é um **incremento inicial**, não a conclusão integral da fase. Ainda é 
 - Teste de integração ampliado para papéis, CSRF, isolamento de tenants, chave idempotente, ticket público, ticket encerrado, persistência e ausência de alegação de entrega externa.
 
 **Aceite técnico:** executar lint/TS, testes do servidor e integração PostgreSQL, migrações (incluindo 017) em banco descartável, builds e Playwright; confirmar GitHub Actions verde no **HEAD** correspondente. Até essa prova, tratar a entrega como *implementada — não validada*. A revisão independente de segurança, LGPD/retention policy, SLA, acessibilidade aprofundada e homologação externa permanecem gates.
+
+## Incremento 3 — timeline de status de tickets, apenas administração
+
+**SHA de código validado:** [96e58848cb696489560fa14fcbceaf19357d2566](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/96e58848cb696489560fa14fcbceaf19357d2566). [CI backend #44920626498](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44920626498) e [CI browser #44920626428](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44920626428) — **success**.
+
+- GET /api/admin/support/tickets/:id/events: somente super_admin com MFA, UUID e paginação estritos, cache privado/no-store, 404 para ID inexistente.
+- Lista campos necessários (old_status, new_status, reason, actor_name, created_at) sem metadados livres de auditoria.
+- AdminOperationsView mostra timeline com autor/motivo e diferencia evento interno de resposta externa.
+- Cobertura nova PostgreSQL: 401, 403, 404, 400, status e ator, no-store; sem criar nova migração porque support_ticket_events já existe na 016.
+- Continua **pendente:** SLA, alertas/notificações, anexos, atendimento LGPD integral, governança, UX fina, staging/PSP/Meta e revisão legal. Nada enviado ao cliente por esse histórico.

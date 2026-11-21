@@ -2,7 +2,15 @@
 
 Este registro separa **evidência do código no GitHub** de homologação externa. O estado de um workflow pertence ao SHA executado; um sucesso antigo não prova que um commit novo passou.
 
-## Último incremento F7 validado (21/11/2026)
+## Último incremento F7 validado — timeline interna de status
+- Código: [96e58848cb696489560fa14fcbceaf19357d2566](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/96e58848cb696489560fa14fcbceaf19357d2566).
+- GitHub Actions backend/Postgres/integration/builds: [#44920626498](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44920626498) — **success**.
+- GitHub Actions browser Chromium desktop/mobile: [#44920626428](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44920626428) — **success**.
+- Integridade da memória: [#44920626521](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44920626521) — **success** (12 fontes originais e 10 fases).
+- Negativos cobertos: 401 anon, 403 owner/operator, 404 ticket inexistente, 400 paginação inválida, no-store.
+- Não foi enviada nenhuma notificação externa; não equivale a SLA.
+ 
+## Incremento F7 anterior — respostas no portal (21/11/2026)
 - **Código:** [4dcbb80f2ebfa817b3d512c94502d697d4077842](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/4dcbb80f2ebfa817b3d512c94502d697d4077842).
 - **CI backend/migrações/integração:** [#44915970990](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44915970990) — **success**, com instalação, typecheck, domain, security, UI, PostgreSQL migrações duas vezes, multi-tenant integration e builds demo/produção.
 - **CI navegador:** [#44915971125](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44915971125) — **success**, Chromium desktop/mobile.

@@ -12,6 +12,6 @@ O **CobraFlux** está sendo convertido de um demonstrativo **Golden Billing SaaS
 
 **Branch de implementação autorizada:** feat/production-foundation. **main preservada**, sem merge/deploy sem autorização.
 
-**Atualizado em 21/11/2026:** a Fase 7 está em desenvolvimento, dois incrementos testados. Último commit funcional validado 4dcbb80f2ebfa817b3d512c94502d697d4077842, CI backend #44915970990 e navegador #44915971125 aprovados. Provedores externos, hosting, backup restaurado, dinheiro live, Meta live e publicação Android não foram homologados.
+**Atualizado em 21/11/2026:** a Fase 7 está em desenvolvimento, três incrementos testados. Último código validado 96e58848cb696489560fa14fcbceaf19357d2566, CI backend #44920626498 e navegador #44920626428 aprovados. Provedores externos, hosting, backup restaurado, dinheiro live, Meta live e publicação Android não foram homologados.
 
 Essa memória é **persistente via commits**: futuras IAs precisam atualizar os documentos a cada entrega, revalidar a HEAD real e nunca confundir documentação histórica com estado operacional.

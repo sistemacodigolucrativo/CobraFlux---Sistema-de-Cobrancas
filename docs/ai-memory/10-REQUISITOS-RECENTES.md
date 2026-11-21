@@ -28,4 +28,4 @@
 ## Regras para REQ-121+
 Criar ID livre, preservar origem (incluindo número original da anotação, quando existir), decisão aprovada/pedida/indefinida, escopo, critérios de aceite, execução, SHA/CI e pendências externas. Vincular BL/ADR/arquivo de fase. Não inventar evidência nem modificar retroativamente os REQ históricos.
 
-**Fase 7 atual:** REQ-101 respostas de suporte é **parcial** (portal somente), REQ-104 LGPD ponta a ponta e REQ-105 SLA/monitoramento seguem pendentes.
+**Fase 7 atual:** REQ-100 triagem foi ampliada por timeline de status no commit 96e58848 (testado); REQ-101 respostas de suporte permanece **parcial** (portal somente), REQ-104 LGPD ponta a ponta e REQ-105 SLA/monitoramento seguem pendentes.

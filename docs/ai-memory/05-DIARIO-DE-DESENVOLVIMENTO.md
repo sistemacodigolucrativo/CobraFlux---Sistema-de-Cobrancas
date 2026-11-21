@@ -16,6 +16,8 @@
 | 2026-11-21 F7 incremento 2 | Resposta em suporte no portal, histórico, segurança e idempotência | Migração 017; commit [4dcbb80](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/4dcbb80f2ebfa817b3d512c94502d697d4077842); [CI #44915970990](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44915970990), [browser #44915971125](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44915971125) | **IMPLEMENTADA — TESTADA**; sem e-mail/Meta/SLA; F7 continua aberta |
 | 2026-11-21 memória | Solicitação expressa de persistir conhecimento em pasta remota | Este diretório, AGENTS.md, diário e arquivos de fases; consultar git log destes paths | 12 fontes originais importadas com hashes exatos; documentação apenas, sem novo incremento financeiro/operacional |
 
+| 2026-11-21 F7 incremento 3 | Timeline administrativa de status dos tickets | [Commit 96e58848](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/96e58848cb696489560fa14fcbceaf19357d2566), [backend #44920626498](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44920626498) e [browser #44920626428](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44920626428) — success | RBAC e motivos auditáveis; sem notificação externa nem SLA; F7 aberta |
+
 ## Rastro adicional da segunda entrega F7
 - 2c79532: migração 017;
 - 1d609d6: rotas seguras do portal;
