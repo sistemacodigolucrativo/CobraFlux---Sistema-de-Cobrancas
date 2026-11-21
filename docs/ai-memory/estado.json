@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "project": "CobraFlux — Sistema de Cobranças",
+  "snapshotDate": "2026-11-21",
+  "source": "GitHub PR #2 / Issue #3 / GitHub Actions / handoff local de 21-11",
+  "repository": "sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas",
+  "authorizedBranch": "feat/production-foundation",
+  "lastVerifiedCodeCommit": "4dcbb80f2ebfa817b3d512c94502d697d4077842",
+  "mainReferenceCommit": "95aba9c27c363c8b24c2f34c65a28c2f3b011b3b",
+  "pullRequest": {
+    "number": 2,
+    "draft": true,
+    "merged": false
+  },
+  "roadmapIssue": 3,
+  "currentPhase": 7,
+  "totalPhases": 10,
+  "phase7Status": "EM DESENVOLVIMENTO",
+  "lastCompletedIncrement": "Fase 7: respostas administrativas em chamados autenticados, persistidas no portal; entrega externa pendente",
+  "lastValidatedCi": [
+    {
+      "id": 44915970990,
+      "result": "success",
+      "scope": "backend/typecheck/domain/security/migrations/integration/builds"
+    },
+    {
+      "id": 44915971125,
+      "result": "success",
+      "scope": "Chromium desktop/mobile E2E"
+    }
+  ],
+  "productionDeployed": false,
+  "financialLiveApproved": false,
+  "externalHomologationCompleted": false,
+  "nextApprovedScope": [
+    "F7: SLA/gestao de suporte e avisos internos seguros",
+    "F7: LGPD com verificacao/revisao legal",
+    "F7: relatórios, exports e paridade"
+  ],
+  "sourceArchive": "CobraFlux-Knowledge-Handoff-2026-11-21.zip",
+  "sourceArchiveUploadedToRepository": false,
+  "caution": "Snapshot historico; reverificar HEAD, PR, issue e CI antes de alterar."
+}
