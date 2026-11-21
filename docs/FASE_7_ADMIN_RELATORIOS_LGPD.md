@@ -115,3 +115,16 @@ Este é um **incremento inicial**, não a conclusão integral da fase. Ainda é 
 - Painel admin: filtro, definição/remoção com motivo e linha do tempo. Integração PostgreSQL cobre permissão 401/403, CSRF, 400/404/409, vencimento, filtros, remoção, eventos imutáveis e fechamento.
 
 **Limites:** não há política comercial automática de SLA, cálculo de dias úteis, alertas, e-mail/Meta, comprovantes de entrega ou homologação externa. O prazo é **referência interna manual**, sem prometer notificação ou resposta ao usuário. F7 e BL-006 continuam abertos.
+
+## Incremento 5 — alertas internos no painel e ciência auditável (BL-006)
+
+**Código testado:** [42f7eecf6aa5ee25adb3d135930d73befbeaa6b8](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/42f7eecf6aa5ee25adb3d135930d73befbeaa6b8). CI [backend/PostgreSQL #44928047228](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44928047228), [Chromium #44928047306](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44928047306), [memória #44928047281](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44928047281) — **success no mesmo SHA**.
+
+- Migração incremental `019_support_sla_alert_ack.sql`: revisão crescente do prazo por ticket e reconhecimento do alerta vinculado à revisão exata, registro imutável do responsável, motivo e hora; nenhuma alteração do histórico original.
+- `GET /api/admin/support/sla-alerts`: sinalizações calculadas por SQL em tempo de consulta para prazos internos vencidos de chamados não encerrados; filtros `open|acknowledged|all`, paginação, RBAC superadmin com MFA, minimização de dados pessoais e `Cache-Control: private, no-store`.
+- `POST /api/admin/support/sla-alerts/:id/acknowledge`: requer CSRF, motivo e transação bloqueando o ticket; não admite chamados sem atraso, encerrados nem reconhecimento repetido da mesma revisão; auditoria sem mensagem de cliente.
+- Alterar prazo válido incrementa revisão, de modo que alerta vencido reapareça para nova ciência, preservando histórico anterior. Remover prazo ou encerrar ticket retira-o da caixa atual sem apagar os registros de ciência.
+- `AdminOperationsView`: caixa de alertas pendentes/reconhecidos e formulário de ciência com justificativa. A consulta não executa worker, cron, push, e-mail nem WhatsApp.
+- Testes PostgreSQL de 401/403/404/400/409, MFA/CSRF, validação, ausência de alerta antes do vencimento, reconhecimento, repetição, revisão, isolamento de payload e imutabilidade.
+
+**Delimitação:** os alertas surgem **apenas ao abrir/atualizar o painel administrativo**, e uma ciência interna **não é atendimento, entrega, solução do ticket ou cumprimento contratual**. Não há política comercial automatizada, notificações externas, agendamento, cron ou homologação fora do CI. BL-006 e F7 permanecem abertos.

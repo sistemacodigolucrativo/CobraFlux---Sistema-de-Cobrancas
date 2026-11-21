@@ -20,6 +20,8 @@
 
 | 2026-11-21 F7 incremento 4 | Gestão manual de prazo SLA, filtro vencidos, eventos imutáveis | [Código 472b0bd](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/472b0bd84885e1463c5c5b660bb800bf498994d8); [backend #44922044208](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044208), [browser #44922044209](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044209), [memória #44922044232](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044232) — success | Implementado e testado; sem política SLA automática, alertas, e-mail nem deploy; F7 aberta |
 
+| 2026-11-21 F7 incremento 5 | Inbox interna de prazos vencidos, reconhecimento versionado e auditado | [Código 42f7eec](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/42f7eecf6aa5ee25adb3d135930d73befbeaa6b8), [backend/PostgreSQL #44928047228](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44928047228), [Chromium #44928047306](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44928047306), [memória #44928047281](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44928047281) — success | Implementado e testado; alerta somente ao consultar painel, nenhuma notificação externa e F7 aberta |
+
 ## Rastro adicional da segunda entrega F7
 - 2c79532: migração 017;
 - 1d609d6: rotas seguras do portal;

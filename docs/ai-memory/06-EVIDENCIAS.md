@@ -2,7 +2,12 @@
 
 Este registro separa **evidência do código no GitHub** de homologação externa. O estado de um workflow pertence ao SHA executado; um sucesso antigo não prova que um commit novo passou.
 
-## Último incremento F7 validado — SLA interno manual (21/11/2026)
+## Último incremento F7 validado — alertas internos e ciência auditável (21/11/2026)
+- Código [42f7eecf6aa5ee25adb3d135930d73befbeaa6b8](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/42f7eecf6aa5ee25adb3d135930d73befbeaa6b8) com CI [backend/PostgreSQL #44928047228](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44928047228), [Chromium #44928047306](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44928047306), [memória #44928047281](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44928047281): **success** no mesmo SHA.
+- Testado: autorização admin/MFA, CSRF, 401/403/404/400/409, ausência de alertas antecipados, reconhecimento de atraso, versão de prazo, repetição bloqueada, evento imutável, não exposição do corpo de tickets, retorno no-store e ausência de alegação de entrega externa.
+- Limites: consulta sob demanda no painel, sem push/cron/comunicação externa, política SLA comercial ou homologação de produção.
+
+## Incremento F7 anterior — SLA interno manual (21/11/2026)
 - Código [472b0bd84885e1463c5c5b660bb800bf498994d8](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/472b0bd84885e1463c5c5b660bb800bf498994d8) com backend [#44922044208](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044208), browser [#44922044209](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044209) e memória [#44922044232](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44922044232), todos **success** e vinculados ao SHA.
 - Testado: MFA/RBAC, 401/403/404/400/409, CSRF, ISO com fuso, filtros, prazo vencido, remoção, imutabilidade de eventos e ticket encerrado.
 - Limites: prazos configurados manualmente sem SLA padrão, sem alertas/entrega externa e sem homologação operacional.
