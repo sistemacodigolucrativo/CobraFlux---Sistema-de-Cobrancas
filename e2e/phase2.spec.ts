@@ -63,6 +63,10 @@ test('desktop: login, client records, service catalog, charge draft and team acc
   await nav.getByRole('button',{name:'Equipe e permissões'}).click();
   await expect(page.getByRole('heading',{name:'Equipe e permissões'})).toBeVisible();
   await expect(page.getByText(owner.email)).toBeVisible();
+  await nav.getByRole('button',{name:'WhatsApp Business'}).click();
+  await expect(page.getByRole('heading',{name:'WhatsApp Business'})).toBeVisible();
+  await expect(page.getByText(/Envios desligados até homologação/)).toBeVisible();
+  await expect(page.getByRole('button',{name:'Preparar lembrete (não enviar)'})).toBeDisabled();
   await nav.getByRole('button',{name:'Configurações'}).click();
   await expect(page.getByRole('heading',{name:'Asaas Pix · SANDBOX'})).toBeVisible();
   await expect(page.getByRole('button',{name:'Gerar token seguro'})).toBeVisible();
@@ -84,6 +88,9 @@ test('mobile: bottom navigation, accessible drawer and owner-only team menu',asy
   await expect(drawer).toBeVisible();
   await drawer.getByRole('button',{name:'Recorrências'}).click();
   await expect(page.getByRole('heading',{name:'Recorrências'})).toBeVisible();
+  await page.getByRole('button',{name:'Abrir menu completo'}).click();
+  await drawer.getByRole('button',{name:'WhatsApp Business'}).click();
+  await expect(page.getByRole('heading',{name:'WhatsApp Business'})).toBeVisible();
   await page.getByRole('button',{name:'Abrir menu completo'}).click();
   await drawer.getByRole('button',{name:'Equipe e permissões'}).click();
   await expect(page.getByRole('heading',{name:'Equipe e permissões'})).toBeVisible();
