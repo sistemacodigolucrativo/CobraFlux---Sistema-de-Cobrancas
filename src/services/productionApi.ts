@@ -86,6 +86,40 @@ export type SaaSQuote={
  baseCents:number|null;discountCents:number;totalCents:number|null;couponCode:string|null;
  requiresVerifiedPlatformPayment:true;
 };
+export type Phase7Summary={
+ counts:{clients_active:number;services_active:number;recurrence_plans_active:number;
+  charges_total:number;drafts:number;outstanding:number;sandbox_paid_count:number;
+  sandbox_net_cents:string;real_net_cents:string};
+ monthlyCreatedCharges:Array<{month:string;created_charges:number}>;
+ sandboxSeparate:true;realPaymentProviderIntegrated:false;
+};
+export type Phase7AuditEntry={
+ id:string;organization_id?:string;action:string;entity_type:string;entity_id:string|null;
+ created_at:string;actor_name:string|null;
+};
+export type Phase7AdminOrg={
+ id:string;name:string;status:'active'|'suspended'|'blocked';created_at:string;
+ plan_code:string;subscription_status:string;clients_active:number;
+};
+export type Phase7AdminOverview={
+ organizations:{organizations_total:number;organizations_active:number;organizations_restricted:number;
+ registered_users:number;tickets_open:number;privacy_requests_open:number};
+ subscriptions:Array<{plan_code:string;status:string;total:number}>;
+ finance:{mrrCents:string;merchantRealGpvCents:string;merchantSandboxGpvCents:string;
+  platformVerifiedReceiptsCents:string};
+ mrrDefinition:string;realMoneyRequiresVerifiedPSP:true;
+ platformPspConnected:false;merchantLivePspConnected:false;sandboxExcludedFromReal:true;
+};
+export type Phase7AdminTicket={
+ id:string;organization_id:string|null;organization_name:string|null;name:string;
+ email:string;subject:string;message:string;status:'open'|'in_progress'|'closed';created_at:string;
+};
+export type Phase7PrivacyRequest={
+ id:string;organization_id?:string;organization_name?:string;
+ kind:'access'|'rectification'|'erasure'|'portability';
+ state:'open'|'in_review'|'awaiting_evidence'|'closed_rejected';
+ reason:string;created_at:string;updated_at:string;
+};
 export type OrganizationChoice={id:string;name:string;role:'owner'|'operator'|'super_admin'};
 export type TeamMember={id:string;name:string;email:string;role:'owner'|'operator'|'super_admin';organization_id:string};
 export type TeamInvitation={
@@ -117,6 +151,25 @@ async function request<T>(path:string,method='GET',body?:object):Promise<T>{
     throw new ApiFailure(result,response.status);
   }
   return payload as T;
+}
+async function downloadPhase7Csv(dataset:'clients'|'charges'):Promise<void>{
+ const response=await fetch('/api/reports/exports/'+encodeURIComponent(dataset),{
+  method:'POST',credentials:'include',
+  headers:{'Content-Type':'application/json',...(csrfToken?{'X-CF-CSRF':csrfToken}:{})},
+  body:JSON.stringify({limit:1000,offset:0})
+ });
+ if(!response.ok){
+  const details=await response.json() as {error?:string;message?:string};
+  throw new ApiFailure(details,response.status);
+ }
+ if(!(response.headers.get('Content-Type')??'').includes('text/csv'))
+  throw new Error('Servidor não devolveu uma exportação CSV válida.');
+ const file=await response.blob();
+ if(file.size>4000000)throw new Error('Arquivo excedeu o tamanho permitido.');
+ const url=URL.createObjectURL(file),link=document.createElement('a');
+ link.href=url;link.download='cobraflux-'+dataset+'-'+new Date().toISOString().slice(0,10)+'.csv';
+ document.body.appendChild(link);
+ try{link.click();}finally{link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 }
 function qs(fields:Record<string,string|number|undefined>):string{
  const p=new URLSearchParams();
@@ -185,6 +238,32 @@ export const productionApi={
     request<{ok:boolean;organizationId:string;organizationName:string;email:string}>('/team/activate','POST',{token,name,password}),
   acceptInvite:(token:string)=>request<{ok:boolean;organizationId:string;organizationName:string}>('/team/accept','POST',{token}),
 
+  phase7Summary:()=>request<Phase7Summary>('/reports/summary'),
+  phase7Audit:()=>request<{items:Phase7AuditEntry[];metadataRedacted:true}>('/reports/audit'),
+  phase7ExportCsv:downloadPhase7Csv,
+  phase7MyPrivacy:()=>request<{items:Phase7PrivacyRequest[];automaticErasure:false}>('/privacy/requests'),
+  phase7CreatePrivacy:(kind:Phase7PrivacyRequest['kind'],reason:string)=>request<{
+    id:string;kind:string;state:'open';automaticDeletion:false
+  }>('/privacy/requests','POST',{kind,reason}),
+  phase7AdminOverview:()=>request<Phase7AdminOverview>('/admin/reports/overview'),
+  phase7AdminOrganizations:(search?:string,status?:Phase7AdminOrg['status'])=>
+    request<{items:Phase7AdminOrg[];total:number}>('/admin/organizations'+qs({search,status,limit:50})),
+  phase7AdminSetStatus:(id:string,status:Phase7AdminOrg['status'],reason:string)=>
+    request<{id:string;previous:string;status:string;sessionsRevoked:boolean}>(
+      '/admin/organizations/'+encode(id)+'/status','PATCH',{status,reason}),
+  phase7AdminTickets:(status?:Phase7AdminTicket['status'])=>
+    request<{items:Phase7AdminTicket[]}>('/admin/support/tickets'+qs({status,limit:50})),
+  phase7AdminTicketReview:(id:string,status:Phase7AdminTicket['status'],reason:string)=>
+    request<{id:string;status:string;replySent:false}>('/admin/support/tickets/'+encode(id),
+      'PATCH',{status,reason}),
+  phase7AdminPrivacy:()=>request<{items:Phase7PrivacyRequest[];manualLegalReviewRequired:true}>(
+    '/admin/privacy/requests'),
+  phase7AdminPrivacyReview:(id:string,state:'in_review'|'awaiting_evidence'|'closed_rejected',reviewerNote:string)=>
+    request<{id:string;state:string;automaticDeletion:false}>('/admin/privacy/requests/'+encode(id),
+      'PATCH',{state,reviewerNote}),
+  phase7AdminAudit:(organizationId?:string)=>
+    request<{items:Phase7AuditEntry[];metadataRedacted:true}>(
+      '/admin/audit'+qs({organizationId,limit:50})),
   saasPlans:()=>request<{items:SaaSPlan[];billingProviderConfigured:false;realCheckoutEnabled:false}>('/saas/plans'),
   saasSubscription:()=>request<SaaSSubscription>('/saas/subscription'),
   saasInvoices:()=>request<{items:SaaSInvoice[];ledger:'platform_saas';excludedFromMerchantCashflow:true}>('/saas/invoices'),
