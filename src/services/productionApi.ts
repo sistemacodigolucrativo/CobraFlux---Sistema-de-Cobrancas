@@ -114,6 +114,13 @@ export type Phase7AdminTicket={
  id:string;organization_id:string|null;organization_name:string|null;name:string;
  email:string;subject:string;message:string;status:'open'|'in_progress'|'closed';created_at:string;
 };
+export type Phase7SupportReply={
+  id:string;ticket_id:string;message:string;delivery_state:'portal_only';
+  created_at:string;author_name:string;
+};
+export type Phase7SupportReplyPage={
+  items:Phase7SupportReply[];hasMore:boolean;delivery:'portal_only';emailSent:false;
+};
 export type Phase7PrivacyRequest={
  id:string;organization_id?:string;organization_name?:string;
  kind:'access'|'rectification'|'erasure'|'portability';
@@ -256,6 +263,11 @@ export const productionApi={
   phase7AdminTicketReview:(id:string,status:Phase7AdminTicket['status'],reason:string)=>
     request<{id:string;status:string;replySent:false}>('/admin/support/tickets/'+encode(id),
       'PATCH',{status,reason}),
+  phase7AdminTicketReplies:(id:string,offset=0)=>
+    request<Phase7SupportReplyPage>('/admin/support/tickets/'+encode(id)+'/replies'+qs({limit:50,offset})),
+  phase7AdminTicketReply:(id:string,message:string,clientRequestId:string)=>
+    request<{id:string;ticketId:string;deliveryState:'portal_only';emailSent:false;duplicate:boolean}>(
+      '/admin/support/tickets/'+encode(id)+'/replies','POST',{message,clientRequestId}),
   phase7AdminPrivacy:()=>request<{items:Phase7PrivacyRequest[];manualLegalReviewRequired:true}>(
     '/admin/privacy/requests'),
   phase7AdminPrivacyReview:(id:string,state:'in_review'|'awaiting_evidence'|'closed_rejected',reviewerNote:string)=>
@@ -351,6 +363,8 @@ export const productionApi={
   updateOrganization:(patch:Partial<{name:string;category:string;contactPhone:string;contactEmail:string}>)=>
     request<Profile['organization']>('/organization','PATCH',patch),
   supportTickets:()=>request<{items:SupportTicket[]}>('/support/tickets'),
+  supportTicketReplies:(id:string,offset=0)=>
+    request<Phase7SupportReplyPage>('/support/tickets/'+encode(id)+'/replies'+qs({limit:50,offset})),
   createSupportTicket:(subject:string,message:string)=>
     request<SupportTicket>('/support/tickets','POST',{subject,message}),
 };
