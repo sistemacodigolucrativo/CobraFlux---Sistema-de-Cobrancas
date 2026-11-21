@@ -65,6 +65,8 @@ const {app}=await import('./index');
 app.set('trust proxy',1); // Only in isolated CI test process, never in production configuration.
 const {pool}=await import('./db');
 const {runWhatsAppBatch}=await import('./whatsapp-worker');
+const {eligibleDueCount,enqueueDueReminders}=await import('./whatsapp-enqueue');
+const {localBillingDate}=await import('./recurrence-calendar');
 const server=app.listen(0,'127.0.0.1');
 await new Promise<void>(resolve=>server.once('listening',resolve));
 apiBase='http://127.0.0.1:'+(server.address() as AddressInfo).port+'/api';
@@ -121,6 +123,9 @@ test('Meta Cloud: canonical opt-in, signed webhooks, no blind sends, pre-ack cal
    assert.equal((await call('/whatsapp/connection/enable','POST',{},a.cookie,a.csrf)).status,200);
    const templates=await call('/whatsapp/templates','GET',undefined,a.cookie);
    const templateId=templates.body.items[0].id as string;
+   assert.equal((await call('/whatsapp/default-template','POST',{templateId},b.cookie,b.csrf)).status,409);
+   const def=await call('/whatsapp/default-template','POST',{templateId},a.cookie,a.csrf);
+   assert.equal(def.status,200,JSON.stringify(def.body));
    assert.equal((await call('/whatsapp/messages/queue','POST',{chargeId,templateId},a.cookie,a.csrf)).status,409);
    assert.equal((await call('/whatsapp/clients/'+clientId+'/consent','POST',{
      action:'grant',source:'signed_form',acknowledged:true},a.cookie,a.csrf)).status,422);
@@ -185,6 +190,17 @@ test('Meta Cloud: canonical opt-in, signed webhooks, no blind sends, pre-ack cal
    const throttled=await runWhatsAppBatch(10,new Date('2026-11-23T13:00:00Z'));
    assert.equal(throttled.deferred,1,'no more than one request per recipient per 24 hours');
    assert.equal(sent,1);
+   const autoCharge=await chargeFor(a,clientId);
+   const today=localBillingDate();
+   await pool.query('UPDATE charges SET due_date=$2::date WHERE id=$1',[autoCharge,today]);
+   assert.ok((await eligibleDueCount(today))>=1);
+   const auto=await enqueueDueReminders(20,today);
+   assert.ok(auto.queued>=1,JSON.stringify(auto));
+   assert.equal((await enqueueDueReminders(20,today)).queued,0,'automatic selection is idempotent');
+   assert.equal(sent,1,'automatic queue insertion must never send directly');
+   const autoJob=await pool.query('SELECT state,created_by FROM whatsapp_outbox WHERE charge_id=$1',[autoCharge]);
+   assert.equal(autoJob.rows[0].state,'queued');
+   assert.equal(autoJob.rows[0].created_by,null);
    const allA=await call('/whatsapp/outbox','GET',undefined,a.cookie);
    assert.ok(allA.body.items.length>=3);
    assert.equal((await call('/whatsapp/outbox','GET',undefined,b.cookie)).body.items.length,0);
