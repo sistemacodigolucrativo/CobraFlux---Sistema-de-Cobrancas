@@ -112,7 +112,7 @@ test('SaaS separate ledger, fail-closed plan checkout, tenant permissions, quota
   assert.equal(before.rows[0].used,1);
   await pool.query(
    "INSERT INTO clients(id,organization_id,internal_code,name,phone) "+
-   "SELECT gen_random_uuid(),$1,'CF-Q-'+g::text,'Conta '+g::text,"+
+   "SELECT gen_random_uuid(),$1,'CF-Q-'||g::text,'Conta '||g::text,"+
    "'+55118'||lpad(g::text,8,'0') FROM generate_series(1,249) AS g",
    [a.orgId]);
   const limit=await call('/clients','POST',{name:'Cliente Excedente',phone:'+5511999999032'},a);
