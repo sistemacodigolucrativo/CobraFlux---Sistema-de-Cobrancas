@@ -168,7 +168,6 @@ export function AdminOperationsView(){
      Registrar andamento
     </Button>
    </form>}
-  </Card>
   {selectedTicket&&<div className="space-y-3 border-t border-white/10 pt-3">
    <p className="font-semibold text-sm">Histórico de respostas no painel</p>
    <p className="text-xs text-[#B8BFCD]">
@@ -205,6 +204,7 @@ export function AdminOperationsView(){
       Contato público: responder exige canal autenticado e verificação de identidade.
      </p>}
   </div>}
+  </Card>
   <Card className="p-5 space-y-3">
    <h3 className="font-semibold">Solicitações de privacidade — triagem LGPD</h3>
    <p className="text-xs text-[#B8BFCD]">
