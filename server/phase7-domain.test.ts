@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {safeCsvCell,csvRows,isVerifiedPlatformInvoice,moneyString} from './phase7-domain';
 test('CSV quoted and spreadsheet formula injection is neutralized',()=>{
  for(const bad of ['=HYPERLINK("https://example.com","x")','+SUM(1,2)','-1+2','@SUM(1,2)',' \t=1+1','\uFEFF=2+2'])
-  assert.ok(safeCsvCell(bad).startsWith('"\\''),bad);
+  assert.equal(safeCsvCell(bad).charCodeAt(1),39,bad);
  assert.equal(safeCsvCell('João, "Santos"'),'"João, ""Santos"""');
  assert.equal(safeCsvCell('regular'),'"regular"');
  const csv=csvRows(['Nome','Contato'],[['=1+1','+5511999999999']]);
