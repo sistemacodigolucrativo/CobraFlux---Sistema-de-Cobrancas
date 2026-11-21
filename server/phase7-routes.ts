@@ -174,14 +174,68 @@ export function registerPhase7Routes(app:Express,{sessions,csrf,who,route,rateLi
  }));
  app.get('/api/admin/support/tickets',sessions,route(async(req,res)=>{
   const p=who(req);if(!requireAdmin(p,res))return;
-  const q=page.extend({status:z.enum(['open','in_progress','closed']).optional()}).parse(req.query);
+  const q=page.extend({status:z.enum(['open','in_progress','closed']).optional(),
+   sla:z.enum(['overdue','without_deadline']).optional()}).parse(req.query);
   const rows=await pool.query(
    'SELECT t.id,t.organization_id,o.name AS organization_name,t.name,t.email,'+
-   't.subject,t.message,t.status,t.created_at FROM support_tickets t '+
-   'LEFT JOIN organizations o ON o.id=t.organization_id '+
-   'WHERE ($1::text IS NULL OR t.status=$1) ORDER BY t.created_at DESC,t.id DESC LIMIT $2 OFFSET $3',
-   [q.status??null,q.limit,q.offset]);
+   't.subject,t.message,t.status,t.created_at,s.due_at AS sla_due_at,'+
+   "(s.due_at IS NOT NULL AND t.status<>'closed' AND s.due_at<NOW()) AS sla_overdue "+
+   'FROM support_tickets t LEFT JOIN organizations o ON o.id=t.organization_id '+
+   'LEFT JOIN support_ticket_sla s ON s.ticket_id=t.id '+
+   'WHERE ($1::text IS NULL OR t.status=$1) '+
+   "AND ($4::text IS NULL OR ($4='overdue' AND s.due_at IS NOT NULL "+
+   "AND t.status<>'closed' AND s.due_at<NOW()) "+
+   "OR ($4='without_deadline' AND s.due_at IS NULL)) "+
+   'ORDER BY t.created_at DESC,t.id DESC LIMIT $2 OFFSET $3',
+   [q.status??null,q.limit,q.offset,q.sla??null]);
   res.json({items:rows.rows,clientMessagesContainPersonalData:true});
+ }));
+ // Manual deadline management: absence of a deadline means "not configured", never "SLA met".
+ app.patch('/api/admin/support/tickets/:id/sla',sessions,csrf,route(async(req,res)=>{
+  const p=who(req);if(!requireAdmin(p,res))return;
+  const {id}=identifier.parse(req.params);
+  const body=z.object({dueAt:z.iso.datetime({offset:true}).nullable(),
+   reason:z.string().trim().min(10).max(1000)}).strict().parse(req.body);
+  const result=await transaction(async db=>{
+   const ticket=await db.query('SELECT organization_id,status FROM support_tickets WHERE id=$1 FOR UPDATE',[id]);
+   if(!ticket.rowCount)return {error:'ticket_not_found',code:404};
+   if(ticket.rows[0].status==='closed')return {error:'ticket_closed',code:409};
+   const current=await db.query('SELECT due_at FROM support_ticket_sla WHERE ticket_id=$1',[id]);
+   const previous:Date|null=current.rowCount?current.rows[0].due_at:null;
+   const next:Date|null=body.dueAt===null?null:new Date(body.dueAt);
+   if((previous?.getTime()??null)===(next?.getTime()??null))
+    return {error:'sla_unchanged',code:409};
+   await db.query(
+    'INSERT INTO support_ticket_sla(ticket_id,due_at,updated_by) VALUES($1,$2,$3) '+
+    'ON CONFLICT(ticket_id) DO UPDATE SET due_at=EXCLUDED.due_at,'+
+    'updated_by=EXCLUDED.updated_by,updated_at=now()',
+    [id,next,p.userId]);
+   await db.query(
+    'INSERT INTO support_ticket_sla_events(id,ticket_id,organization_id,actor_id,'+
+    'previous_due_at,new_due_at,reason) VALUES($1,$2,$3,$4,$5,$6,$7)',
+    [randomUUID(),id,ticket.rows[0].organization_id,p.userId,previous,next,body.reason]);
+   await audit(db,p,'ADMIN_SUPPORT_SLA_CHANGED','support_ticket',id,
+    {action:next?'deadline_set':'deadline_removed'},ticket.rows[0].organization_id);
+   return {ticketId:id,dueAt:next?.toISOString()??null,configured:next!==null,
+    automaticSlaPolicy:false,externalNotificationSent:false};
+  });
+  if('error' in result){res.status(result.code??409).json({error:result.error});return;}
+  res.setHeader('Cache-Control','private, no-store');
+  res.json(result);
+ }));
+ app.get('/api/admin/support/tickets/:id/sla/events',sessions,route(async(req,res)=>{
+  const p=who(req);if(!requireAdmin(p,res))return;
+  const {id}=identifier.parse(req.params),q=page.parse(req.query);
+  const exists=await pool.query('SELECT id FROM support_tickets WHERE id=$1',[id]);
+  if(!exists.rowCount){res.status(404).json({error:'ticket_not_found'});return;}
+  const events=await pool.query(
+   'SELECT s.id,s.previous_due_at,s.new_due_at,s.reason,s.created_at,u.name AS actor_name '+
+   'FROM support_ticket_sla_events s JOIN users u ON u.id=s.actor_id '+
+   'WHERE s.ticket_id=$1 ORDER BY s.created_at DESC,s.id DESC LIMIT $2 OFFSET $3',
+   [id,q.limit+1,q.offset]);
+  res.setHeader('Cache-Control','private, no-store');
+  res.json({items:events.rows.slice(0,q.limit),hasMore:events.rows.length>q.limit,
+   auditOnly:true,externalNotificationSent:false});
  }));
  // Status history is administrative evidence, not a notification/delivery channel.
  app.get('/api/admin/support/tickets/:id/events',sessions,route(async(req,res)=>{

@@ -113,6 +113,14 @@ export type Phase7AdminOverview={
 export type Phase7AdminTicket={
  id:string;organization_id:string|null;organization_name:string|null;name:string;
  email:string;subject:string;message:string;status:'open'|'in_progress'|'closed';created_at:string;
+ sla_due_at:string|null;sla_overdue:boolean;
+};
+export type Phase7SupportSlaEvent={
+ id:string;previous_due_at:string|null;new_due_at:string|null;reason:string;
+ created_at:string;actor_name:string;
+};
+export type Phase7SupportSlaEventPage={
+ items:Phase7SupportSlaEvent[];hasMore:boolean;auditOnly:true;externalNotificationSent:false;
 };
 export type Phase7SupportStatusEvent={
  id:string;old_status:'open'|'in_progress'|'closed';new_status:'open'|'in_progress'|'closed';
@@ -265,8 +273,15 @@ export const productionApi={
   phase7AdminSetStatus:(id:string,status:Phase7AdminOrg['status'],reason:string)=>
     request<{id:string;previous:string;status:string;sessionsRevoked:boolean}>(
       '/admin/organizations/'+encode(id)+'/status','PATCH',{status,reason}),
-  phase7AdminTickets:(status?:Phase7AdminTicket['status'])=>
-    request<{items:Phase7AdminTicket[]}>('/admin/support/tickets'+qs({status,limit:50})),
+  phase7AdminTickets:(status?:Phase7AdminTicket['status'],sla?:'overdue'|'without_deadline')=>
+    request<{items:Phase7AdminTicket[]}>('/admin/support/tickets'+qs({status,sla,limit:50})),
+  phase7AdminSetTicketSla:(id:string,dueAt:string|null,reason:string)=>
+    request<{ticketId:string;dueAt:string|null;configured:boolean;automaticSlaPolicy:false;
+      externalNotificationSent:false}>('/admin/support/tickets/'+encode(id)+'/sla',
+      'PATCH',{dueAt,reason}),
+  phase7AdminTicketSlaEvents:(id:string,offset=0)=>
+    request<Phase7SupportSlaEventPage>(
+      '/admin/support/tickets/'+encode(id)+'/sla/events'+qs({limit:50,offset})),
   phase7AdminTicketReview:(id:string,status:Phase7AdminTicket['status'],reason:string)=>
     request<{id:string;status:string;replySent:false}>('/admin/support/tickets/'+encode(id),
       'PATCH',{status,reason}),

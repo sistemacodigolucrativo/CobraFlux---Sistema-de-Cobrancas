@@ -1,10 +1,15 @@
 import React,{useCallback,useEffect,useState} from 'react';
 import {Button,Card,Input} from '../../components/ui/Primitives';
 import {productionApi,type Phase7AdminOverview,type Phase7AdminOrg,
- type Phase7AdminTicket,type Phase7PrivacyRequest,type Phase7AuditEntry,type Phase7SupportReply,type Phase7SupportStatusEvent} from '../../services/productionApi';
+ type Phase7AdminTicket,type Phase7PrivacyRequest,type Phase7AuditEntry,type Phase7SupportReply,type Phase7SupportStatusEvent,type Phase7SupportSlaEvent} from '../../services/productionApi';
 
 const money=(cents:string|number)=>new Intl.NumberFormat('pt-BR',{
  style:'currency',currency:'BRL'}).format(Number(cents)/100);
+const toLocalInput=(iso:string|null)=>{
+ if(!iso)return '';
+ const date=new Date(iso);
+ return new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16);
+};
 const statuses:Record<Phase7AdminOrg['status'],string>={
  active:'Ativa',suspended:'Suspensa',blocked:'Bloqueada'
 };
@@ -23,6 +28,10 @@ export function AdminOperationsView(){
  const [ticketReason,setTicketReason]=useState('');
  const [ticketReplies,setTicketReplies]=useState<Phase7SupportReply[]>([]);
  const [ticketStatusEvents,setTicketStatusEvents]=useState<Phase7SupportStatusEvent[]>([]);
+ const [slaEvents,setSlaEvents]=useState<Phase7SupportSlaEvent[]>([]);
+ const [slaFilter,setSlaFilter]=useState<'all'|'overdue'|'without_deadline'>('all');
+ const [slaDate,setSlaDate]=useState('');
+ const [slaReason,setSlaReason]=useState('');
  const [ticketReplyMessage,setTicketReplyMessage]=useState('');
  const [replyKey,setReplyKey]=useState('');
  const [privacyId,setPrivacyId]=useState(''),[privacyStatus,setPrivacyStatus]=useState<'in_review'|'awaiting_evidence'|'closed_rejected'>('in_review');
@@ -31,24 +40,26 @@ export function AdminOperationsView(){
   const [summary,orgs,support,requests,events]=await Promise.all([
    productionApi.phase7AdminOverview(),
    productionApi.phase7AdminOrganizations(filter),
-   productionApi.phase7AdminTickets(),
+   productionApi.phase7AdminTickets(undefined,slaFilter==='all'?undefined:slaFilter),
    productionApi.phase7AdminPrivacy(),
    productionApi.phase7AdminAudit()
   ]);
   setOverview(summary);setOrganizations(orgs.items);setTickets(support.items);
   setPrivacy(requests.items);setAudit(events.items);
- },[]);
+ },[slaFilter]);
  useEffect(()=>{setLoading(true);void load().catch(e=>setError(e instanceof Error?e.message:'Administração indisponível.'))
   .finally(()=>setLoading(false));},[load]);
  useEffect(()=>{
-  if(!ticketId){setTicketReplies([]);setTicketStatusEvents([]);return;}
+  if(!ticketId){setTicketReplies([]);setTicketStatusEvents([]);setSlaEvents([]);return;}
   let current=true;
-  setTicketReplies([]);setTicketStatusEvents([]);
+  setTicketReplies([]);setTicketStatusEvents([]);setSlaEvents([]);
   void Promise.all([
    productionApi.phase7AdminTicketReplies(ticketId),
-   productionApi.phase7AdminTicketEvents(ticketId)
-  ]).then(([replies,history])=>{
-   if(current){setTicketReplies(replies.items);setTicketStatusEvents(history.items);}
+   productionApi.phase7AdminTicketEvents(ticketId),
+   productionApi.phase7AdminTicketSlaEvents(ticketId)
+  ]).then(([replies,history,slaHistory])=>{
+   if(current){setTicketReplies(replies.items);setTicketStatusEvents(history.items);
+    setSlaEvents(slaHistory.items);}
   }).catch(e=>{if(current)setError(e instanceof Error?e.message:'Falha ao consultar histórico do chamado.');});
   return ()=>{current=false;};
  },[ticketId]);
@@ -145,13 +156,31 @@ export function AdminOperationsView(){
     A alteração de status é registrada, mas não envia e-mail nem afirma que o cliente recebeu uma resposta.
     As mensagens podem conter dados pessoais, acessíveis somente à administração.
    </p>
+   <label className="text-xs text-[#B8BFCD] block">Filtrar prazos internos
+    <select aria-label="Filtrar prazos de suporte" value={slaFilter}
+     onChange={e=>{setSlaFilter(e.target.value as typeof slaFilter);setTicketId('');}}
+     className="block mt-2 w-full p-3 bg-[#0B0D12] border border-white/20 rounded-lg">
+     <option value="all">Todos os chamados</option>
+     <option value="overdue">Prazo vencido (chamados abertos)</option>
+     <option value="without_deadline">Sem prazo definido</option>
+    </select>
+   </label>
    <div className="max-h-72 overflow-auto space-y-2">
+    {tickets.length===0&&<p className="text-sm text-[#B8BFCD]">Nenhum chamado neste filtro.</p>}
     {tickets.map(t=><button type="button" key={t.id} onClick={()=>{
-     setTicketId(t.id);setTicketReason('');setTicketReplyMessage('');setReplyKey('');setTicketStatus(t.status==='open'?'in_progress':'closed');
+     setTicketId(t.id);setTicketReason('');setTicketReplyMessage('');setReplyKey('');
+     setSlaDate(toLocalInput(t.sla_due_at));setSlaReason('');
+     setTicketStatus(t.status==='open'?'in_progress':'closed');
     }} className={'w-full text-left border rounded-lg p-3 '+
       (ticketId===t.id?'border-[#E2BE72]':'border-white/10')}>
      <span className="block text-sm font-semibold">{t.subject} · {t.status}</span>
      <span className="block text-xs text-[#B8BFCD]">{t.organization_name??'Contato público'} · {t.name}</span>
+     <span className={'block text-xs mt-1 '+(t.sla_overdue?'text-[#F16C79]':'text-[#B8BFCD]')}>
+      {t.sla_due_at
+       ?(t.status==='closed'?'Encerrado · último prazo interno: ':t.sla_overdue?'Prazo interno vencido: ':'Prazo interno: ')+
+         new Date(t.sla_due_at).toLocaleString('pt-BR')
+       :'Sem prazo interno definido'}
+     </span>
     </button>)}
    </div>
    {selectedTicket&&<form className="space-y-3" onSubmit={e=>{e.preventDefault();void action(async()=>{
@@ -172,6 +201,59 @@ export function AdminOperationsView(){
      Registrar andamento
     </Button>
    </form>}
+  {selectedTicket&&<div className="space-y-3 border-t border-white/10 pt-3">
+   <h4 className="font-semibold text-sm">Prazo interno de atendimento (SLA manual)</h4>
+   <p className="text-xs text-[#B8BFCD]">
+    Sem prazo automático por padrão. A configuração é um alvo interno, não garante resposta
+    ou notificação ao cliente; chamados encerrados não recebem alteração de prazo.
+   </p>
+   <form className="space-y-2" onSubmit={e=>{e.preventDefault();
+    if(!slaDate)return;
+    void action(async()=>{
+     await productionApi.phase7AdminSetTicketSla(ticketId,new Date(slaDate).toISOString(),slaReason);
+     const history=await productionApi.phase7AdminTicketSlaEvents(ticketId);
+     setSlaEvents(history.items);setSlaReason('');
+    },'Prazo interno registrado e auditado; nenhuma mensagem enviada.');
+   }}>
+    <label className="block text-sm">Data e hora do prazo interno
+     <input type="datetime-local" aria-label="Prazo interno de atendimento" value={slaDate}
+      onChange={e=>setSlaDate(e.target.value)}
+      className="block mt-2 w-full p-3 bg-[#0B0D12] border border-white/20 rounded-lg"/>
+    </label>
+    <Input label="Justificativa da mudança (mín. 10 caracteres)" value={slaReason}
+     onChange={e=>setSlaReason(e.target.value)}/>
+    <div className="flex flex-wrap gap-2">
+     <Button size="sm" type="submit"
+      disabled={busy||selectedTicket.status==='closed'||slaReason.trim().length<10||
+       !slaDate||toLocalInput(selectedTicket.sla_due_at)===slaDate}>
+      Salvar prazo interno
+     </Button>
+     <Button size="sm" type="button" variant="secondary"
+      disabled={busy||selectedTicket.status==='closed'||slaReason.trim().length<10||!selectedTicket.sla_due_at}
+      onClick={()=>void action(async()=>{
+       await productionApi.phase7AdminSetTicketSla(ticketId,null,slaReason);
+       setSlaDate('');setSlaReason('');
+       const history=await productionApi.phase7AdminTicketSlaEvents(ticketId);
+       setSlaEvents(history.items);
+      },'Prazo removido com registro auditável; nenhuma mensagem enviada.')}>
+      Remover prazo
+     </Button>
+    </div>
+   </form>
+   <p className="text-xs text-[#B8BFCD]">Histórico de configuração de prazos — uso interno</p>
+   {slaEvents.length===0
+    ?<p className="text-xs text-[#B8BFCD]">Nenhuma mudança de prazo registrada.</p>
+    :<div className="max-h-48 overflow-y-auto space-y-2">{slaEvents.map(ev=>
+     <div key={ev.id} className="p-3 rounded-lg border border-white/10 space-y-1">
+      <p className="text-xs text-[#B8BFCD]">{ev.actor_name} · {new Date(ev.created_at).toLocaleString('pt-BR')}</p>
+      <p className="text-xs">
+       {ev.previous_due_at?new Date(ev.previous_due_at).toLocaleString('pt-BR'):'Sem prazo'}
+       {' → '}
+       {ev.new_due_at?new Date(ev.new_due_at).toLocaleString('pt-BR'):'Sem prazo'}
+      </p>
+      <p className="text-xs whitespace-pre-wrap break-words">{ev.reason}</p>
+     </div>)}</div>}
+  </div>}
   {selectedTicket&&<div className="space-y-3 border-t border-white/10 pt-3">
    <p className="font-semibold text-sm">Histórico de respostas no painel</p>
    <p className="text-xs text-[#B8BFCD]">

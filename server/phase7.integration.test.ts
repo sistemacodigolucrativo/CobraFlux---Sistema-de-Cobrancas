@@ -142,6 +142,70 @@ test('Phase 7 platform admin, audited exports, financial segregation, ticket tri
   assert.equal(one.status,200);
   assert.equal(one.body.hasMore,false);
 
+
+  // BL-006: no default SLA or invented policy; manual deadlines are internal and auditable.
+  const slaPath='/admin/support/tickets/'+support.body.id+'/sla';
+  const futureSla=new Date(Date.now()+48*3600_000).toISOString();
+  const pastSla=new Date(Date.now()-3600_000).toISOString();
+  const slaInput={dueAt:futureSla,reason:'Definir acompanhamento manual do atendimento.'};
+  const initialTicket=await call('/admin/support/tickets','GET',undefined,root);
+  const initialSla=initialTicket.body.items.find((x:{id:string})=>x.id===support.body.id);
+  assert.equal(initialSla.sla_due_at,null);
+  assert.equal(initialSla.sla_overdue,false);
+  assert.equal((await call(slaPath)).status,404,'SLA update is PATCH-only');
+  assert.equal((await call(slaPath,'PATCH',slaInput,a)).status,403);
+  assert.equal((await call(slaPath,'PATCH',slaInput,b)).status,403);
+  assert.equal((await call(slaPath,'PATCH',slaInput,{cookie:root.cookie,csrf:''})).status,403);
+  assert.equal((await call(slaPath,'PATCH',{...slaInput,dueAt:'2026-11-21T10:00'},root)).status,400,
+   'SLA date must specify timezone offset');
+  assert.equal((await call(slaPath,'PATCH',{...slaInput,unrecognizedField:true},root)).status,400);
+  assert.equal((await call('/admin/support/tickets/'+randomUUID()+'/sla','PATCH',slaInput,root)).status,404);
+  assert.equal((await call(slaPath,'PATCH',{...slaInput,dueAt:null},root)).status,409);
+  const slaConfigured=await call(slaPath,'PATCH',slaInput,root);
+  assert.equal(slaConfigured.status,200,JSON.stringify(slaConfigured.body));
+  assert.equal(slaConfigured.body.configured,true);
+  assert.equal(slaConfigured.body.dueAt,futureSla);
+  assert.equal(slaConfigured.body.automaticSlaPolicy,false);
+  assert.equal(slaConfigured.body.externalNotificationSent,false);
+  assert.equal((await call(slaPath,'PATCH',slaInput,root)).status,409,
+   'unchanged deadline must not generate duplicate evidence');
+  const slaList=await call('/admin/support/tickets','GET',undefined,root);
+  assert.equal(slaList.body.items.find((x:{id:string})=>x.id===support.body.id).sla_overdue,false);
+  const overdueSet=await call(slaPath,'PATCH',
+   {dueAt:pastSla,reason:'Revisão manual de prazo com histórico preservado.'},root);
+  assert.equal(overdueSet.status,200,JSON.stringify(overdueSet.body));
+  const overdue=await call('/admin/support/tickets?sla=overdue','GET',undefined,root);
+  assert.equal(overdue.status,200);
+  assert.ok(overdue.body.items.some((x:{id:string})=>x.id===support.body.id));
+  const noDeadline=await call('/admin/support/tickets?sla=without_deadline','GET',undefined,root);
+  assert.ok(!noDeadline.body.items.some((x:{id:string})=>x.id===support.body.id));
+  assert.equal((await call('/admin/support/tickets?sla=invalid','GET',undefined,root)).status,400);
+  const slaEventsPath=slaPath+'/events';
+  assert.equal((await call(slaEventsPath)).status,401);
+  assert.equal((await call(slaEventsPath,'GET',undefined,a)).status,403);
+  assert.equal((await call(slaEventsPath,'GET',undefined,b)).status,403);
+  assert.equal((await call(slaEventsPath+'?limit=0','GET',undefined,root)).status,400);
+  assert.equal((await call('/admin/support/tickets/'+randomUUID()+'/sla/events','GET',undefined,root)).status,404);
+  const slaTimeline=await call(slaEventsPath,'GET',undefined,root);
+  assert.equal(slaTimeline.status,200,JSON.stringify(slaTimeline.body));
+  assert.equal(slaTimeline.body.items.length,2);
+  assert.equal(slaTimeline.body.auditOnly,true);
+  assert.equal(slaTimeline.body.externalNotificationSent,false);
+  assert.equal(slaTimeline.body.items[0].new_due_at,pastSla);
+  assert.match(slaTimeline.headers.get('cache-control')??'',/no-store/);
+  assert.equal((await call(slaEventsPath+'?limit=1','GET',undefined,root)).body.hasMore,true);
+  await assert.rejects(()=>pool.query('DELETE FROM support_ticket_sla_events WHERE ticket_id=$1',
+   [support.body.id]),/support ticket SLA events are append-only/);
+  const clearSla=await call(slaPath,'PATCH',
+   {dueAt:null,reason:'Remoção de prazo com registro interno preservado.'},root);
+  assert.equal(clearSla.status,200);
+  assert.equal(clearSla.body.configured,false);
+  const cleared=await call('/admin/support/tickets?sla=without_deadline','GET',undefined,root);
+  assert.ok(cleared.body.items.some((x:{id:string})=>x.id===support.body.id));
+  assert.equal((await call('/admin/support/tickets?sla=overdue','GET',undefined,root)).body.items.some(
+   (x:{id:string})=>x.id===support.body.id),false);
+  assert.equal((await pool.query('SELECT count(*)::int AS n FROM support_ticket_sla_events WHERE ticket_id=$1',
+   [support.body.id])).rows[0].n,3);
   // Fase 7: resposta persistida apenas no portal autenticado, sem entrega externa.
   const key=randomUUID();
   const answer={message:'A equipe validou seu chamado. Acompanhe esta resposta neste painel.',clientRequestId:key};
@@ -181,6 +245,8 @@ test('Phase 7 platform admin, audited exports, financial segregation, ticket tri
   const closing=await call('/admin/support/tickets/'+support.body.id,'PATCH',
    {status:'closed',reason:'Acompanhamento de suporte encerrado e documentado.'},root);
   assert.equal(closing.status,200);
+  assert.equal((await call(slaPath,'PATCH',slaInput,root)).status,409,
+   'closed ticket cannot have its internal deadline silently revised');
   assert.equal((await call('/admin/support/tickets/'+support.body.id+'/replies','POST',
    {...answer,clientRequestId:randomUUID()},root)).status,409,'closed ticket cannot receive new reply');
 
