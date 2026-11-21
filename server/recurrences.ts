@@ -3,8 +3,7 @@ import type {Express,Request,Response,RequestHandler} from 'express';
 import {z} from 'zod';
 import {pool,transaction} from './db';
 import {
-  isoDate,isAlignedFirstDue,previewCycles,skipPastCycles,advanceRecurrence,localBillingDate,
-  type RecurrenceFrequency
+  isoDate,isAlignedFirstDue,previewCycles,skipPastCycles,advanceRecurrence,localBillingDate
 } from './recurrence-calendar';
 
 type Principal={userId:string;orgId:string;role:string};
@@ -42,10 +41,6 @@ async function audit(db:{query:Function},p:Principal,action:string,id:string,det
     'VALUES($1,$2,$3,$4,$5,$6,$7::jsonb)',
     [randomUUID(),p.orgId,p.userId,action,'recurrence',id,JSON.stringify(details)]
   );
-}
-function validateSchedule(firstDueDate:string,cycle:RecurrenceFrequency,anchorDay:number){
-  isoDate(firstDueDate);
-  if(!isAlignedFirstDue(firstDueDate,cycle,anchorDay))throw new Error('first_date_not_aligned');
 }
 function failedDate(res:Response){res.status(422).json({error:'first_date_not_aligned'});}
 export function registerRecurrences(app:Express,{sessions,csrf,who,route}:Deps):void{
@@ -97,6 +92,10 @@ export function registerRecurrences(app:Express,{sessions,csrf,who,route}:Deps):
     if(b.firstDueDate<today){res.status(422).json({error:'first_due_date_must_be_today_or_future'});return;}
     const id=randomUUID();
     const result=await transaction(async db=>{
+      await db.query('SELECT id FROM organizations WHERE id=$1 FOR UPDATE',[p.orgId]);
+      const count=await db.query("SELECT count(*)::int AS count FROM recurrence_plans "+
+        "WHERE organization_id=$1 AND state<>'cancelled'",[p.orgId]);
+      if(count.rows[0].count>=250)return {error:'recurrence_plan_limit_reached'};
       const client=await db.query("SELECT id FROM clients WHERE id=$1 AND organization_id=$2 AND status='active'",
         [b.clientId,p.orgId]);
       if(!client.rowCount)return null;
@@ -118,6 +117,7 @@ export function registerRecurrences(app:Express,{sessions,csrf,who,route}:Deps):
       return row.rows[0];
     });
     if(!result){res.status(404).json({error:'client_or_service_not_available'});return;}
+    if('error' in result){res.status(429).json(result);return;}
     res.status(201).json({...result,draftOnly:true,automaticPix:false});
   }));
   app.patch('/api/recurrences/:id',sessions,csrf,route(async(req,res)=>{
