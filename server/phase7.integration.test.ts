@@ -82,7 +82,7 @@ test('Phase 7 platform admin, audited exports, financial segregation, ticket tri
   assert.equal(illegalDataset.status,400);
   const exportA=await call('/reports/exports/clients','POST',{limit:100},a,true);
   assert.equal(exportA.status,200);
-  assert.match(String(exportA.body),/^\uFEFF/);
+  assert.match(String(exportA.body),/^"id","codigo"/); // fetch.text() strips UTF-8 BOM by specification.
   assert.match(String(exportA.body),/'=HYPERLINK/,'spreadsheet formula must be escaped');
   assert.match(String(exportA.body),/owner7@example\.com/);
   assert.match(String(exportA.headers.get('content-disposition')),/attachment;/);
