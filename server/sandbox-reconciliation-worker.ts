@@ -1,6 +1,7 @@
 import {pool,transaction} from './db';
 import {credentialsReady} from './asaas-sandbox';
 import {ReconciliationError,reconcileSandboxFinancial,recordReconciliationIncident} from './sandbox-reconciliation';
+import {reconcileSandboxCancellation} from './sandbox-cancellation';
 
 type Candidate={chargeId:string;organizationId:string;attempts:number};
 export type WorkerSummary={
@@ -51,7 +52,13 @@ export async function reconcileSandboxBatch(limit=20):Promise<WorkerSummary>{
     if(!candidate)break;
     stats.examined++;
     try{
-      const result=await reconcileSandboxFinancial(candidate.organizationId,candidate.chargeId,null);
+      const cancellation=await pool.query(
+        "SELECT 1 FROM sandbox_cancellation_requests WHERE organization_id=$1 AND charge_id=$2 "+
+        "AND state IN('reserved','submitted','reconcile_required') LIMIT 1",
+        [candidate.organizationId,candidate.chargeId]);
+      const result=cancellation.rowCount
+        ?await reconcileSandboxCancellation(candidate.organizationId,candidate.chargeId,null)
+        :await reconcileSandboxFinancial(candidate.organizationId,candidate.chargeId,null);
       await finish(candidate,true,result.status,null);
       stats.reconciled++;
     }catch(e){

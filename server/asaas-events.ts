@@ -18,7 +18,7 @@ export const providerMoneyCents=(value:number):number=>{
   if(!Number.isSafeInteger(result)||Math.abs(value*100-result)>0.000001)throw new Error('provider_invalid_money_precision');
   return result;
 };
-export type ChargeStatus='pending_provider'|'pending'|'paid'|'partial'|'partially_refunded'|'overdue'|'cancelled'|'refunded'|'draft';
+export type ChargeStatus='pending_provider'|'pending'|'paid'|'partial'|'partially_refunded'|'cancel_pending'|'overdue'|'cancelled'|'refunded'|'draft';
 export type EventDecision={status:ChargeStatus;paidCents:number;result:string};
 /** Confirmed in the provider is not necessarily received; never credit just from a CREATED/CONFIRMED event. */
 export function applySandboxEvent(current:ChargeStatus,paidCents:number,
@@ -29,6 +29,8 @@ export function applySandboxEvent(current:ChargeStatus,paidCents:number,
   }
   const kind=event.event;
   if(current==='draft')return {status:current,paidCents,result:'not_issued'};
+  if(current==='cancel_pending'&&kind==='PAYMENT_DELETED')
+    return {status:current,paidCents,result:'cancellation_reconciliation_required'};
   // Chargeback/dispute/refund denial is an incident, not a financial settlement.
   if(kind.startsWith('PAYMENT_CHARGEBACK')||kind==='PAYMENT_AWAITING_CHARGEBACK_REVERSAL'||
      kind==='PAYMENT_REFUND_DENIED'||kind==='PAYMENT_RECEIVED_IN_CASH_UNDONE')

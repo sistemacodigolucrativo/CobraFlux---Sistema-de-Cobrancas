@@ -74,6 +74,11 @@ export async function reconcileSandboxFinancial(orgId:string,chargeId:string,act
   if(!q.rowCount)throw new ReconciliationError('sandbox_charge_not_found',404);
   if(!credentialsReady())throw new ReconciliationError('sandbox_credentials_unavailable',503);
   const row=q.rows[0];
+  const cancellation=await pool.query(
+    "SELECT 1 FROM sandbox_cancellation_requests WHERE organization_id=$1 AND charge_id=$2 "+
+    "AND state IN('reserved','submitted','reconcile_required') LIMIT 1",
+    [orgId,chargeId]);
+  if(cancellation.rowCount)throw new ReconciliationError('cancellation_reconciliation_required');
   const expected=Number(row.expected_cents);
   const api=new AsaasSandbox(decryptApiKey(row.api_key_ciphertext,row.organization_id));
   let payment:Awaited<ReturnType<AsaasSandbox['getPayment']>>,refunds:SandboxRefund[];

@@ -267,6 +267,19 @@ export function registerSandboxPayments(app:Express,{sessions,csrf,route,who}:De
             'WHERE charge_id=$1 AND account_id=$3',[ref,receipt,accountId]);
         }
       }
+      if(decision.result==='cancellation_reconciliation_required'){
+        await db.query("UPDATE sandbox_issuances SET reconcile_due_at=now(),updated_at=now() "+
+          "WHERE charge_id=$1 AND account_id=$2",[ref,accountId]);
+      }
+      if(decision.result==='received_after_cancellation_review'){
+        await db.query("UPDATE sandbox_issuances SET reconcile_due_at=now(),review_required=true,"+
+          "review_reason='received_after_cancellation',updated_at=now() WHERE charge_id=$1 AND account_id=$2",
+          [ref,accountId]);
+        await db.query('INSERT INTO sandbox_reconciliation_incidents(id,organization_id,charge_id,code) '+
+          "VALUES($1,$2,$3,'received_after_cancellation') "+
+          'ON CONFLICT(organization_id,charge_id,code) DO UPDATE SET last_seen_at=now(),resolved_at=NULL',
+          [randomUUID(),org,ref]);
+      }
       if(decision.result==='refund_reconciliation_required'||event.event==='PAYMENT_REFUND_DENIED'){
         await db.query('UPDATE sandbox_issuances SET refund_sync_required=true,reconcile_due_at=now(),updated_at=now() '+
           'WHERE charge_id=$1 AND account_id=$2',[ref,accountId]);

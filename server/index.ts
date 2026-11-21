@@ -11,6 +11,7 @@ import { registerOperations } from './operations';
 import { registerTeamRoutes } from './team';
 import { registerSandboxPayments } from './sandbox-payments';
 import { registerSandboxRefunds } from './sandbox-refunds';
+import { registerSandboxCancellation } from './sandbox-cancellation';
 import { csrfForSession, getCookie, normalizeEmail, passwordHash, passwordMatches, randomSecret, secureEquals, sha256 } from './security';
 
 const app = express();
@@ -304,6 +305,7 @@ registerOperations(app, { sessions, csrf, route, who });
 registerTeamRoutes(app, { sessions, csrf, route, who, rateLimit, ip });
 registerSandboxPayments(app, { sessions, csrf, route, who });
 registerSandboxRefunds(app, { sessions, csrf, route, who });
+registerSandboxCancellation(app, { sessions, csrf, route, who });
 
 app.get('/api/public/charges/:publicToken', route(async (req,res)=>{
   if (req.params.publicToken.length<20 || req.params.publicToken.length>120) { res.status(404).json({error:'not_found'}); return; }
