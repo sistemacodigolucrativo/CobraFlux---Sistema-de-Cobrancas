@@ -60,7 +60,7 @@ export class AsaasSandbox {
   constructor(private readonly apiKey:string,private readonly transport:typeof fetch=fetch){
     if(!apiKey||apiKey.length<30)throw new Error('asaas_sandbox_api_key_required');
   }
-  private async request(method:'GET'|'POST',path:string,body?:object):Promise<unknown>{
+  private async request(method:'GET'|'POST'|'DELETE',path:string,body?:object):Promise<unknown>{
     if(!path.startsWith('/')||path.startsWith('//')||path.includes('..'))throw new Error('invalid_provider_path');
     const url=SANDBOX_ORIGIN+path;
     let res:Response;
@@ -74,6 +74,7 @@ export class AsaasSandbox {
       });
     }catch{throw new AsaasError(0,'network_or_timeout');}
     if(!res.ok)throw new AsaasError(res.status,'http');
+    if(res.status===204)return {deleted:true};
     try{return await res.json();}catch{throw new AsaasError(res.status,'invalid_json');}
   }
   async customerByReference(clientId:string):Promise<string|null>{
@@ -105,6 +106,11 @@ export class AsaasSandbox {
       dueDate:data.dueDate,description:data.description,externalReference:data.chargeId
     });
     return paymentData.parse(response);
+  }
+  async deleteUnpaidPayment(providerPaymentId:string):Promise<void>{
+    const id=providerId.parse(providerPaymentId);
+    // The actual API request may succeed even if its response is lost. NEVER retry the DELETE automatically.
+    await this.request('DELETE','/payments/'+encodeURIComponent(id));
   }
   async getPayment(providerPaymentId:string){
     const id=providerId.parse(providerPaymentId);
