@@ -40,7 +40,7 @@ function validatedExportStatus(dataset:'clients'|'charges',value:unknown):string
 type ExportDataset='clients'|'charges';
 const exportedCursorSchema=z.object({
  v:z.literal(1),orgId:z.uuid(),dataset:z.enum(['clients','charges']),
- status:z.string().nullable(),cutoff:z.string().regex(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}Z$/),
+ status:z.string().nullable(),privacyRequestId:z.uuid().nullable().default(null),cutoff:z.string().regex(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}Z$/),
  afterAt:z.string().regex(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}Z$/),
  afterId:z.uuid(),expiresAt:z.number().int().positive()
 }).strict();
@@ -55,7 +55,7 @@ function signExportCursor(value:ExportCursor):string{
  const encoded=Buffer.from(JSON.stringify(value)).toString('base64url');
  return encoded+'.'+exportCursorSignature(encoded).toString('base64url');
 }
-function parseExportCursor(raw:string,p:Principal,dataset:ExportDataset,status:string|null):ExportCursor|null{
+function parseExportCursor(raw:string,p:Principal,dataset:ExportDataset,status:string|null,privacyRequestId:string|null):ExportCursor|null{
  if(raw.length>2048||!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(raw))return null;
  const parts=raw.split('.');
  const provided=Buffer.from(parts[1],'base64url'),expected=exportCursorSignature(parts[0]);
@@ -66,6 +66,7 @@ function parseExportCursor(raw:string,p:Principal,dataset:ExportDataset,status:s
  if(!parsed.success)return null;
  const data=parsed.data;
  if(data.orgId!==p.orgId||data.dataset!==dataset||data.status!==status||
+  data.privacyRequestId!==privacyRequestId||
   data.expiresAt<=Date.now()||data.expiresAt>Date.now()+31*60_000||
   data.afterAt>data.cutoff)return null;
  return data;
@@ -557,10 +558,23 @@ export function registerPhase7Routes(app:Express,{sessions,csrf,who,route,rateLi
   const b=z.object({
    limit:z.number().int().min(1).max(1000).default(1000),
    status:z.string().optional(),
-   cursor:z.string().min(1).max(2048).optional()
+   cursor:z.string().min(1).max(2048).optional(),
+   privacyRequestId:z.uuid().optional()
   }).strict().parse(req.body??{});
   const status=validatedExportStatus(dataset,b.status);
-  const cursor=b.cursor?parseExportCursor(b.cursor,p,dataset,status):null;
+  const privacyRequestId=b.privacyRequestId??null;
+  // A link provides evidence of a batch, NOT approval or proof of full legal fulfillment.
+  if(privacyRequestId){
+   const request=await pool.query(
+    'SELECT kind,state FROM privacy_requests WHERE id=$1 AND organization_id=$2',
+    [privacyRequestId,p.orgId]);
+   if(!request.rowCount){res.status(404).json({error:'privacy_request_not_found'});return;}
+   if(!['access','portability'].includes(request.rows[0].kind)||
+    request.rows[0].state==='closed_rejected'){
+    res.status(409).json({error:'privacy_request_not_exportable'});return;
+   }
+  }
+  const cursor=b.cursor?parseExportCursor(b.cursor,p,dataset,status,privacyRequestId):null;
   if(b.cursor&&!cursor){res.status(400).json({error:'invalid_or_expired_export_cursor'});return;}
   // PostgreSQL microsecond timestamps are kept as text; JS Date would truncate microseconds.
   const cutoff=cursor?.cutoff??(await pool.query(
@@ -608,15 +622,19 @@ export function registerPhase7Routes(app:Express,{sessions,csrf,who,route,rateLi
   const hasMore=resultRows.length>b.limit;
   const last=hasMore?resultRows[b.limit-1]:null;
   const next=last?signExportCursor({
-   v:1,orgId:p.orgId,dataset,status,cutoff,
+   v:1,orgId:p.orgId,dataset,status,privacyRequestId,cutoff,
    afterAt:last.cursor_created_at as string,afterId:last.id as string,
    expiresAt:cursor?.expiresAt??Date.now()+30*60_000
   }):null;
   await transaction(async db=>{
    await audit(db,p,'CSV_EXPORT_GENERATED','report_export',randomUUID(),{
     mode:'keyset',dataset,status,limit:b.limit,rows:exportRows.length,
-    continued:Boolean(cursor),hasMore,containsPersonalData:dataset==='clients'
+    continued:Boolean(cursor),hasMore,containsPersonalData:dataset==='clients',
+    ...(privacyRequestId?{privacyRequestId}:{})
    });
+   if(privacyRequestId)await audit(db,p,'PRIVACY_DATA_EXPORT_BATCH','privacy_request',
+    privacyRequestId,{dataset,rows:exportRows.length,hasMore,mode:'keyset',
+     fulfillmentNotVerified:true});
   });
   const filename='cobraflux-'+dataset+'-keyset-'+new Date().toISOString().slice(0,10)+'.csv';
   res.setHeader('Content-Type','text/csv; charset=utf-8');

@@ -482,6 +482,43 @@ test('Phase 7 platform admin, audited exports, financial segregation, ticket tri
    (e:{id:string})=>e.id===privacy.body.id),false);
   assert.equal((await pool.query('SELECT count(*)::int AS n FROM clients WHERE id=$1',[c.body.id])).rows[0].n,1);
 
+
+  // BL-007: portability/access request attribution, never an automatic fulfillment claim.
+  const rights=await signedIn(await registered('Rights7'));
+  for(const [name,phone] of [['Portabilidade A','+5511988888011'],
+   ['Portabilidade B','+5511988888012']]){
+   const created=await call('/clients','POST',{name,phone},rights);
+   assert.equal(created.status,201,JSON.stringify(created.body));
+  }
+  const rightsRequest=await call('/privacy/requests','POST',{
+   kind:'portability',reason:'Solicito cópias portáveis dos meus clientes registrados.'},rights);
+  assert.equal(rightsRequest.status,201);
+  const rightsId=rightsRequest.body.id;
+  const rightsExport='/reports/exports/clients/keyset';
+  assert.equal((await call(rightsExport,'POST',{limit:1,privacyRequestId:privacy.body.id},a)).status,409,
+   'erasure request must not be accepted as a portability batch');
+  assert.equal((await call(rightsExport,'POST',{limit:1,privacyRequestId:rightsId},a)).status,404,
+   'another organization must not link a privacy request');
+  assert.equal((await call(rightsExport,'POST',{limit:1,privacyRequestId:randomUUID()},rights)).status,404);
+  const rightsFirst=await call(rightsExport,'POST',{limit:1,privacyRequestId:rightsId},rights,true);
+  assert.equal(rightsFirst.status,200);
+  assert.equal(rightsFirst.headers.get('x-export-count'),'1');
+  const rightsCursor=rightsFirst.headers.get('x-export-next-cursor')??'';
+  assert.ok(rightsCursor.length>30);
+  assert.equal((await call(rightsExport,'POST',{limit:1,cursor:rightsCursor},rights)).status,400,
+   'cursor must be tied to the original privacy request context');
+  const rightsLast=await call(rightsExport,'POST',
+   {limit:1,cursor:rightsCursor,privacyRequestId:rightsId},rights,true);
+  assert.equal(rightsLast.status,200);
+  assert.equal(rightsLast.headers.get('x-export-count'),'1');
+  const stored=await pool.query(
+   "SELECT count(*)::int AS n FROM audit_logs WHERE organization_id=$1 AND "+
+   "action='PRIVACY_DATA_EXPORT_BATCH' AND entity_id=$2 AND metadata->>'fulfillmentNotVerified'='true'",
+   [rights.orgId,rightsId]);
+  assert.equal(stored.rows[0].n,2);
+  assert.equal((await call('/privacy/requests','GET',undefined,rights)).body.items.find(
+   (x:{id:string})=>x.id===rightsId).state,'open',
+   'files are available for review, but they cannot auto-complete an LGPD request');
   const list=await call('/admin/organizations','GET',undefined,root);
   assert.ok(list.body.items.some((o:{id:string})=>o.id===b.orgId));
   assert.equal((await call('/admin/organizations/'+b.orgId+'/status','PATCH',{

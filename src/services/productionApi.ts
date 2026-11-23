@@ -232,12 +232,13 @@ export type Phase7KeysetExportResult={
  exported:number;hasMore:boolean;nextCursor:string|null;
 };
 async function downloadPhase7CsvKeyset(dataset:'clients'|'charges',
- options:{limit:number;status?:string;cursor?:string;pageNumber:number}):Promise<Phase7KeysetExportResult>{
+ options:{limit:number;status?:string;cursor?:string;pageNumber:number;privacyRequestId?:string}):Promise<Phase7KeysetExportResult>{
  const response=await fetch('/api/reports/exports/'+encodeURIComponent(dataset)+'/keyset',{
   method:'POST',credentials:'include',
   headers:{'Content-Type':'application/json',...(csrfToken?{'X-CF-CSRF':csrfToken}:{})},
   body:JSON.stringify({limit:options.limit,...(options.status?{status:options.status}:{}),
-   ...(options.cursor?{cursor:options.cursor}:{})})
+   ...(options.cursor?{cursor:options.cursor}:{}),
+   ...(options.privacyRequestId?{privacyRequestId:options.privacyRequestId}:{})})
  });
  if(!response.ok){
   const details=await response.json() as {error?:string;message?:string};

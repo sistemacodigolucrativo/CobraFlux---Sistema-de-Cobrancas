@@ -28,6 +28,7 @@ export function ReportsOperationsView({canManage}:{canManage:boolean}){
  const [cursorStack,setCursorStack]=useState<Array<string|null>>([null]);
  const [cursorPage,setCursorPage]=useState(0);
  const [cursorExported,setCursorExported]=useState<number|null>(null);
+ const [exportPrivacyRequestId,setExportPrivacyRequestId]=useState('');
  function resetCursorExport(){setCursorStack([null]);setCursorPage(0);setCursorExported(null);}
  const load=useCallback(async()=>{
   const [report,history,privacy]=await Promise.all([
@@ -193,6 +194,23 @@ export function ReportsOperationsView({canManage}:{canManage:boolean}){
 
   {canManage&&<Card className="p-5 space-y-3">
    <h3 className="font-semibold">Exportação de grandes volumes — navegação por cursor</h3>
+   <label className="text-sm block">Associar ao pedido LGPD (opcional)
+    <select aria-label="Pedido LGPD para vínculo auditável" disabled={busy}
+     className="block mt-2 w-full p-3 bg-[#0B0D12] border border-white/20 rounded-lg"
+     value={exportPrivacyRequestId}
+     onChange={e=>{setExportPrivacyRequestId(e.target.value);resetCursorExport();}}>
+     <option value="">Sem vínculo a pedido</option>
+     {requests.filter(r=>(r.kind==='access'||r.kind==='portability')&&
+      r.state!=='closed_rejected').map(r=>
+      <option key={r.id} value={r.id}>
+       {privacyLabels[r.kind]} · {new Date(r.created_at).toLocaleDateString('pt-BR')}
+      </option>)}
+    </select>
+   </label>
+   <p className="text-xs text-[#B8BFCD]">
+    O vínculo registra cada lote em auditoria. Não aprova o pedido nem comprova a entrega integral
+    ou o cumprimento da LGPD. O arquivo continua disponível apenas à organização autenticada.
+   </p>
    <p className="text-xs text-[#B8BFCD]">
     Percorre registros por chave de criação e ID, sem limite de offset. O cursor é assinado,
     vinculado à organização e aos filtros, e expira 30 minutos após iniciar.
@@ -217,7 +235,8 @@ export function ReportsOperationsView({canManage}:{canManage:boolean}){
      onClick={()=>void action(async()=>{
       const result=await productionApi.phase7ExportCsvKeyset(exportDataset,{
        limit:exportLimit,status:exportStatus||undefined,
-       cursor:cursorStack[cursorPage]||undefined,pageNumber:cursorPage+1
+       cursor:cursorStack[cursorPage]||undefined,pageNumber:cursorPage+1,
+       privacyRequestId:exportPrivacyRequestId||undefined
       });
       setCursorExported(result.exported);
       setCursorStack(previous=>[...previous.slice(0,cursorPage+1),
