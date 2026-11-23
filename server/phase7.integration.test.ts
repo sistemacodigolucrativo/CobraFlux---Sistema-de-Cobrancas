@@ -495,9 +495,12 @@ test('Phase 7 platform admin, audited exports, financial segregation, ticket tri
   assert.equal(rightsRequest.status,201);
   const rightsId=rightsRequest.body.id;
   const rightsExport='/reports/exports/clients/keyset';
-  assert.equal((await call(rightsExport,'POST',{limit:1,privacyRequestId:privacy.body.id},a)).status,409,
-   'erasure request must not be accepted as a portability batch');
-  assert.equal((await call(rightsExport,'POST',{limit:1,privacyRequestId:rightsId},a)).status,404,
+  const rightsErasure=await call('/privacy/requests','POST',{
+   kind:'erasure',reason:'Quero avaliação humana sobre retenção e exclusão legal.'},rights);
+  assert.equal(rightsErasure.status,201);
+  assert.equal((await call(rightsExport,'POST',{limit:1,privacyRequestId:rightsErasure.body.id},
+   rights)).status,409,'erasure must not masquerade as portability');
+  assert.equal((await call(rightsExport,'POST',{limit:1,privacyRequestId:rightsId},b)).status,404,
    'another organization must not link a privacy request');
   assert.equal((await call(rightsExport,'POST',{limit:1,privacyRequestId:randomUUID()},rights)).status,404);
   const rightsFirst=await call(rightsExport,'POST',{limit:1,privacyRequestId:rightsId},rights,true);
