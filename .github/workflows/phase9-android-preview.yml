@@ -4,10 +4,14 @@ on:
     branches: [feat/production-foundation]
     paths:
       - 'mobile/android/**'
+      - 'scripts/phase9-android-contract.mjs'
+      - 'scripts/phase9-android-contract.test.mjs'
       - '.github/workflows/phase9-android-preview.yml'
   pull_request:
     paths:
       - 'mobile/android/**'
+      - 'scripts/phase9-android-contract.mjs'
+      - 'scripts/phase9-android-contract.test.mjs'
       - '.github/workflows/phase9-android-preview.yml'
   workflow_dispatch:
 permissions:
@@ -33,6 +37,10 @@ jobs:
           set -Eeuo pipefail
           SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           "$SDK/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Guard Android origin, cleartext, WebView and debug-only build policy
+        run: |
+          node --test scripts/phase9-android-contract.test.mjs
+          node scripts/phase9-android-contract.mjs --check
       - name: JUnit policy tests and debug APK (no release signing)
         working-directory: mobile/android
         run: gradle --no-daemon :app:testDebugUnitTest :app:assembleDebug
