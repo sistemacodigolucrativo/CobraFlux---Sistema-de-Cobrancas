@@ -1,23 +1,29 @@
 # 01 — Estado atual e ponto exato de retomada
 
-**Atualizado em:** 23/11/2026, após F8 #02 e ADR-026. **Snapshot documental**, não serviço de telemetria. Os **12 arquivos originais do handoff** já estão preservados com hash exato em [originais/](originais/), sem depender do chat.
+**Atualizado em:** 23/11/2026, após F8 #03 (inventário e ameaça) e ADR-026. **Snapshot documental**, não serviço de telemetria. Os **12 arquivos originais do handoff** já estão preservados com hash exato em [originais/](originais/), sem depender do chat.
 
 | Item | Última evidência |
 | --- | --- |
 | Repositório | https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas |
 | Branch permitida | feat/production-foundation |
-| **Último commit de código validado** | [afb04d84](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/afb04d84f28e3adbe628b40cc0c2f3b28ce92a27) |
+| **Último commit de código validado** | [c210b5d2](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/c210b5d2ead0f25d469fb3ad38b8d5d9bb34c280) |
 | Base main verificada | 95aba9c27c363c8b24c2f34c65a28c2f3b011b3b — não alterada por esses incrementos |
 | PR #2 | Aberta, em draft, não mesclada no último exame |
 | Fase atual | **8 — Homologação (preparação técnica iniciada, operação não homologada)** |
-| Último incremento concluído tecnicamente | Fase 8 nº 02: configuração fail-closed de produção HTTPS/TLS/segredo; F7 ADR-026 preservada |
-| Backend/integração/migrações | [CI #45194516204](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45194516204) — success no commit afb04d84 |
-| Browser desktop/mobile | [CI #45194517814](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45194517814) — success no commit afb04d84 |
+| Último incremento concluído tecnicamente | Fase 8 nº 03: 33/33 variáveis classificadas, scanner CI, ameaça e runbook; sem staging ou credenciais reais |
+| Backend/integração/migrações | [Actions #45200150015](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45200150015) — success no commit c210b5d2 |
+| Browser desktop/mobile | [Actions #45200150042](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45200150042) — success no commit c210b5d2 |
 | Release/merge/deploy | **Nenhum** |
 | PSP live/Meta live | **Não habilitados nem homologados** |
 | Próximo marco | F8 planejamento/staging; requisitos F7 **ADIADOS, NÃO CONCLUÍDOS** por ADR-026, [lista](pendencias/2026-11-23-f7-adiados.md) |
 
 **Atenção:** commits posteriores podem alterar só documentação e mudar o HEAD; isso não apaga o SHA do último **incremento de código** com CI verde. O próximo agente precisa verificar ambos.
+
+## F8 #03 — inventário de variáveis e ameaça (23/11/2026)
+
+- 33 nomes estáticos identificados e classificados; gate CI reprova nova variável não documentada, entradas obsoletas e `VITE_` classificado como segredo. Código [c210b5d2](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/c210b5d2ead0f25d469fb3ad38b8d5d9bb34c280); backend [Actions #45200150015](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45200150015), browser [Actions #45200150042](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45200150042), preflight/restore [Actions #45200149826](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45200149826), memória [Actions #45200149781](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45200149781) — **success**.
+- Modelo STRIDE e runbook em `docs/security/`. [Registro](entregas/2026-11-23-f8-03-inventario-segredos.md).
+- Não verifica valores reais, tokens hardcoded ou staging; sem deploy.
 
 ## F8 #02 — baseline de configuração de produção (23/11/2026)
 

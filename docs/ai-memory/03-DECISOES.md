@@ -58,3 +58,11 @@ PSP de checkout da plataforma e preços Starter/Business; hosting e custos; cred
 **Evidência:** [afb04d84](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/afb04d84f28e3adbe628b40cc0c2f3b28ce92a27), [CI #45194516204](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45194516204), [CI #45194517814](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45194517814), [CI #45194517198](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45194517198) — success. [Detalhamento](entregas/2026-11-23-f8-02-configuracao-producao.md).
 
 **Limites:** não substitui entropia real, domínio aprovado, cadeia SSL homologada nem revisão independente. Não autoriza deploy, merge, live, alteração da main nem encerramento F8.
+
+## ADR-028 — Contrato estático de segredos e ambientes (23/11/2026)
+
+**Decisão:** classificar apenas NOMES de variáveis em `docs/security/staging-config-inventory.json` e exigir no CI que todo novo nome esteja documentado; `VITE_` é público. Manter exemplos legados de AI Studio marcados como não confirmados. Não armazenar valores em Git. KMS/cofre e rotação de chaves requerem revisão e operador futuro.
+
+**Evidência:** F8 #03: inventário estático de 33 variáveis, CI de nomes e classificações, threat model e runbook. Código [c210b5d2](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/c210b5d2ead0f25d469fb3ad38b8d5d9bb34c280), backend [Actions #45200150015](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45200150015), Chromium [Actions #45200150042](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45200150042), preflight/restore [Actions #45200149826](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45200149826) e memória [Actions #45200149781](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45200149781), todos **success** no mesmo SHA. A auditoria não lê valores de segredos nem acessa rede; staging real permanece não homologado.
+
+**Não autoriza:** provider live, secret real, deploy, mudança de main, declaração de compliance ou conclusão dos itens F7 adiados por ADR-026.

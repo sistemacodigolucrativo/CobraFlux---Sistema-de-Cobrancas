@@ -1,6 +1,6 @@
 # Fase 8 — Homologação e segurança operacional
 
-**Estado em 23/11/2026:** **EM DESENVOLVIMENTO — F8 #02 CONFIGURAÇÃO SEGURA DE PRODUÇÃO VALIDADA EM CI.** Sem staging real, sem serviços externos, sem lançamento nem homologação operacional. F7: reescopo ADR-026, pendências registradas.
+**Estado em 23/11/2026:** **EM DESENVOLVIMENTO — F8 #03 INVENTÁRIO OFFLINE DE SEGREDOS E AMEAÇAS VALIDADO EM CI.** Sem staging real, sem serviços externos, sem lançamento nem homologação operacional. F7: reescopo ADR-026, pendências registradas.
 
 ## Implementação identificada
 Workflows de CI, testes iniciais e scripts de manutenção são preparação técnica; **não** configuram homologação operacional.
@@ -44,3 +44,9 @@ docs/EXECUCAO_PRODUCAO_FUNDACAO.md, Issue #3
 
 ## Como continuar esta fase
 Antes de marcar qualquer item como completo: conferir branch e SHA no GitHub, revisar implementação presente, estabelecer testes de aceitação, não duplicar funcionalidade, criar registro em **../entregas/**, atualizar esta fase e **estado.json**. Distinguir código testado, homologação externa e publicação.
+
+## Incremento nº 03 — inventário e ameaça (23/11/2026)
+F8 #03: inventário estático de 33 variáveis, CI de nomes e classificações, threat model e runbook. Código [c210b5d2](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/c210b5d2ead0f25d469fb3ad38b8d5d9bb34c280), backend [Actions #45200150015](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45200150015), Chromium [Actions #45200150042](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45200150042), preflight/restore [Actions #45200149826](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45200149826) e memória [Actions #45200149781](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45200149781), todos **success** no mesmo SHA. A auditoria não lê valores de segredos nem acessa rede; staging real permanece não homologado.
+- `docs/security/staging-config-inventory.json`: inventário 33/33; scanner `scripts/phase8-secrets-audit.mjs` e três testes; workflow de preflight.
+- [Modelo STRIDE](../../security/staging-threat-model.md) e [runbook](../../security/staging-secrets-runbook.md) com riscos residuais, segredos e aprovações futuras.
+- [Registro de entrega](../entregas/2026-11-23-f8-03-inventario-segredos.md). Não houve acesso a segredo ou rede externa.

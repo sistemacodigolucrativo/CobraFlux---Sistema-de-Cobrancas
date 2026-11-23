@@ -5,7 +5,7 @@
   "source": "GitHub PR #2 / Issue #3 / GitHub Actions / handoff local de 21-11",
   "repository": "sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas",
   "authorizedBranch": "feat/production-foundation",
-  "lastVerifiedCodeCommit": "afb04d84f28e3adbe628b40cc0c2f3b28ce92a27",
+  "lastVerifiedCodeCommit": "c210b5d2ead0f25d469fb3ad38b8d5d9bb34c280",
   "mainReferenceCommit": "95aba9c27c363c8b24c2f34c65a28c2f3b011b3b",
   "pullRequest": {
     "number": 2,
@@ -16,25 +16,25 @@
   "currentPhase": 8,
   "totalPhases": 10,
   "phase7Status": "ESCOPO TECNICO NAO ADIADO ENCERRADO POR DECISAO ADR-026; REQUISITOS ADIADOS CONTINUAM PENDENTES",
-  "lastCompletedIncrement": "F8 #02: startup fail-closed para APP_ORIGIN HTTPS canonico, DATABASE_SSL=require e SESSION_SECRET sem placeholders; testes backend/browser/preflight/memoria aprovados",
+  "lastCompletedIncrement": "F8 #03: inventario de 33 nomes de env, scanner/CI offline 33/33, modelo STRIDE e runbook; sem segredos reais",
   "lastValidatedCi": [
     {
-      "id": 45194516204,
+      "id": 45200150015,
       "result": "success",
-      "scope": "typecheck/backend/security/integration/migrations/build"
+      "scope": "backend/typecheck/migrations/integration/builds"
     },
     {
-      "id": 45194517814,
+      "id": 45200150042,
       "result": "success",
       "scope": "Chromium desktop/mobile"
     },
     {
-      "id": 45194517198,
+      "id": 45200149826,
       "result": "success",
-      "scope": "F8 offline readiness and synthetic PostgreSQL16 restore"
+      "scope": "F8 33/33 variables, unit tests, offline checks and isolated PG16 restore"
     },
     {
-      "id": 45194516118,
+      "id": 45200149781,
       "result": "success",
       "scope": "AI memory integrity"
     }
@@ -43,10 +43,10 @@
   "financialLiveApproved": false,
   "externalHomologationCompleted": false,
   "nextApprovedScope": [
-    "F8: inventario de secrets e threat model offline, sem credenciais reais",
-    "F8: testes HTTPS/TLS/proxy/backup no staging autorizado",
-    "F8: provedores externos, LGPD, monitoramento e rollback pendentes de aprovacao",
-    "F7 ADR-026: requisitos adiados seguem pendentes antes de release"
+    "F8: hardening de dependencias e supply chain/CI sem provedores",
+    "F8: hospedagem, dominios, HTTPS, segredos e DB real somente com autorizacao",
+    "F8: restore offsite/PITR e PSP/Meta/Resend com evidencias externas pendentes",
+    "F7 ADR-026: requisitos adiados a revisar antes do lancamento"
   ],
   "sourceArchive": "CobraFlux-Knowledge-Handoff-2026-11-21.zip",
   "sourceArchiveUploadedToRepository": false,
@@ -87,11 +87,17 @@
   "phase8Status": "EM DESENVOLVIMENTO — preflight e restore sintético CI aprovados, sem staging/homologação real",
   "phase8OperationallyHomologated": false,
   "phase8Deployed": false,
-  "phase8LastCompletedIncrement": "F8 #02: startup fail-closed para APP_ORIGIN HTTPS canonico, DATABASE_SSL=require e SESSION_SECRET sem placeholders; testes backend/browser/preflight/memoria aprovados",
+  "phase8LastCompletedIncrement": "F8 #03: inventario de 33 nomes de env, scanner/CI offline 33/33, modelo STRIDE e runbook; sem segredos reais",
   "phase7ImplementationScopeClosed": true,
   "phase7OperationallyHomologated": false,
   "phase7DeferredRequirementsReviewed": false,
   "phase7DeferralDecision": "ADR-026",
   "phase7DeferredRequirementsDocument": "docs/ai-memory/pendencias/2026-11-23-f7-adiados.md",
-  "phase8ProductionConfigFailClosed": true
+  "phase8ProductionConfigFailClosed": true,
+  "phase8InventoryPath": "docs/security/staging-config-inventory.json",
+  "phase8InventoryNameCount": 33,
+  "phase8ThreatModelPath": "docs/security/staging-threat-model.md",
+  "phase8SecretsRunbookPath": "docs/security/staging-secrets-runbook.md",
+  "phase8RealSecretsReviewed": false,
+  "phase8StagingInfrastructureReady": false
 }

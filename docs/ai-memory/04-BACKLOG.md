@@ -36,3 +36,6 @@ Escolher um recorte **já aprovado** de BL-006/007/008/012. Prioridade sugerida:
 ## Reprogramação por ADR-026 e F8 iniciada (23/11/2026)
 A lista F7 permanece como **ADIADA — NÃO CONCLUÍDA**; responsável solicitou analisar posteriormente. [Registro detalhado](pendencias/2026-11-23-f7-adiados.md). Somente o escopo de código F7 não adiado foi encerrado; obrigações legais/operacionais não foram liberadas.
 F8 #01 — readiness offline e backup/restore sintético em PostgreSQL 16 com CI aprovado em [#45190560236](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45190560236). Próximos itens: staging/HTTPS com autorização, backup offsite/PITR, observabilidade, QA/segurança, prestadores sandbox, LGPD, piloto, rollback. **Não confundir testes sintéticos com homologação real**.
+
+## F8 #03 — configuração e segurança (23/11/2026)
+**IMPLEMENTADO/TESTADO:** auditoria de nomes 33/33 e classes, três testes novos, modelo STRIDE e runbook. [Actions #45200149826](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45200149826) success. **PENDENTE:** cofre de secrets e revisão independente de vazamentos hardcoded, supply chain/CI, TLS real, dados e contas segregados, backup offsite/PITR, provedores, LGPD e rollback. F7 ADR-026 ainda pendente.
