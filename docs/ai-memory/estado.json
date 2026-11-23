@@ -5,7 +5,7 @@
   "source": "GitHub PR #2 / Issue #3 / GitHub Actions / handoff local de 21-11",
   "repository": "sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas",
   "authorizedBranch": "feat/production-foundation",
-  "lastVerifiedCodeCommit": "c210b5d2ead0f25d469fb3ad38b8d5d9bb34c280",
+  "lastVerifiedCodeCommit": "4d43aa6c5cd8623d2ee0fe403ca016bfb51353cc",
   "mainReferenceCommit": "95aba9c27c363c8b24c2f34c65a28c2f3b011b3b",
   "pullRequest": {
     "number": 2,
@@ -16,25 +16,30 @@
   "currentPhase": 8,
   "totalPhases": 10,
   "phase7Status": "ESCOPO TECNICO NAO ADIADO ENCERRADO POR DECISAO ADR-026; REQUISITOS ADIADOS CONTINUAM PENDENTES",
-  "lastCompletedIncrement": "F8 #03: inventario de 33 nomes de env, scanner/CI offline 33/33, modelo STRIDE e runbook; sem segredos reais",
+  "lastCompletedIncrement": "F8 #04: npm lock v3 674 entradas, npm ci CI/Docker, 6 workflows read-only com actions SHA, auditoria de supply chain e build Docker local CI",
   "lastValidatedCi": [
     {
-      "id": 45200150015,
+      "id": 45205396845,
       "result": "success",
-      "scope": "backend/typecheck/migrations/integration/builds"
+      "scope": "Node/TypeScript, security, PostgreSQL multi-tenant integrations and builds"
     },
     {
-      "id": 45200150042,
+      "id": 45205396796,
       "result": "success",
-      "scope": "Chromium desktop/mobile"
+      "scope": "Chromium E2E desktop/mobile"
     },
     {
-      "id": 45200149826,
+      "id": 45205396813,
       "result": "success",
-      "scope": "F8 33/33 variables, unit tests, offline checks and isolated PG16 restore"
+      "scope": "F8 offline config and PG16 synthetic backup/restore"
     },
     {
-      "id": 45200149781,
+      "id": 45205396857,
+      "result": "success",
+      "scope": "6 workflows SHA/read-only; lock 674 entries; npm ci, typecheck and local Docker build"
+    },
+    {
+      "id": 45205396804,
       "result": "success",
       "scope": "AI memory integrity"
     }
@@ -43,10 +48,10 @@
   "financialLiveApproved": false,
   "externalHomologationCompleted": false,
   "nextApprovedScope": [
-    "F8: hardening de dependencias e supply chain/CI sem provedores",
-    "F8: hospedagem, dominios, HTTPS, segredos e DB real somente com autorizacao",
-    "F8: restore offsite/PITR e PSP/Meta/Resend com evidencias externas pendentes",
-    "F7 ADR-026: requisitos adiados a revisar antes do lancamento"
+    "F8 #05: analisar vulnerabilidades/CVEs e dependencias transitivas sem deploy; registrar e corrigir conforme evidencias",
+    "F8: fixar digest das imagens base Node/PostgreSQL com estrategia de atualizacao comprovada",
+    "F8: staging real, HTTPS/secret manager/PSP/Meta/Resend e offsite/PITR somente apos aprovacao",
+    "F7 ADR-026: requisitos adiados seguem pendentes antes de lancamento"
   ],
   "sourceArchive": "CobraFlux-Knowledge-Handoff-2026-11-21.zip",
   "sourceArchiveUploadedToRepository": false,
@@ -87,7 +92,7 @@
   "phase8Status": "EM DESENVOLVIMENTO — preflight e restore sintético CI aprovados, sem staging/homologação real",
   "phase8OperationallyHomologated": false,
   "phase8Deployed": false,
-  "phase8LastCompletedIncrement": "F8 #03: inventario de 33 nomes de env, scanner/CI offline 33/33, modelo STRIDE e runbook; sem segredos reais",
+  "phase8LastCompletedIncrement": "F8 #04: npm lock v3 674 entradas, npm ci CI/Docker, 6 workflows read-only com actions SHA, auditoria de supply chain e build Docker local CI",
   "phase7ImplementationScopeClosed": true,
   "phase7OperationallyHomologated": false,
   "phase7DeferredRequirementsReviewed": false,
@@ -99,5 +104,14 @@
   "phase8ThreatModelPath": "docs/security/staging-threat-model.md",
   "phase8SecretsRunbookPath": "docs/security/staging-secrets-runbook.md",
   "phase8RealSecretsReviewed": false,
-  "phase8StagingInfrastructureReady": false
+  "phase8StagingInfrastructureReady": false,
+  "phase8NpmLockfileCanonical": true,
+  "phase8NpmLockfilePackages": 674,
+  "phase8ActionsShaPinned": true,
+  "phase8WorkflowsReadOnly": 6,
+  "phase8SupplyChainPolicyPath": "scripts/phase8-supply-chain.mjs",
+  "phase8DockerImageBuiltInCI": true,
+  "phase8DockerImagePublished": false,
+  "phase8DependenciesCveAudited": false,
+  "phase8DockerBasePinnedByDigest": false
 }

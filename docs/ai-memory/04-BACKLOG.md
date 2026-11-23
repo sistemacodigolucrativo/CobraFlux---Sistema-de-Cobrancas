@@ -39,3 +39,9 @@ F8 #01 — readiness offline e backup/restore sintético em PostgreSQL 16 com CI
 
 ## F8 #03 — configuração e segurança (23/11/2026)
 **IMPLEMENTADO/TESTADO:** auditoria de nomes 33/33 e classes, três testes novos, modelo STRIDE e runbook. [Actions #45200149826](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45200149826) success. **PENDENTE:** cofre de secrets e revisão independente de vazamentos hardcoded, supply chain/CI, TLS real, dados e contas segregados, backup offsite/PITR, provedores, LGPD e rollback. F7 ADR-026 ainda pendente.
+
+## F8 #04 — cadeia de dependências e CI (23/11/2026)
+
+**IMPLEMENTADO/CI GREEN:** npm `package-lock.json` v3 com 674 entradas, `npm ci` em Docker/workflows, 6 workflows padrão read-only, Actions por SHA, auditoria estática e Docker build local sem publicar ([CI #45205396857](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45205396857)). [4d43aa6c](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/4d43aa6c5cd8623d2ee0fe403ca016bfb51353cc).
+
+**PENDENTES P1/P0 (segurança de lançamento):** auditar CVEs de dependências transitivas (`glob@11.1.0` e `node-domexception@1.0.0` emitiram avisos), corrigir justificadamente, pinagem por digest das bases `node:22-alpine`/`postgres:16`, revisão de scripts pós-instalação e proveniência/SBOM, HTTPS/staging real, providers, backup offsite/PITR e requisitos F7 adiados ADR-026.

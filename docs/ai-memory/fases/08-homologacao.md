@@ -1,6 +1,6 @@
 # Fase 8 — Homologação e segurança operacional
 
-**Estado em 23/11/2026:** **EM DESENVOLVIMENTO — F8 #03 INVENTÁRIO OFFLINE DE SEGREDOS E AMEAÇAS VALIDADO EM CI.** Sem staging real, sem serviços externos, sem lançamento nem homologação operacional. F7: reescopo ADR-026, pendências registradas.
+**Estado em 23/11/2026:** **EM DESENVOLVIMENTO — F8 #04 CI REPRODUTÍVEL E SUPPLY CHAIN VALIDADO EM CI.** Sem staging real, sem serviços externos, sem lançamento nem homologação operacional. F7: reescopo ADR-026, pendências registradas.
 
 ## Implementação identificada
 Workflows de CI, testes iniciais e scripts de manutenção são preparação técnica; **não** configuram homologação operacional.
@@ -50,3 +50,10 @@ F8 #03: inventário estático de 33 variáveis, CI de nomes e classificações, 
 - `docs/security/staging-config-inventory.json`: inventário 33/33; scanner `scripts/phase8-secrets-audit.mjs` e três testes; workflow de preflight.
 - [Modelo STRIDE](../../security/staging-threat-model.md) e [runbook](../../security/staging-secrets-runbook.md) com riscos residuais, segredos e aprovações futuras.
 - [Registro de entrega](../entregas/2026-11-23-f8-03-inventario-segredos.md). Não houve acesso a segredo ou rede externa.
+
+## Incremento nº 04 — npm lockfile e pipeline seguro (23/11/2026)
+
+- F8 #04 — dependências npm com lockfile, CI em modo read-only, Actions fixadas por SHA e build Docker local. Código [4d43aa6c](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/4d43aa6c5cd8623d2ee0fe403ca016bfb51353cc); backend [CI #45205396845](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45205396845), navegador [CI #45205396796](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45205396796), F8 preflight/restore [CI #45205396813](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45205396813), política da cadeia de dependências e Docker [CI #45205396857](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45205396857), memória [CI #45205396804](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45205396804) — **success** no mesmo SHA. Não houve deploy nem publicação de imagem.
+- Lock v3 com 674 entradas, remoção de `bun.lock` desatualizado e workflow temporário, seis workflows `contents: read`, Actions pinadas e `npm ci` CI/Docker.
+- Auditor `scripts/phase8-supply-chain.mjs` garante contratos, workflow dedicado faz build Docker local **sem publicação**.
+- Pendente: varredura CVEs/SBOM, imagens base Docker por digest e provedores/staging externos. [Entrega](../entregas/2026-11-23-f8-04-ci-reprodutivel.md).
