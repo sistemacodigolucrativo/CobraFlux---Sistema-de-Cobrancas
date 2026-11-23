@@ -19,6 +19,7 @@ import { registerPhase7Routes } from './phase7-routes';
 import { SaasQuotaError } from './saas-domain';
 import { registerMetaWebhook } from './whatsapp-webhook';
 import { csrfForSession, getCookie, normalizeEmail, passwordHash, passwordMatches, randomSecret, secureEquals, sha256 } from './security';
+import {validateProductionConfig} from './production-config';
 
 const app = express();
 app.disable('x-powered-by');
@@ -26,8 +27,7 @@ if (process.env.TRUST_PROXY === 'true') app.set('trust proxy', 1);
 const appSecret = process.env.SESSION_SECRET ?? '';
 if (appSecret.length < 32) throw new Error('SESSION_SECRET must have at least 32 characters.');
 const prod = process.env.NODE_ENV === 'production';
-const origin = process.env.APP_ORIGIN;
-if (prod && (!origin || !origin.startsWith('https://'))) throw new Error('APP_ORIGIN must be an HTTPS origin in production.');
+const {origin}=validateProductionConfig(process.env);
 app.use(express.json({limit:'256kb',verify:(req,_res,bytes)=>{
   if(req.url?.split('?')[0]==='/api/webhooks/meta-whatsapp'){
     (req as Request & {metaRawBody?:Buffer}).metaRawBody=Buffer.from(bytes);

@@ -12,10 +12,13 @@ export function assessStagingEnvironment(env){
  const checks=[];
  let origin;
  try{origin=new URL(env.APP_ORIGIN??'');}catch{origin=null;}
- const publicHttps=Boolean(origin&&origin.protocol==='https:'&&
+ const host=origin?.hostname?.toLowerCase().replace(/^\[|\]$/g,'')??'';
+ const value=env.APP_ORIGIN??'';
+ const publicHttps=Boolean(origin&&origin.protocol==='https:'&&host&&
   !origin.username&&!origin.password&&!origin.search&&!origin.hash&&
-  (origin.pathname==='/'||origin.pathname==='')&&
-  !['localhost','127.0.0.1','0.0.0.0'].includes(origin.hostname));
+  origin.pathname==='/'&&(value===origin.origin||value===origin.origin+'/')&&
+  value.trim()===value&&!['localhost','0.0.0.0','::1'].includes(host)&&
+  !host.endsWith('.localhost')&&!/^127\./.test(host));
  checks.push(result('F8-HTTPS-ORIGIN',publicHttps,
   'APP_ORIGIN must be a real HTTPS origin; never connect automatically.'));
  checks.push(result('F8-POSTGRES-TLS',env.DATABASE_SSL==='require',
@@ -28,8 +31,7 @@ export function assessStagingEnvironment(env){
   'A nonlocal PostgreSQL URL is configured; no credentials, connection, or backup are verified.'));
  const secret=env.SESSION_SECRET??'';
  checks.push(result('F8-SESSION-KEY',secret.length>=32&&
-  !secret.includes('ci-test-secret')&&!secret.includes('change-me')&&
-  !secret.includes('synthetic-only'),
+  !/(?:change-me|ci-test-secret|synthetic-only|ci-only|testpass)/i.test(secret),
   'SESSION_SECRET must be unique and at least 32 characters; never print its value.'));
  checks.push(result('F8-REVERSE-PROXY',env.TRUST_PROXY==='true',
   'TRUST_PROXY=true only for a deployment with a controlled trusted proxy.'));

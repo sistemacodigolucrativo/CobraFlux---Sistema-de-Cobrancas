@@ -5,6 +5,8 @@ on:
     paths:
       - 'scripts/phase8-readiness.mjs'
       - 'scripts/phase8-readiness.test.mjs'
+      - 'server/production-config.ts'
+      - 'server/production-config.test.ts'
       - 'scripts/backup-db.sh'
       - 'scripts/restore-drill.sh'
       - '.github/workflows/phase8-preflight.yml'
@@ -12,6 +14,8 @@ on:
     paths:
       - 'scripts/phase8-readiness.mjs'
       - 'scripts/phase8-readiness.test.mjs'
+      - 'server/production-config.ts'
+      - 'server/production-config.test.ts'
       - 'scripts/backup-db.sh'
       - 'scripts/restore-drill.sh'
       - '.github/workflows/phase8-preflight.yml'

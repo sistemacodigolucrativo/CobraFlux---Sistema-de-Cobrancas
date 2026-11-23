@@ -24,7 +24,9 @@ test('staging config is not approved without strict origin and database separati
 });
 test('unsafe or fake configs are rejected without network access',()=>{
  for(const origin of ['http://staging.example.com','https://localhost:3000',
-  'https://user:password@staging.example.com','https://staging.example.com/private']){
+  'https://user:password@staging.example.com','https://staging.example.com/private',
+  'https://127.0.0.1','https://app.localhost','https://staging.example.com?q=1',
+  'https://staging.example.com:443','https://[::1]']){
   const a=assessStagingEnvironment({APP_ORIGIN:origin});
   assert.equal(a.find(x=>x.code==='F8-HTTPS-ORIGIN').status,'pending');
  }
