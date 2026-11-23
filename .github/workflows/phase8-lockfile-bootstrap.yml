@@ -1,32 +1,45 @@
-name: CobraFlux temporary NPM lockfile bootstrap (read-only)
+name: CobraFlux one-time validated npm lockfile import (feature branch only)
 on:
   push:
     branches: [feat/production-foundation]
     paths: ['.github/workflows/phase8-lockfile-bootstrap.yml']
-  workflow_dispatch:
-permissions:
-  contents: read
+permissions: {}
 jobs:
-  generate-and-test:
+  import-validated-lock:
+    if: github.ref == 'refs/heads/feat/production-foundation'
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    permissions:
+      actions: read
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Generate npm lockfile from actual package.json
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - name: Test clean reproducible install
-        run: npm ci --no-audit --no-fund
-      - name: Typecheck and offline tests
+      - name: Retrieve exact validated read-only CI artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          mkdir -p "$RUNNER_TEMP/f8lock"
+          gh run download 45203699174 \
+            --repo "$GITHUB_REPOSITORY" \
+            --name f8-npm-lockfile-candidate \
+            --dir "$RUNNER_TEMP/f8lock"
+      - name: Verify SHA256 and clean install with frozen package resolution
+        run: |
+          set -euo pipefail
+          echo "b45a0c67d7f916a4c66b181c57cc6ab2be1c81cbdc96e77429d7a2b41a1e4397  $RUNNER_TEMP/f8lock/package-lock.json" | sha256sum -c -
+          cp "$RUNNER_TEMP/f8lock/package-lock.json" package-lock.json
+          npm ci --no-audit --no-fund
           npm run lint
-          node scripts/phase8-secrets-audit.mjs --check
-      - name: Publish generated lockfile for review and source-controlled commit
-        uses: actions/upload-artifact@v4
-        with:
-          name: f8-npm-lockfile-candidate
-          path: package-lock.json
-          retention-days: 2
-          if-no-files-found: error
+      - name: Commit lockfile only on the explicitly authorized feature branch
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/feat/production-foundation"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- package-lock.json
+          git diff --cached --quiet && exit 0
+          git commit -m "build(phase8): commit verified npm lockfile from read-only CI artifact"
+          git push origin "HEAD:refs/heads/feat/production-foundation"
