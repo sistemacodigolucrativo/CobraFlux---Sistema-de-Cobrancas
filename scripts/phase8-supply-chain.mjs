@@ -10,7 +10,7 @@ const pinnedActions=new Map([
  ['actions/setup-node','49933ea5288caeca8642d1e84afbd3f7d6820020'],
  ['actions/upload-artifact','ea165f8d65b6e75b540449e92b4886f43607fa02'],
  ['actions/setup-java','cf277c60eb25467037889841efdb72551f06f6c3'],
- ['gradle/actions','ed408507eac070d1f99cc633dbcf757c94c7933a']
+ ['gradle/actions/setup-gradle','ed408507eac070d1f99cc633dbcf757c94c7933a']
 ]);
 const approvedImages={
  node:'node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a',
@@ -48,7 +48,7 @@ export function validateWorkflow(content,path){
  const actionRefs=[...content.matchAll(/^\s*-\s*uses:\s*([^\s#]+)/gm)].map(x=>x[1]);
  if(!actionRefs.length)failures.push(path+': no actions found');
  for(const ref of actionRefs){
-  const match=ref.match(/^([a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+)@([a-f0-9]{40})$/);
+  const match=ref.match(/^((?:[a-zA-Z0-9_-]+\/){1,2}[a-zA-Z0-9_-]+)@([a-f0-9]{40})$/);
   if(!match){failures.push(path+': mutable or unpinned action '+ref);continue;}
   if(pinnedActions.get(match[1])!==match[2])
    failures.push(path+': unreviewed action or different SHA '+match[1]);
