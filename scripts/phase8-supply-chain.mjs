@@ -8,7 +8,9 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const pinnedActions=new Map([
  ['actions/checkout','11d5960a326750d5838078e36cf38b85af677262'],
  ['actions/setup-node','49933ea5288caeca8642d1e84afbd3f7d6820020'],
- ['actions/upload-artifact','ea165f8d65b6e75b540449e92b4886f43607fa02']
+ ['actions/upload-artifact','ea165f8d65b6e75b540449e92b4886f43607fa02'],
+ ['actions/setup-java','cf277c60eb25467037889841efdb72551f06f6c3'],
+ ['gradle/actions','ed408507eac070d1f99cc633dbcf757c94c7933a']
 ]);
 const approvedImages={
  node:'node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a',
