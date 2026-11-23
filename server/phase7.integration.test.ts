@@ -440,6 +440,22 @@ test('Phase 7 platform admin, audited exports, financial segregation, ticket tri
    reason:'Desejo consultar os requisitos legais para a exclusão da empresa.'},a);
   assert.equal(privacy.status,201);
   assert.equal(privacy.body.automaticDeletion,false);
+  const privacyHistoryPath='/privacy/requests/'+privacy.body.id+'/history';
+  const privacyAdminHistoryPath='/admin/privacy/requests/'+privacy.body.id+'/history';
+  assert.equal((await call(privacyHistoryPath)).status,401);
+  assert.equal((await call(privacyHistoryPath,'GET',undefined,b)).status,404);
+  assert.equal((await call(privacyHistoryPath,'GET',undefined,root)).status,404,
+   'superadmin cannot read another tenant history by owner route');
+  assert.equal((await call(privacyAdminHistoryPath,'GET',undefined,a)).status,403);
+  assert.equal((await call(privacyAdminHistoryPath,'GET',undefined,b)).status,403);
+  assert.equal((await call('/admin/privacy/requests/'+randomUUID()+'/history','GET',undefined,root)).status,404);
+  assert.equal((await call(privacyHistoryPath+'?limit=0','GET',undefined,a)).status,400);
+  const initialHistory=await call(privacyHistoryPath,'GET',undefined,a);
+  assert.equal(initialHistory.status,200);
+  assert.equal(initialHistory.body.items.length,1);
+  assert.equal(initialHistory.body.items[0].new_state,'open');
+  assert.equal(initialHistory.body.privateReviewerNotesIncluded,false);
+  assert.match(initialHistory.headers.get('cache-control')??'',/no-store/);
   assert.equal((await call('/admin/privacy/requests','GET',undefined,b)).status,403);
   assert.equal((await call('/admin/privacy/requests/'+privacy.body.id,'PATCH',{
    state:'completed',reviewerNote:'pedido concluído sem validação'},root)).status,400);
@@ -447,6 +463,19 @@ test('Phase 7 platform admin, audited exports, financial segregation, ticket tri
    state:'in_review',reviewerNote:'Em análise jurídica e retenção obrigatória.'},root);
   assert.equal(review.status,200,JSON.stringify(review.body));
   assert.equal(review.body.automaticDeletion,false);
+  const reviewHistory=await call(privacyAdminHistoryPath,'GET',undefined,root);
+  assert.equal(reviewHistory.status,200);
+  assert.equal(reviewHistory.body.items.length,2);
+  assert.equal(reviewHistory.body.items[1].new_state,'in_review');
+  assert.equal(reviewHistory.body.items[1].previous_state,'open');
+  assert.equal(reviewHistory.body.items[1].reviewer_note,'Em análise jurídica e retenção obrigatória.');
+  assert.equal(reviewHistory.body.internalNotes,true);
+  assert.equal((await call(privacyHistoryPath,'GET',undefined,a)).body.items[1].reviewer_note,
+   undefined,'owner must never see private reviewer notes');
+  assert.equal((await call(privacyAdminHistoryPath+'?limit=1','GET',undefined,root)).body.hasMore,true);
+  await assert.rejects(()=>pool.query(
+   'DELETE FROM privacy_request_events WHERE request_id=$1',[privacy.body.id]),
+   /privacy request events are append-only/);
   const current=await call('/privacy/requests','GET',undefined,a);
   assert.equal(current.body.items.find((e:{id:string})=>e.id===privacy.body.id).state,'in_review');
   assert.equal((await call('/privacy/requests','GET',undefined,b)).body.items.some(

@@ -1,7 +1,7 @@
 import React,{useCallback,useEffect,useState} from 'react';
 import {Button,Card,Input} from '../../components/ui/Primitives';
 import {productionApi,type Phase7AdminOverview,type Phase7AdminOrg,
- type Phase7AdminTicket,type Phase7PrivacyRequest,type Phase7AuditEntry,type Phase7SupportReply,type Phase7SupportStatusEvent,type Phase7SupportSlaEvent,type Phase7OverdueAlert} from '../../services/productionApi';
+ type Phase7AdminTicket,type Phase7PrivacyRequest,type Phase7PrivacyEvent,type Phase7AuditEntry,type Phase7SupportReply,type Phase7SupportStatusEvent,type Phase7SupportSlaEvent,type Phase7OverdueAlert} from '../../services/productionApi';
 
 const money=(cents:string|number)=>new Intl.NumberFormat('pt-BR',{
  style:'currency',currency:'BRL'}).format(Number(cents)/100);
@@ -41,6 +41,8 @@ export function AdminOperationsView(){
  const [replyKey,setReplyKey]=useState('');
  const [privacyId,setPrivacyId]=useState(''),[privacyStatus,setPrivacyStatus]=useState<'in_review'|'awaiting_evidence'|'closed_rejected'>('in_review');
  const [privacyReason,setPrivacyReason]=useState('');
+ const [privacyHistory,setPrivacyHistory]=useState<Phase7PrivacyEvent[]>([]);
+ const [privacyHistoryHasMore,setPrivacyHistoryHasMore]=useState(false);
  const load=useCallback(async(filter='')=>{
   const [summary,orgs,support,requests,events,alerts]=await Promise.all([
    productionApi.phase7AdminOverview(),
@@ -56,6 +58,14 @@ export function AdminOperationsView(){
  },[slaFilter,alertView]);
  useEffect(()=>{setLoading(true);void load().catch(e=>setError(e instanceof Error?e.message:'Administração indisponível.'))
   .finally(()=>setLoading(false));},[load]);
+ useEffect(()=>{
+  if(!privacyId){setPrivacyHistory([]);setPrivacyHistoryHasMore(false);return;}
+  let current=true;
+  void productionApi.phase7AdminPrivacyHistory(privacyId)
+   .then(data=>{if(current){setPrivacyHistory(data.items);setPrivacyHistoryHasMore(data.hasMore);}})
+   .catch(e=>{if(current)setError(e instanceof Error?e.message:'Histórico de privacidade indisponível.');});
+  return ()=>{current=false;};
+ },[privacyId,privacy]);
  useEffect(()=>{
   if(!ticketId){setTicketReplies([]);setTicketStatusEvents([]);setSlaEvents([]);return;}
   let current=true;
@@ -376,6 +386,18 @@ export function AdminOperationsView(){
      <span className="text-xs text-[#B8BFCD]">{x.reason}</span>
     </button>)}
    </div>
+   {selectedPrivacy&&<div className="space-y-2 border-t border-white/10 pt-3">
+    <p className="text-sm font-semibold">Histórico auditável da revisão (uso interno)</p>
+    {privacyHistory.length===0
+     ?<p className="text-xs text-[#B8BFCD]">Nenhum evento registrado.</p>
+     :<div className="space-y-2 max-h-48 overflow-y-auto">{privacyHistory.map(ev=>
+       <div key={ev.id} className="p-3 rounded-lg border border-white/10 text-xs space-y-1">
+        <p className="text-[#B8BFCD]">{ev.actor_name??'Usuário'} · {new Date(ev.created_at).toLocaleString('pt-BR')}</p>
+        <p>{ev.previous_state??'Solicitação'} → {ev.new_state}</p>
+        {ev.reviewer_note&&<p className="whitespace-pre-wrap break-words">{ev.reviewer_note}</p>}
+       </div>)}</div>}
+    {privacyHistoryHasMore&&<p className="text-xs text-[#B8BFCD]">Mais eventos disponíveis pela API paginada.</p>}
+   </div>}
    {selectedPrivacy&&<form className="space-y-3" onSubmit={e=>{e.preventDefault();void action(async()=>{
     await productionApi.phase7AdminPrivacyReview(privacyId,privacyStatus,privacyReason);
     setPrivacyId('');setPrivacyReason('');

@@ -452,10 +452,44 @@ export function registerPhase7Routes(app:Express,{sessions,csrf,who,route,rateLi
    await db.query(
     "INSERT INTO privacy_requests(id,organization_id,requested_by,kind,reason) VALUES($1,$2,$3,$4,$5)",
     [id,p.orgId,p.userId,b.kind,b.reason]);
+   await db.query(
+    'INSERT INTO privacy_request_events(id,request_id,organization_id,actor_id,'+
+    'action,previous_state,new_state,reviewer_note) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
+    [randomUUID(),id,p.orgId,p.userId,'created',null,'open','Solicitação registrada para análise humana.']);
    await audit(db,p,'PRIVACY_REQUEST_CREATED','privacy_request',id,{kind:b.kind});
   });
   res.status(201).json({id,kind:b.kind,state:'open',automaticDeletion:false,
    legalRetentionRequiresHumanReview:true});
+ }));
+ // The organization owner can inspect the state chronology, not private reviewer notes.
+ app.get('/api/privacy/requests/:id/history',sessions,route(async(req,res)=>{
+  const p=who(req);if(!requireOwner(p,res))return;
+  const {id}=identifier.parse(req.params),q=page.parse(req.query);
+  const request=await pool.query(
+   'SELECT id FROM privacy_requests WHERE id=$1 AND organization_id=$2',[id,p.orgId]);
+  if(!request.rowCount){res.status(404).json({error:'privacy_request_not_found'});return;}
+  const events=await pool.query(
+   'SELECT id,action,previous_state,new_state,created_at FROM privacy_request_events '+
+   'WHERE request_id=$1 AND organization_id=$2 ORDER BY created_at ASC,id ASC LIMIT $3 OFFSET $4',
+   [id,p.orgId,q.limit+1,q.offset]);
+  res.setHeader('Cache-Control','private, no-store');
+  res.json({items:events.rows.slice(0,q.limit),hasMore:events.rows.length>q.limit,
+   reviewOnly:true,automaticErasure:false,privateReviewerNotesIncluded:false});
+ }));
+ app.get('/api/admin/privacy/requests/:id/history',sessions,route(async(req,res)=>{
+  const p=who(req);if(!requireAdmin(p,res))return;
+  const {id}=identifier.parse(req.params),q=page.parse(req.query);
+  const request=await pool.query('SELECT id FROM privacy_requests WHERE id=$1',[id]);
+  if(!request.rowCount){res.status(404).json({error:'privacy_request_not_found'});return;}
+  const events=await pool.query(
+   'SELECT e.id,e.action,e.previous_state,e.new_state,e.created_at,'+
+   'e.reviewer_note,u.name AS actor_name FROM privacy_request_events e '+
+   'JOIN users u ON u.id=e.actor_id '+
+   'WHERE e.request_id=$1 ORDER BY e.created_at ASC,e.id ASC LIMIT $2 OFFSET $3',
+   [id,q.limit+1,q.offset]);
+  res.setHeader('Cache-Control','private, no-store');
+  res.json({items:events.rows.slice(0,q.limit),hasMore:events.rows.length>q.limit,
+   reviewOnly:true,automaticErasure:false,internalNotes:true});
  }));
  app.get('/api/admin/privacy/requests',sessions,route(async(req,res)=>{
   const p=who(req);if(!requireAdmin(p,res))return;
@@ -482,6 +516,10 @@ export function registerPhase7Routes(app:Express,{sessions,csrf,who,route,rateLi
    await db.query(
     'UPDATE privacy_requests SET state=$2,reviewer_note=$3,reviewed_by=$4,reviewed_at=now(),updated_at=now() '+
     'WHERE id=$1',[id,b.state,b.reviewerNote,p.userId]);
+   await db.query(
+    'INSERT INTO privacy_request_events(id,request_id,organization_id,actor_id,'+
+    'action,previous_state,new_state,reviewer_note) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
+    [randomUUID(),id,old.rows[0].organization_id,p.userId,'reviewed',previous,b.state,b.reviewerNote]);
    await audit(db,p,'ADMIN_PRIVACY_REQUEST_REVIEWED','privacy_request',id,
     {previous,next:b.state,manualReview:true},old.rows[0].organization_id);
    return {id,previous,state:b.state,automaticDeletion:false,

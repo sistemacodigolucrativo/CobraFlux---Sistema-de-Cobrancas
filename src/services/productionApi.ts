@@ -146,6 +146,14 @@ export type Phase7SupportReply={
 export type Phase7SupportReplyPage={
   items:Phase7SupportReply[];hasMore:boolean;delivery:'portal_only';emailSent:false;
 };
+export type Phase7PrivacyEvent={
+ id:string;action:'created'|'reviewed';previous_state:string|null;new_state:string;
+ created_at:string;reviewer_note?:string;actor_name?:string;
+};
+export type Phase7PrivacyHistory={
+ items:Phase7PrivacyEvent[];hasMore:boolean;reviewOnly:true;automaticErasure:false;
+ privateReviewerNotesIncluded?:false;internalNotes?:true;
+};
 export type Phase7PrivacyRequest={
  id:string;organization_id?:string;organization_name?:string;
  kind:'access'|'rectification'|'erasure'|'portability';
@@ -330,6 +338,8 @@ export const productionApi={
   phase7ExportPreview:(dataset:'clients'|'charges',status?:string)=>
     request<Phase7ExportPreview>('/reports/exports/'+encode(dataset)+'/preview'+qs({status})),
   phase7MyPrivacy:()=>request<{items:Phase7PrivacyRequest[];automaticErasure:false}>('/privacy/requests'),
+  phase7PrivacyHistory:(id:string,offset=0)=>
+    request<Phase7PrivacyHistory>('/privacy/requests/'+encode(id)+'/history'+qs({limit:50,offset})),
   phase7CreatePrivacy:(kind:Phase7PrivacyRequest['kind'],reason:string)=>request<{
     id:string;kind:string;state:'open';automaticDeletion:false
   }>('/privacy/requests','POST',{kind,reason}),
@@ -367,6 +377,8 @@ export const productionApi={
       '/admin/support/tickets/'+encode(id)+'/replies','POST',{message,clientRequestId}),
   phase7AdminPrivacy:()=>request<{items:Phase7PrivacyRequest[];manualLegalReviewRequired:true}>(
     '/admin/privacy/requests'),
+  phase7AdminPrivacyHistory:(id:string,offset=0)=>
+    request<Phase7PrivacyHistory>('/admin/privacy/requests/'+encode(id)+'/history'+qs({limit:50,offset})),
   phase7AdminPrivacyReview:(id:string,state:'in_review'|'awaiting_evidence'|'closed_rejected',reviewerNote:string)=>
     request<{id:string;state:string;automaticDeletion:false}>('/admin/privacy/requests/'+encode(id),
       'PATCH',{state,reviewerNote}),

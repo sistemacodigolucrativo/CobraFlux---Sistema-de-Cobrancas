@@ -1,7 +1,7 @@
 import React,{useCallback,useEffect,useState} from 'react';
 import {Button,Card,Input} from '../../components/ui/Primitives';
 import {productionApi,type Phase7Summary,type Phase7AuditEntry,type Phase7PrivacyRequest,
- type Phase7ExportPreview,type Phase7ExportResult} from '../../services/productionApi';
+ type Phase7ExportPreview,type Phase7ExportResult,type Phase7PrivacyEvent} from '../../services/productionApi';
 
 const money=(cents:string|number)=>new Intl.NumberFormat('pt-BR',{
  style:'currency',currency:'BRL'}).format(Number(cents)/100);
@@ -17,6 +17,8 @@ export function ReportsOperationsView({canManage}:{canManage:boolean}){
  const [error,setError]=useState(''),[notice,setNotice]=useState('');
  const [kind,setKind]=useState<Phase7PrivacyRequest['kind']>('access');
  const [reason,setReason]=useState('');
+ const [selectedPrivacyId,setSelectedPrivacyId]=useState('');
+ const [privacyHistory,setPrivacyHistory]=useState<Phase7PrivacyEvent[]>([]);
  const [exportDataset,setExportDataset]=useState<'clients'|'charges'>('clients');
  const [exportStatus,setExportStatus]=useState('');
  const [exportLimit,setExportLimit]=useState<100|250|1000>(250);
@@ -43,6 +45,14 @@ export function ReportsOperationsView({canManage}:{canManage:boolean}){
    .catch(e=>{if(current)setError(e instanceof Error?e.message:'Não foi possível consultar a exportação.');});
   return ()=>{current=false;};
  },[canManage,exportDataset,exportStatus]);
+ useEffect(()=>{
+  if(!selectedPrivacyId){setPrivacyHistory([]);return;}
+  let current=true;
+  void productionApi.phase7PrivacyHistory(selectedPrivacyId)
+   .then(data=>{if(current)setPrivacyHistory(data.items);})
+   .catch(e=>{if(current)setError(e instanceof Error?e.message:'Histórico não disponível.');});
+  return ()=>{current=false;};
+ },[selectedPrivacyId,requests]);
  useEffect(()=>{setLoading(true);void load().catch(e=>setError(e instanceof Error?e.message:'Não foi possível carregar o relatório.'))
   .finally(()=>setLoading(false));},[load]);
  async function action(fn:()=>Promise<unknown>,message:string){
@@ -247,9 +257,19 @@ export function ReportsOperationsView({canManage}:{canManage:boolean}){
     </label>
     <Button type="submit" disabled={busy||reason.trim().length<12}>Registrar solicitação</Button>
    </form>
-   {requests.map(r=><p className="text-xs border-b border-white/10 py-2" key={r.id}>
+   {requests.map(r=><button type="button" className="text-xs border-b border-white/10 py-2 text-left w-full"
+    key={r.id} onClick={()=>setSelectedPrivacyId(x=>x===r.id?'':r.id)}>
     {privacyLabels[r.kind]} · {r.state} · {new Date(r.created_at).toLocaleDateString('pt-BR')}
-   </p>)}
+    <span className="block underline">Consultar andamento</span>
+   </button>)}
+   {selectedPrivacyId&&<div className="space-y-2 border-t border-white/10 pt-2">
+    <p className="text-xs font-semibold">Andamento da solicitação (sem notas internas)</p>
+    {privacyHistory.length===0
+     ?<p className="text-xs text-[#B8BFCD]">Sem eventos disponíveis.</p>
+     :privacyHistory.map(ev=><p key={ev.id} className="text-xs">
+       {new Date(ev.created_at).toLocaleString('pt-BR')} · {ev.new_state}
+      </p>)}
+   </div>}
   </Card>}
   {canManage&&<Card className="p-5 space-y-2">
    <h3 className="font-semibold">Trilha de auditoria</h3>
