@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "project": "CobraFlux — Sistema de Cobranças",
-  "snapshotDate": "2026-11-21",
+  "snapshotDate": "2026-11-23",
   "source": "GitHub PR #2 / Issue #3 / GitHub Actions / handoff local de 21-11",
   "repository": "sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas",
   "authorizedBranch": "feat/production-foundation",
-  "lastVerifiedCodeCommit": "e88ddfe8c2792dbd8d7806c046a14a8a3ff4b7d2",
+  "lastVerifiedCodeCommit": "1c16c6ad0798b6c77543679738e2a57fb9e831ea",
   "mainReferenceCommit": "95aba9c27c363c8b24c2f34c65a28c2f3b011b3b",
   "pullRequest": {
     "number": 2,
@@ -15,21 +15,21 @@
   "roadmapIssue": 3,
   "currentPhase": 7,
   "totalPhases": 10,
-  "phase7Status": "EM DESENVOLVIMENTO",
-  "lastCompletedIncrement": "F7 incremento 7: CSV export por keyset cursor assinado/HMAC, org+dataset+status vinculados, TTL 30min e timestamp de corte; sem snapshot e sem teste de carga",
+  "phase7Status": "EM DESENVOLVIMENTO — GATES DE FECHAMENTO ABERTOS",
+  "lastCompletedIncrement": "F7 #10: vinculo auditavel do cursor CSV a pedido LGPD do mesmo tenant; nao configura fulfillment legal",
   "lastValidatedCi": [
     {
-      "id": 44935128670,
+      "id": 45184992979,
       "result": "success",
-      "scope": "backend/TypeScript/security/migrations twice/integration multi-tenant/builds"
+      "scope": "backend/migrations/integration/builds"
     },
     {
-      "id": 44935128826,
+      "id": 45184993002,
       "result": "success",
-      "scope": "Chromium desktop/mobile E2E"
+      "scope": "Chromium desktop/mobile"
     },
     {
-      "id": 44935128710,
+      "id": 45184992978,
       "result": "success",
       "scope": "AI memory integrity"
     }
@@ -38,9 +38,9 @@
   "financialLiveApproved": false,
   "externalHomologationCompleted": false,
   "nextApprovedScope": [
-    "F7 BL-008/031: testes de carga de exportação, avaliação de índice/performance, sem alegar snapshot consistente",
-    "F7 BL-007: fluxo LGPD completo com revisão jurídica",
-    "F7 BL-012: revisão de paridade e acessibilidade em relatórios"
+    "F7 BL-006/007: decisões legais/canais/anexos e implementação segura",
+    "F7 BL-008/031: snapshot consistente e testes de staging",
+    "F7 BL-012: auditoria visual/acessibilidade e dispositivos físicos"
   ],
   "sourceArchive": "CobraFlux-Knowledge-Handoff-2026-11-21.zip",
   "sourceArchiveUploadedToRepository": false,
@@ -64,5 +64,18 @@
   "exportCsvKeysetCursorSigned": true,
   "exportCsvKeysetCursorTtlMinutes": 30,
   "exportCsvKeysetNotSnapshot": true,
-  "exportCsvLoadTest100kCompleted": false
+  "exportCsvLoadTest100kCompleted": true,
+  "phase8Started": false,
+  "exportCsvLoadTestSyntheticOnly": true,
+  "exportCsvLoadTestProductionCompleted": false,
+  "lgpdAppendOnlyReviewHistory": true,
+  "lgpdBatchExportAuditLinkedToRequest": true,
+  "lgpdFulfillmentLegallyApproved": false,
+  "phase7ClosureGatesDocument": "docs/ai-memory/fases/07-gates-de-encerramento-2026-11-23.md",
+  "phase7RemainingGates": [
+    "SLA comercial, notificações verificadas, anexos seguros",
+    "LGPD completa e revisão legal/identidade/retention",
+    "Exportação consistente durante mutações e carga real",
+    "Paridade/acessibilidade, segurança independente e staging"
+  ]
 }

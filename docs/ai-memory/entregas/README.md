@@ -8,6 +8,7 @@ Cada incremento precisa de um documento individual baseado em [09-MODELO-DE-REGI
 - [2026-11-21 — Fase 7: alertas internos auditáveis](2026-11-21-f7-alertas-internos.md).
 - [2026-11-21 — Fase 7: exportação CSV filtrada e páginas](2026-11-21-f7-exportacoes-paginadas.md).
 - [2026-11-21 — Fase 7: exportação keyset com cursor assinado](2026-11-21-f7-exportacao-keyset-cursor.md).
+- [2026-11-23 — F7 #08–10: índices, eventos LGPD e portabilidade auditada](2026-11-23-f7-08-09-10.md).
 - [2026-11-21 — Implantação da memória persistente](2026-11-21-criacao-memoria.md).
 
 **Ordem confiável:** commit e CI vinculados ao SHA > documento de entrega > diário > resumo de conversa. Nenhum registro cria permissão para deploy, lançamento live ou merge.

@@ -157,3 +157,9 @@ Este é um **incremento inicial**, não a conclusão integral da fase. Ainda é 
 - O teste foi corrigido para verificar separadamente `GET=404` e `POST anônimo=401` em `e88ddfe8c2792dbd8d7806c046a14a8a3ff4b7d2`. CI final verde; falha preservada neste histórico.
 
 **Limitação essencial:** não é snapshot transacional/MVCC duradouro. O corte temporal e o keyset reduzem deslocamentos por inserções concorrentes, mas alterações de status, exclusões ou outras mutações durante múltiplos downloads ainda podem gerar diferenças. O cursor expira após 30 minutos, alterações em `SESSION_SECRET` invalidam os tokens, e a cota de 12 arquivos/hora impede exportação massiva instantânea. A integração foi testada funcionalmente com poucos registros; **teste de carga 100 mil+ e revisão de performance não foram executados**. BL-008 e Fase 7 permanecem abertos.
+
+## Incrementos F7 #08–10 (23/11/2026)
+- #08: índices da migração 020 e benchmark PostgreSQL sintético de 100 mil clientes + 100 mil cobranças, [CI #45183457088](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45183457088) sucesso; sem prova de produção.
+- #09: migração 021 com eventos LGPD imutáveis, histórico seguro ao owner e superadmin, [49d134a5](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/49d134a5e76d6697c5b0138d6efa537cd225281b) validado.
+- #10: `privacyRequestId` vinculável ao keyset e auditoria `PRIVACY_DATA_EXPORT_BATCH`, sem pressupor atendimento LGPD, [1c16c6ad](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/1c16c6ad0798b6c77543679738e2a57fb9e831ea) validado.
+- Fase 7 AINDA ABERTA, com [matriz de gates](ai-memory/fases/07-gates-de-encerramento-2026-11-23.md). Não iniciar F8 até resolver as pendências e obter as evidências necessárias.

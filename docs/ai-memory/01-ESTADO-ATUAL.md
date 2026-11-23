@@ -1,25 +1,31 @@
 # 01 — Estado atual e ponto exato de retomada
 
-**Atualizado em:** 21/11/2026, após implementação e validação do incremento de suporte da Fase 7. **Snapshot documental**, não serviço de telemetria. Os **12 arquivos originais do handoff** já estão preservados com hash exato em [originais/](originais/), sem depender do chat.
+**Atualizado em:** 23/11/2026, após F7 incremento nº 10 validado, com auditoria dos gates de encerramento. **Snapshot documental**, não serviço de telemetria. Os **12 arquivos originais do handoff** já estão preservados com hash exato em [originais/](originais/), sem depender do chat.
 
 | Item | Última evidência |
 | --- | --- |
 | Repositório | https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas |
 | Branch permitida | feat/production-foundation |
-| **Último commit de código validado** | [e88ddfe8c2792dbd8d7806c046a14a8a3ff4b7d2](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/e88ddfe8c2792dbd8d7806c046a14a8a3ff4b7d2) |
+| **Último commit de código validado** | [1c16c6ad0798b6c77543679738e2a57fb9e831ea](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/1c16c6ad0798b6c77543679738e2a57fb9e831ea) |
 | Base main verificada | 95aba9c27c363c8b24c2f34c65a28c2f3b011b3b — não alterada por esses incrementos |
 | PR #2 | Aberta, em draft, não mesclada no último exame |
 | Fase atual | **7 — Administração e Relatórios** |
-| Último incremento concluído tecnicamente | Fase 7 nº 07: exportações CSV por cursor assinado, preservados incrementos 1–6 |
-| Backend/integração/migrações | [Actions #44935128670](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44935128670) — success para commit e88ddfe |
-| Browser desktop/mobile | [Actions #44935128826](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/44935128826) — success para commit e88ddfe |
+| Último incremento concluído tecnicamente | Fase 7 nº 10: CSV vinculado a pedido LGPD auditável; incrementos 1–9 preservados |
+| Backend/integração/migrações | [CI #45184992979](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45184992979) — success no commit 1c16c6ad |
+| Browser desktop/mobile | [CI #45184993002](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45184993002) — success no commit 1c16c6ad |
 | Release/merge/deploy | **Nenhum** |
 | PSP live/Meta live | **Não habilitados nem homologados** |
-| Próximo marco | Fase 7 — teste de carga/exportações consistentes sob mutações, LGPD jurídica, relatórios, política SLA/notificações externas, governança e paridade |
+| Próximo marco | F7 AINDA ABERTA: revisão LGPD, SLA/notificações/anexos, exportação consistente, acessibilidade e homologação; ver matriz de gates |
 
 **Atenção:** commits posteriores podem alterar só documentação e mudar o HEAD; isso não apaga o SHA do último **incremento de código** com CI verde. O próximo agente precisa verificar ambos.
 
-## O que a última entrega adicionou — incremento F7 #7
+## Novas entregas técnicas F7 #08–10 (23/11/2026)
+- #08: índices compostos e benchmark sintético 100k clientes/100k cobranças, [CI #45183457088](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45183457088) verde; não é medição de produção.
+- #09: histórico LGPD append-only e notas internas ocultas ao owner, [49d134a5](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/49d134a5e76d6697c5b0138d6efa537cd225281b), [CI #45184164223](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45184164223) / [CI #45184164450](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45184164450) verdes.
+- #10: vinculação de pedido LGPD access/portability ao CSV por cursor, sem cumprimento legal presumido, [1c16c6ad](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/1c16c6ad0798b6c77543679738e2a57fb9e831ea), [CI #45184992979](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45184992979) / [CI #45184993002](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45184993002) / [CI #45184992978](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45184992978) verdes.
+- **F7 NÃO encerrada; F8 NÃO iniciada.** [Matriz de gates](fases/07-gates-de-encerramento-2026-11-23.md).
+
+## Entrega anterior — incremento F7 #7
 
 - Exportação adicional por cursor HMAC assinado, vinculado ao tenant, dataset e filtro, com 30 minutos de validade e sem limite de offset, mantendo a exportação anterior compatível.
 - Paginação por `(created_at,id)` preservando microssegundos do PostgreSQL e corte temporal inicial; UI de lotes com navegação e download individual.
@@ -63,7 +69,7 @@
 
 ## Não esquecer
 - O núcleo da Fase 6 está tecnicamente implementado, mas **não há checkout financeiro live do SaaS**, aprovação comercial, tributação ou cobrança homologada.
-- O núcleo da Fase 7 está **incompleto**, apesar de sete incrementos de código testados.
+- O núcleo da Fase 7 está **incompleto**, apesar de dez incrementos de código testados.
 - Homologação externa foi **adiada para antes do lançamento**, não dispensada; existem dívidas de Fases 0–7.
 - A base de conhecimento não substitui revisões de código, segurança, política legal nem licença para mexer na main.
 

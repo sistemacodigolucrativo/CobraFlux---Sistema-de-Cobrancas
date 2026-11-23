@@ -3,14 +3,14 @@
 **Fonte primária atual:** [Issue #3](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/issues/3). **Fonte histórica:** arquivo 04-BACKLOG-CONSOLIDADO.md do ZIP (BL-001 a BL-038). IDs e decisões de origem permanecem imutáveis; não transformar ideias em aprovações.
 
 ## Fase 7: tarefas de desenvolvimento ainda em aberto
-| ID histórico | Assunto | Situação em 21/11/2026 | Próximo aceite técnico |
+| ID histórico | Assunto | Situação em 23/11/2026 | Próximo aceite técnico |
 | --- | --- | --- | --- |
 | BL-006 | Respostas, SLA e suporte | **Parcial:** resposta/histórico no portal TESTADOS em 4dcbb80; timeline interna de status TESTADA em 96e58848; prazo manual TESTADO em 472b0bd; alertas internos em consulta e ciência versionada TESTADOS em 42f7eec; e-mail, SLA comercial automático, anexos e notificações externas ausentes | Definir política aprovada, alertas e entrega verificável sem simulação; manter testes permissão e atraso |
-| BL-007 | Direitos LGPD ponta a ponta | Triagem existente, atendimento legal ainda **não concluído** | Evidência/revisão, portabilidade integral, retenção sob parecer jurídico |
-| BL-008 | Relatórios/exportações completos | Prévia e paginação por offset testadas em a157e6f; modo keyset por cursor HMAC, tenant+filtro e corte de novas inserções TESTADO em e88ddfe; ainda sem snapshot sob edições/exclusões nem teste de carga 100k+ | Avaliar performance e índices, testar carga/concorrência, considerar snapshot export assíncrono somente com autorização, revisar LGPD/PII |
+| BL-007 | Direitos LGPD ponta a ponta | Triagem, eventos LGPD append-only (49d134a) e lotes access/portability auditáveis (1c16c6a) testados; cumprimento LGPD integral **não concluído** | Evidência/revisão, portabilidade integral, retenção sob parecer jurídico |
+| BL-008 | Relatórios/exportações completos | Prévia e paginação por offset testadas em a157e6f; modo keyset por cursor HMAC, tenant+filtro e corte de novas inserções TESTADO em e88ddfe; índices 020 e benchmark sintético 100k clientes+100k cobranças testados (1fbc06a), ainda sem snapshot sob mutações e carga de produção | Avaliar performance e índices, testar carga/concorrência, considerar snapshot export assíncrono somente com autorização, revisar LGPD/PII |
 | BL-012 | Paridade da interface F7 | Primeiro incremento testado | Verificar demo vs operação, papéis, estados de erro, acessibilidade, mobile |
 | BL-003/004/005 | LGPD, concorrência da suspensão, precisão MRR/GPV | Gate de segurança/riscos | Tests de concorrência e revisão de origem financeira antes de live |
-| BL-031/032/033 | Carga de export, MRR e logs/PII | Refinamentos necessários | Medir com dataset e prova; não declarar por inspeção |
+| BL-031/032/033 | Carga de export, MRR e logs/PII | Refinamentos necessários | Benchmark sintético 100k+100k concluído; ainda requer dados concorrentes/reais em staging, validação de MRR e auditoria PII |
 
 ## Débitos históricos por fase
 - F0: baseline completo do demo e inventário por componente.
