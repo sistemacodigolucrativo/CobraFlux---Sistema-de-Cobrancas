@@ -32,3 +32,7 @@ BL-034 fornecedor/preço checkout SaaS; BL-035 hosting/domínio; BL-036 refatora
 Escolher um recorte **já aprovado** de BL-006/007/008/012. Prioridade sugerida: **testes de carga e consistência real de exportações (BL-008/031)**, LGPD jurídica ou paridade visual, preservando a segurança comprovada e testes, sem alegar envio externo. Antes de codar: verificar código e decisões, definir critérios mensuráveis, testar erro/CSRF/MFA/cross-tenant, atualizar docs após CI.
 
 **Status não é binário:** PLANEJADA, EM DESENVOLVIMENTO, IMPLEMENTADA NÃO VALIDADA, IMPLEMENTADA TESTADA, HOMOLOGAÇÃO PENDENTE e OPERACIONAL são dimensões distintas. Não converter esta lista em percentual de conclusão.
+
+## Reprogramação por ADR-026 e F8 iniciada (23/11/2026)
+A lista F7 permanece como **ADIADA — NÃO CONCLUÍDA**; responsável solicitou analisar posteriormente. [Registro detalhado](pendencias/2026-11-23-f7-adiados.md). Somente o escopo de código F7 não adiado foi encerrado; obrigações legais/operacionais não foram liberadas.
+F8 #01 — readiness offline e backup/restore sintético em PostgreSQL 16 com CI aprovado em [#45190560236](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45190560236). Próximos itens: staging/HTTPS com autorização, backup offsite/PITR, observabilidade, QA/segurança, prestadores sandbox, LGPD, piloto, rollback. **Não confundir testes sintéticos com homologação real**.
