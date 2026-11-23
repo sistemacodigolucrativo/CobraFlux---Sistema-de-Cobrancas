@@ -1,6 +1,6 @@
 # Fase 8 — Homologação e segurança operacional
 
-**Estado em 23/11/2026:** **EM DESENVOLVIMENTO — F8 #04 CI REPRODUTÍVEL E SUPPLY CHAIN VALIDADO EM CI.** Sem staging real, sem serviços externos, sem lançamento nem homologação operacional. F7: reescopo ADR-026, pendências registradas.
+**Estado em 23/11/2026:** **CONTROLES TÉCNICOS F8 #01–09 IMPLEMENTADOS/VALIDADOS; HOMOLOGAÇÃO OPERACIONAL NÃO ENCERRADA — 12 GATES PENDENTES.** Sem staging real, sem serviços externos, sem lançamento nem homologação operacional. F7: reescopo ADR-026, pendências registradas.
 
 ## Implementação identificada
 Workflows de CI, testes iniciais e scripts de manutenção são preparação técnica; **não** configuram homologação operacional.
@@ -57,3 +57,12 @@ F8 #03: inventário estático de 33 variáveis, CI de nomes e classificações, 
 - Lock v3 com 674 entradas, remoção de `bun.lock` desatualizado e workflow temporário, seis workflows `contents: read`, Actions pinadas e `npm ci` CI/Docker.
 - Auditor `scripts/phase8-supply-chain.mjs` garante contratos, workflow dedicado faz build Docker local **sem publicação**.
 - Pendente: varredura CVEs/SBOM, imagens base Docker por digest e provedores/staging externos. [Entrega](../entregas/2026-11-23-f8-04-ci-reprodutivel.md).
+
+## F8 #05–09 — avanços e limites (23/11/2026)
+Código [aa155cb8](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/aa155cb880f72c99d972fa58de758a810880b50f): backend [CI #45210349937](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210349937), navegador [CI #45210349834](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210349834), restore sintético [CI #45210349944](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210349944), supply chain/Docker [CI #45210349882](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210349882), npm audit/SBOM [CI #45210350161](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210350161), gates/smoke simulados [CI #45210350118](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210350118), memória [CI #45210349835](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210349835) — **7 success no mesmo SHA**.
+- #05: 4 CVEs moderadas no npm audit completo e production; SBOM 673; sem aceitação de risco.
+- #06: 12 gates, validação offline e smoke HTTPS manual sem rede por padrão.
+- #07: X-CF-Request-Id e logging mínimo sem dados sensíveis comuns, ainda sem observabilidade externa.
+- #08: Node/PostgreSQL digests do registry fixados; update requer revisão.
+- #09: rollback preflight com aprovação e backup/RPO/RTO pendentes, sem execução.
+- [Runbook externo](../../security/phase8-homologation-runbook.md), [entrega](../entregas/2026-11-23-f8-05-09.md). F7 ADR-026 não foi cumprida, F8 ainda não homologada e F9 não foi iniciada.

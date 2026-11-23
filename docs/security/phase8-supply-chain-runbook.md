@@ -38,3 +38,7 @@ A instalação npm exige rede para baixar os pacotes, mas não conecta aos prove
 4. **Sem ambiente externo homologado:** não houve testes reais de DNS/TLS, provedores, backups offsite/PITR, monitoração, legalidade/LGPD ou Android físico. ADR-026 mantém requisitos F7 adiados, NÃO concluídos.
 
 **Próximo recorte recomendado:** SCA de dependências e pinagem das imagens com manutenção controlada ou, após autorização específica, preparação de staging real. Sem merge/deploy.
+
+## Complemento F8 #05/#08 — SCA e imagem por digest
+- [CI #45210350161](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210350161): 4 moderate (glob/minimatch/vite-plugin-pwa/workbox-build), SBOM 673; achados **não remediados nem aceitos**.
+- Node `node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a`, PostgreSQL `postgres:16@sha256:3950ad7c3148ca2175ef1b6c36c9efbf78957ae8fbe8b3a5d7c35af50500382f`; digests consultados no registry [CI #45209584530](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45209584530) e testados no Docker/CI [CI #45210349882](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210349882). Reavaliar updates e CVEs periodicamente. [Runbook F8](phase8-homologation-runbook.md).

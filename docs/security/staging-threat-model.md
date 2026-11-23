@@ -15,7 +15,7 @@
 | T07 | Cliente acessa dados de outro tenant | Testes multi-tenant CI já existentes | Pentest, revisão de filtros/queries e ambiente real |
 | T08 | Vazamento de PII por CSV/log/backup | CSV auditado parcialmente; restore sintético F8 #01 | Redação, retenção LGPD, cifra offsite, políticas legais |
 | T09 | Restore destrói banco errado | restore-drill exige banco vazio com _restore_drill | Provar segregação de conta e ensaio offsite/PITR |
-| T10 | Runner/dependência comprometidos | CI atual tem actions/*@v4 e npm install sem lock npm | Pin SHA, dependências reprodutíveis, permissões mínimas |
+| T10 | Runner/dependência comprometidos | F8 #04/#08 têm npm ci, Actions por SHA, token read-only e imagens pinadas | 4 avisos moderate Workbox/PWA, revisão CVE/SBOM e atualização controlada |
 | T11 | Dados pessoais reais usados em staging | CI usa massa de dados sintéticos | Aprovação, minimização e dados desidentificados |
 | T12 | Habilitação acidental de worker ou PSP live | Flags opt-in no código e inventário | Dupla aprovação, rollback, evidências de QA antes de ativar |
 

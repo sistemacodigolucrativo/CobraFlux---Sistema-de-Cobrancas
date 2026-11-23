@@ -5,7 +5,7 @@
   "source": "GitHub PR #2 / Issue #3 / GitHub Actions / handoff local de 21-11",
   "repository": "sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas",
   "authorizedBranch": "feat/production-foundation",
-  "lastVerifiedCodeCommit": "4d43aa6c5cd8623d2ee0fe403ca016bfb51353cc",
+  "lastVerifiedCodeCommit": "aa155cb880f72c99d972fa58de758a810880b50f",
   "mainReferenceCommit": "95aba9c27c363c8b24c2f34c65a28c2f3b011b3b",
   "pullRequest": {
     "number": 2,
@@ -16,30 +16,40 @@
   "currentPhase": 8,
   "totalPhases": 10,
   "phase7Status": "ESCOPO TECNICO NAO ADIADO ENCERRADO POR DECISAO ADR-026; REQUISITOS ADIADOS CONTINUAM PENDENTES",
-  "lastCompletedIncrement": "F8 #04: npm lock v3 674 entradas, npm ci CI/Docker, 6 workflows read-only com actions SHA, auditoria de supply chain e build Docker local CI",
+  "lastCompletedIncrement": "F8 #09: auditoria+SBOM, 12 gates pendentes, smoke HTTPS opt-in, logs sem URL/PII, digests e rollback offline",
   "lastValidatedCi": [
     {
-      "id": 45205396845,
+      "id": 45210349937,
       "result": "success",
-      "scope": "Node/TypeScript, security, PostgreSQL multi-tenant integrations and builds"
+      "scope": "backend/migrations/integration/build"
     },
     {
-      "id": 45205396796,
+      "id": 45210349834,
       "result": "success",
-      "scope": "Chromium E2E desktop/mobile"
+      "scope": "Chromium desktop/mobile"
     },
     {
-      "id": 45205396813,
+      "id": 45210349944,
       "result": "success",
-      "scope": "F8 offline config and PG16 synthetic backup/restore"
+      "scope": "isolated synthetic PostgreSQL restore"
     },
     {
-      "id": 45205396857,
+      "id": 45210349882,
       "result": "success",
-      "scope": "6 workflows SHA/read-only; lock 674 entries; npm ci, typecheck and local Docker build"
+      "scope": "SHA pinning/digests/npm-ci/Docker build"
     },
     {
-      "id": 45205396804,
+      "id": 45210350161,
+      "result": "success",
+      "scope": "npm audit 4 moderate; CycloneDX 673"
+    },
+    {
+      "id": 45210350118,
+      "result": "success",
+      "scope": "12 pending release gates/rollback and mocked HTTPS"
+    },
+    {
+      "id": 45210349835,
       "result": "success",
       "scope": "AI memory integrity"
     }
@@ -48,10 +58,11 @@
   "financialLiveApproved": false,
   "externalHomologationCompleted": false,
   "nextApprovedScope": [
-    "F8 #05: analisar vulnerabilidades/CVEs e dependencias transitivas sem deploy; registrar e corrigir conforme evidencias",
-    "F8: fixar digest das imagens base Node/PostgreSQL com estrategia de atualizacao comprovada",
-    "F8: staging real, HTTPS/secret manager/PSP/Meta/Resend e offsite/PITR somente apos aprovacao",
-    "F7 ADR-026: requisitos adiados seguem pendentes antes de lancamento"
+    "F8: 12 gates externos nao homologados; autorizar infraestrutura/domínio/segredos antes de conexao real",
+    "F8: revisar/corrigir ou aceitar fundamentadamente 4 avisos moderate PWA/Workbox",
+    "F8: homologar backup offsite/PITR, Asaas sandbox/Meta/Resend, monitoramento e piloto somente com evidencias e autorizacao",
+    "F7 ADR-026: direitos LGPD/SLA/exportacoes/acessibilidade adiados nao concluidos; antes de lancamento",
+    "F9 nao iniciar como release aprovado enquanto F8 nao passar gates operacionais"
   ],
   "sourceArchive": "CobraFlux-Knowledge-Handoff-2026-11-21.zip",
   "sourceArchiveUploadedToRepository": false,
@@ -89,10 +100,10 @@
     "Exportação consistente durante mutações e carga real (ADIADO, NAO CONCLUIDO)",
     "Paridade/acessibilidade, segurança independente e staging (ADIADO, NAO CONCLUIDO)"
   ],
-  "phase8Status": "EM DESENVOLVIMENTO — preflight e restore sintético CI aprovados, sem staging/homologação real",
+  "phase8Status": "CONTROLES TECNICOS LOCAIS F8 #01-09 TESTADOS; HOMOLOGACAO EXTERNA PENDENTE",
   "phase8OperationallyHomologated": false,
   "phase8Deployed": false,
-  "phase8LastCompletedIncrement": "F8 #04: npm lock v3 674 entradas, npm ci CI/Docker, 6 workflows read-only com actions SHA, auditoria de supply chain e build Docker local CI",
+  "phase8LastCompletedIncrement": "F8 #09: auditoria+SBOM, 12 gates pendentes, smoke HTTPS opt-in, logs sem URL/PII, digests e rollback offline",
   "phase7ImplementationScopeClosed": true,
   "phase7OperationallyHomologated": false,
   "phase7DeferredRequirementsReviewed": false,
@@ -113,5 +124,32 @@
   "phase8DockerImageBuiltInCI": true,
   "phase8DockerImagePublished": false,
   "phase8DependenciesCveAudited": false,
-  "phase8DockerBasePinnedByDigest": false
+  "phase8DockerBasePinnedByDigest": true,
+  "phase8LocalTechnicalScopeValidated": true,
+  "phase8AuditFindings": {
+    "critical": 0,
+    "high": 0,
+    "moderate": 4,
+    "low": 0,
+    "packages": [
+      "glob",
+      "minimatch",
+      "vite-plugin-pwa",
+      "workbox-build"
+    ],
+    "remediated": false,
+    "reviewedAndAccepted": false
+  },
+  "phase8SBOMComponents": 673,
+  "phase8PendingExternalGateCount": 12,
+  "phase8ExternalGatesFile": "docs/security/phase8-acceptance-gates.json",
+  "phase8RollbackPlanFile": "docs/security/phase8-rollback-plan.json",
+  "phase8OperationalRunbook": "docs/security/phase8-homologation-runbook.md",
+  "phase8StagingSmokeImplemented": true,
+  "phase8StagingSmokeRealRun": false,
+  "phase8RequestTelemetryMinimal": true,
+  "phase8ExternalMonitoringVerified": false,
+  "phase8NodeDigest": "sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a",
+  "phase8PostgresDigest": "sha256:3950ad7c3148ca2175ef1b6c36c9efbf78957ae8fbe8b3a5d7c35af50500382f",
+  "phase8RollbackRealDrillCompleted": false
 }

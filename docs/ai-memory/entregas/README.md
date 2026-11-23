@@ -13,6 +13,7 @@ Cada incremento precisa de um documento individual baseado em [09-MODELO-DE-REGI
 - [2026-11-23 — F8 #02: configuração de produção fail-closed](2026-11-23-f8-02-configuracao-producao.md).
 - [2026-11-23 — F8 #03: inventário offline, risco e segredos](2026-11-23-f8-03-inventario-segredos.md).
 - [2026-11-23 — F8 #04: npm reprodutível, ações SHA e CI read-only](2026-11-23-f8-04-ci-reprodutivel.md).
+- [2026-11-23 — F8 #05–09: audit, gates, telemetria, digests e rollback](2026-11-23-f8-05-09.md).
 - [2026-11-21 — Implantação da memória persistente](2026-11-21-criacao-memoria.md).
 
 **Ordem confiável:** commit e CI vinculados ao SHA > documento de entrega > diário > resumo de conversa. Nenhum registro cria permissão para deploy, lançamento live ou merge.

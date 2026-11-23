@@ -1,23 +1,29 @@
 # 01 — Estado atual e ponto exato de retomada
 
-**Atualizado em:** 23/11/2026, após F8 #04 (CI reprodutível) e ADR-026. **Snapshot documental**, não serviço de telemetria. Os **12 arquivos originais do handoff** já estão preservados com hash exato em [originais/](originais/), sem depender do chat.
+**Atualizado em:** 23/11/2026, após F8 #05–09 e ADR-026, com homologação externa pendente. **Snapshot documental**, não serviço de telemetria. Os **12 arquivos originais do handoff** já estão preservados com hash exato em [originais/](originais/), sem depender do chat.
 
 | Item | Última evidência |
 | --- | --- |
 | Repositório | https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas |
 | Branch permitida | feat/production-foundation |
-| **Último commit de código validado** | [4d43aa6c](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/4d43aa6c5cd8623d2ee0fe403ca016bfb51353cc) |
+| **Último commit de código validado** | [aa155cb8](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/aa155cb880f72c99d972fa58de758a810880b50f) |
 | Base main verificada | 95aba9c27c363c8b24c2f34c65a28c2f3b011b3b — não alterada por esses incrementos |
 | PR #2 | Aberta, em draft, não mesclada no último exame |
 | Fase atual | **8 — Homologação (preparação técnica iniciada, operação não homologada)** |
-| Último incremento concluído tecnicamente | Fase 8 nº 04: npm ci com lock 674, Actions SHA, 6 workflows read-only e Docker local aprovado; sem staging externo |
-| Backend/integração/migrações | [CI #45205396845](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45205396845) — success no commit 4d43aa6c |
-| Browser desktop/mobile | [CI #45205396796](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45205396796) — success no commit 4d43aa6c |
+| Último incremento concluído tecnicamente | Fase 8 nº 09: SCA/SBOM, gates, logs mínimos, imagens digest e rollback offline; sem staging externo |
+| Backend/integração/migrações | [CI #45210349937](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210349937) — success no commit aa155cb8 |
+| Browser desktop/mobile | [CI #45210349834](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210349834) — success no commit aa155cb8 |
 | Release/merge/deploy | **Nenhum** |
 | PSP live/Meta live | **Não habilitados nem homologados** |
 | Próximo marco | F8 planejamento/staging; requisitos F7 **ADIADOS, NÃO CONCLUÍDOS** por ADR-026, [lista](pendencias/2026-11-23-f7-adiados.md) |
 
 **Atenção:** commits posteriores podem alterar só documentação e mudar o HEAD; isso não apaga o SHA do último **incremento de código** com CI verde. O próximo agente precisa verificar ambos.
+
+## F8 #05–09 — controle técnico local testado, operação não homologada
+- Código [aa155cb8](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/aa155cb880f72c99d972fa58de758a810880b50f): backend [CI #45210349937](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210349937), navegador [CI #45210349834](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210349834), restore sintético [CI #45210349944](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210349944), supply chain/Docker [CI #45210349882](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210349882), npm audit/SBOM [CI #45210350161](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210350161), gates/smoke simulados [CI #45210350118](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210350118), memória [CI #45210349835](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210349835) — **7 success no mesmo SHA**.
+- Npm audit: **4 moderadas não remediadas**, SBOM 673; **12 gates externos** ainda pendentes.
+- Request IDs/logs sem URL/corpo/IP/cookie, HTTPS smoke manual, imagens Node/PG por digest e rollback sem executar.
+- [Entrega #05–09](entregas/2026-11-23-f8-05-09.md) e [runbook](../security/phase8-homologation-runbook.md). F8 **NÃO** operacional, sem merge/deploy.
 
 ## F8 #04 — dependências reprodutíveis e CI least-privilege (23/11/2026)
 
