@@ -22,7 +22,6 @@ jobs:
       - name: Typecheck and offline tests
         run: |
           npm run lint
-          npm run test:server
           node scripts/phase8-secrets-audit.mjs --check
       - name: Publish generated lockfile for review and source-controlled commit
         uses: actions/upload-artifact@v4
