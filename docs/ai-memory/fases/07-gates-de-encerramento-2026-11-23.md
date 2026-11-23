@@ -1,6 +1,8 @@
 # CobraFlux — Fase 7: auditoria de encerramento em 23/11/2026
 
-**Resultado: Fase 7 NÃO encerrada; Fase 8 NÃO iniciada.** CI valida código e testes simulados; não valida aprovação legal, contratos, mensagens enviadas, staging, dinheiro real ou produção.
+**AUDITORIA HISTÓRICA ANTERIOR À ADR-026.** Em 23/11/2026 o responsável decidiu reprogramar estes gates para análise posterior e iniciar a preparação da F8. A redação histórica abaixo é preservada, **não é o status atual do fluxo**. Consulte [ADR-026 e lista de adiados](../pendencias/2026-11-23-f7-adiados.md). O núcleo técnico não adiado da F7 foi encerrado por escopo, mas a F7 não foi integralmente homologada nem seus gates foram cumpridos.
+
+**Resultado histórico (antes de ADR-026): Fase 7 NÃO encerrada; Fase 8 NÃO iniciada.** CI valida código e testes simulados; não valida aprovação legal, contratos, mensagens enviadas, staging, dinheiro real ou produção.
 
 ## Comprovação técnica adicional
 - F7 #08: índices PostgreSQL migração 020, benchmark sintético de 100 mil clientes + 100 mil cobranças, 4 consultas indexadas (0,359 / 0,361 / 0,506 / 0,568 ms em CI efêmero). [1fbc06a7](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/1fbc06a7e22f2f9d548daa1e52a7b1654b4c0aa5), [CI #45183457088](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45183457088) aprovado.

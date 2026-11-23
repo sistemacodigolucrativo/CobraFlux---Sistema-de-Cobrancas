@@ -2,7 +2,9 @@
 
 **Fonte primária atual:** [Issue #3](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/issues/3). **Fonte histórica:** arquivo 04-BACKLOG-CONSOLIDADO.md do ZIP (BL-001 a BL-038). IDs e decisões de origem permanecem imutáveis; não transformar ideias em aprovações.
 
-## Fase 7: tarefas de desenvolvimento ainda em aberto
+## Fase 7: requisitos pendentes ADIADOS para análise posterior (ADR-026)
+
+**Replanejado em 23/11/2026:** o núcleo técnico F7 (incrementos 1–10) encerra seu escopo de desenvolvimento atualmente autorizado. As linhas seguintes **não foram implementadas nem aceitas**; permanecem registradas em [requisitos adiados](pendencias/2026-11-23-f7-adiados.md). A F8 pode iniciar pela preparação técnica sem deploy, mantendo os gates obrigatórios para homologação.
 | ID histórico | Assunto | Situação em 23/11/2026 | Próximo aceite técnico |
 | --- | --- | --- | --- |
 | BL-006 | Respostas, SLA e suporte | **Parcial:** resposta/histórico no portal TESTADOS em 4dcbb80; timeline interna de status TESTADA em 96e58848; prazo manual TESTADO em 472b0bd; alertas internos em consulta e ciência versionada TESTADOS em 42f7eec; e-mail, SLA comercial automático, anexos e notificações externas ausentes | Definir política aprovada, alertas e entrega verificável sem simulação; manter testes permissão e atraso |

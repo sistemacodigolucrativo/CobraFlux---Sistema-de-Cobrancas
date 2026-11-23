@@ -1,6 +1,6 @@
 # Fase 7 — Administração, relatórios, suporte e LGPD
 
-**Estado documental em 23/11/2026:** EM DESENVOLVIMENTO — DEZ INCREMENTOS TESTADOS; GATES ABERTOS
+**Estado documental atualizado em 23/11/2026 por ADR-026:** **NÚCLEO TÉCNICO NO ESCOPO NÃO ADIADO ENCERRADO** — 10 incrementos testados. Os gates e requisitos não implementados são **ADIADOS PARA ANÁLISE, NÃO CONCLUÍDOS**. A F7 não está homologada ou liberada; F8 autorizada apenas para preparação isolada. [Lista de adiamentos](../pendencias/2026-11-23-f7-adiados.md).
 
 ## Implementação identificada
 Migração 016: administração MFA, organizações e bloqueios, auditoria, triagem, privacidade, MRR≠GPV, relatórios/CSV e UI; migração 017: respostas no portal autenticado, histórico de suporte append-only, CSRF, idempotência. Incremento 3: leitura da timeline de support_ticket_events, exclusivamente superadmin MFA, sem migração. Incremento 4: migração 018, prazo SLA manual e histórico imutável sob MFA/CSRF. Incremento 5: migração 019, caixa de alertas internos por prazo vencido com reconhecimento auditável e revisão por mudança de SLA. Incremento 6: exportações CSV filtradas, contagem por tenant, navegação manual de páginas e segurança de datasets. Incremento 7: exportação por cursor HMAC assinado, tenant/status/dataset vinculados, corte temporal e keyset com precisão de microssegundos; sem snapshot nem testes de carga grandes.

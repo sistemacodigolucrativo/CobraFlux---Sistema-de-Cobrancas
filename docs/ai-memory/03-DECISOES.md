@@ -40,3 +40,11 @@
 PSP de checkout da plataforma e preços Starter/Business; hosting e custos; credenciais; go-live financeiro, consentimento operacional, políticas LGPD, impostos/NFSe, cron real, release Android. Itens de ideias (**BL-034 a BL-038**) não viram implementações sem decisão.
 
 **Regra de mudança:** se houver ADR posterior, documentar ID novo, motivo, origem, regra substituída, decisões descartadas **apenas quando constarem de fonte** e evidência. Não reescrever histórico antigo.
+
+## ADR-026 — Reprogramação documentada da F7 e início técnico da F8 (23/11/2026)
+
+**Fonte e autorização:** o responsável solicitou que os requisitos não concluídos fossem **anotados para análise posterior** e que, na ausência de outras tarefas fora desses requisitos, se seguisse para a Fase 8. Não houve autorização para merge, deploy, provedores externos, dinheiro, ou exclusão de dados.
+
+**Decisão:** preservar a lista imutável de 10 incrementos técnicos validados da F7; tratar o desenvolvimento **não adiado** como encerrado para o escopo aprovado; mover todos os gates não executados para [pendências formalizadas](pendencias/2026-11-23-f7-adiados.md), sem declarar a F7 juridicamente/operacionalmente concluída. Iniciar F8 apenas com preflight e exercícios descartáveis sem serviços externos. A matriz anterior de fechamento é mantida como auditoria histórica, acrescida desta decisão de replanejamento.
+
+**Não foi decidido:** termos de SLA, base legal LGPD, políticas fiscais, garantias de snapshots, preços, serviços de storage, domínio e hospedagem, segredos, PSP/Meta/Resend live, release ou main. **Status de cada requisito: ADIADO — NÃO CONCLUÍDO.**
