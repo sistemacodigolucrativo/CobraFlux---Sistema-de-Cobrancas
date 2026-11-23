@@ -5,7 +5,7 @@
   "source": "GitHub PR #2 / Issue #3 / GitHub Actions / handoff local de 21-11",
   "repository": "sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas",
   "authorizedBranch": "feat/production-foundation",
-  "lastVerifiedCodeCommit": "309e28ef2ce67e45e2954d465426e84ec0eab359",
+  "lastVerifiedCodeCommit": "afb04d84f28e3adbe628b40cc0c2f3b28ce92a27",
   "mainReferenceCommit": "95aba9c27c363c8b24c2f34c65a28c2f3b011b3b",
   "pullRequest": {
     "number": 2,
@@ -16,37 +16,37 @@
   "currentPhase": 8,
   "totalPhases": 10,
   "phase7Status": "ESCOPO TECNICO NAO ADIADO ENCERRADO POR DECISAO ADR-026; REQUISITOS ADIADOS CONTINUAM PENDENTES",
-  "lastCompletedIncrement": "F8 #01: inspeção offline de readiness e backup/restore em postgres16 descartável; guards de DB e fixtures sintéticas",
+  "lastCompletedIncrement": "F8 #02: startup fail-closed para APP_ORIGIN HTTPS canonico, DATABASE_SSL=require e SESSION_SECRET sem placeholders; testes backend/browser/preflight/memoria aprovados",
   "lastValidatedCi": [
     {
-      "id": 45190560236,
+      "id": 45194516204,
       "result": "success",
-      "scope": "F8 offline readiness and PG16 backup-restore into isolated synthetic target"
+      "scope": "typecheck/backend/security/integration/migrations/build"
     },
     {
-      "id": 45190560285,
-      "result": "success",
-      "scope": "backend, migration, security, integration and builds"
-    },
-    {
-      "id": 45190560282,
+      "id": 45194517814,
       "result": "success",
       "scope": "Chromium desktop/mobile"
     },
     {
-      "id": 45190560470,
+      "id": 45194517198,
       "result": "success",
-      "scope": "memory integrity"
+      "scope": "F8 offline readiness and synthetic PostgreSQL16 restore"
+    },
+    {
+      "id": 45194516118,
+      "result": "success",
+      "scope": "AI memory integrity"
     }
   ],
   "productionDeployed": false,
   "financialLiveApproved": false,
   "externalHomologationCompleted": false,
   "nextApprovedScope": [
-    "F8: runbook e automação de preflight sem segredos/serviços externos",
-    "F8: planejar staging HTTPS e retenção/backup com autorização de infraestrutura",
-    "F8: prover evidências externas reais só após autorização",
-    "Revisitar ADR-026 e backlog adiado antes de qualquer lançamento"
+    "F8: inventario de secrets e threat model offline, sem credenciais reais",
+    "F8: testes HTTPS/TLS/proxy/backup no staging autorizado",
+    "F8: provedores externos, LGPD, monitoramento e rollback pendentes de aprovacao",
+    "F7 ADR-026: requisitos adiados seguem pendentes antes de release"
   ],
   "sourceArchive": "CobraFlux-Knowledge-Handoff-2026-11-21.zip",
   "sourceArchiveUploadedToRepository": false,
@@ -87,10 +87,11 @@
   "phase8Status": "EM DESENVOLVIMENTO — preflight e restore sintético CI aprovados, sem staging/homologação real",
   "phase8OperationallyHomologated": false,
   "phase8Deployed": false,
-  "phase8LastCompletedIncrement": "F8 #01: inspeção offline de readiness e backup/restore em postgres16 descartável; guards de DB e fixtures sintéticas",
+  "phase8LastCompletedIncrement": "F8 #02: startup fail-closed para APP_ORIGIN HTTPS canonico, DATABASE_SSL=require e SESSION_SECRET sem placeholders; testes backend/browser/preflight/memoria aprovados",
   "phase7ImplementationScopeClosed": true,
   "phase7OperationallyHomologated": false,
   "phase7DeferredRequirementsReviewed": false,
   "phase7DeferralDecision": "ADR-026",
-  "phase7DeferredRequirementsDocument": "docs/ai-memory/pendencias/2026-11-23-f7-adiados.md"
+  "phase7DeferredRequirementsDocument": "docs/ai-memory/pendencias/2026-11-23-f7-adiados.md",
+  "phase8ProductionConfigFailClosed": true
 }

@@ -1,6 +1,6 @@
 # Fase 8 — Homologação e segurança operacional
 
-**Estado em 23/11/2026:** **EM DESENVOLVIMENTO — F8 #01 PREPARAÇÃO TÉCNICA VALIDADA EM CI.** Sem staging real, sem serviços externos, sem lançamento nem homologação operacional. F7: reescopo ADR-026, pendências registradas.
+**Estado em 23/11/2026:** **EM DESENVOLVIMENTO — F8 #02 CONFIGURAÇÃO SEGURA DE PRODUÇÃO VALIDADA EM CI.** Sem staging real, sem serviços externos, sem lançamento nem homologação operacional. F7: reescopo ADR-026, pendências registradas.
 
 ## Implementação identificada
 Workflows de CI, testes iniciais e scripts de manutenção são preparação técnica; **não** configuram homologação operacional.
@@ -18,6 +18,12 @@ HTTPS/staging, segurança externa/E2E, carga, alertas, PITR, restore, piloto, ro
 - Primeiras tentativas registradas: erro de fixture sem internal_code (#45189656787), incompatibilidade de cliente PG com servidor 16 (#45189936453), pacote PG16 indisponível no runner (#45190199472); corrigidas usando o contêiner oficial PG16 efêmero.
 - **Commit de código validado:** [309e28ef2ce67e45e2954d465426e84ec0eab359](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/309e28ef2ce67e45e2954d465426e84ec0eab359); [preflight + restore #45190560236](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45190560236), [backend #45190560285](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45190560285), [browser #45190560282](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45190560282), [memória #45190560470](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45190560470) — **success**.
 - **Fora do alcance:** backup offsite, PITR, restore com dados reais, hosting, DNS/HTTPS, mensagens, gateways de pagamento, auditoria legal, SLA e go-live.
+
+## Incremento nº 02 — validação fail-closed de configuração (23/11/2026)
+- `server/production-config.ts` implementa validação rigorosa e pura da origem HTTPS em modo produção, e exige TLS do banco e segredo não exemplo. `server/index.ts` usa origem canonizada.
+- Testes unitários e preflight offline abrangem configurações perigosas; não utilizam credenciais nem contatam servidores.
+- Código [afb04d84](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/afb04d84f28e3adbe628b40cc0c2f3b28ce92a27), CI backend [CI #45194516204](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45194516204), Chromium [CI #45194517814](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45194517814), F8 offline/restore [CI #45194517198](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45194517198), memória [CI #45194516118](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45194516118): **success**.
+- **Não comprova:** qualidade entrópica real de segredos, HTTPS/certificado/proxy hospedados, staging, backup offsite ou conformidade legal. [Registro completo](../entregas/2026-11-23-f8-02-configuracao-producao.md).
 
 ## Próxima ação autorizada ou necessária
 Continuar somente com planejamento/testes sintéticos offline enquanto não houver infraestrutura autorizada. Para staging real, segredos, restore de backup real, PSP/Meta/Resend, piloto e lançamento, obter aprovação explícita, registrar prova, ambiente, responsável e rollback.

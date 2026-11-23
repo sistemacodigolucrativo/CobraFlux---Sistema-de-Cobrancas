@@ -1,23 +1,29 @@
 # 01 — Estado atual e ponto exato de retomada
 
-**Atualizado em:** 23/11/2026, após ADR-026 e início técnico de F8 #01. **Snapshot documental**, não serviço de telemetria. Os **12 arquivos originais do handoff** já estão preservados com hash exato em [originais/](originais/), sem depender do chat.
+**Atualizado em:** 23/11/2026, após F8 #02 e ADR-026. **Snapshot documental**, não serviço de telemetria. Os **12 arquivos originais do handoff** já estão preservados com hash exato em [originais/](originais/), sem depender do chat.
 
 | Item | Última evidência |
 | --- | --- |
 | Repositório | https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas |
 | Branch permitida | feat/production-foundation |
-| **Último commit de código validado** | [309e28ef2ce67e45e2954d465426e84ec0eab359](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/309e28ef2ce67e45e2954d465426e84ec0eab359) |
+| **Último commit de código validado** | [afb04d84](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/afb04d84f28e3adbe628b40cc0c2f3b28ce92a27) |
 | Base main verificada | 95aba9c27c363c8b24c2f34c65a28c2f3b011b3b — não alterada por esses incrementos |
 | PR #2 | Aberta, em draft, não mesclada no último exame |
 | Fase atual | **8 — Homologação (preparação técnica iniciada, operação não homologada)** |
-| Último incremento concluído tecnicamente | Fase 8 nº 01: readiness offline e restore sintético isolado; F7 escopo não adiado encerrado por ADR-026 |
-| Backend/integração/migrações | [CI #45190560285](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45190560285) — success no commit 309e28ef |
-| Browser desktop/mobile | [CI #45190560282](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45190560282) — success no commit 309e28ef |
+| Último incremento concluído tecnicamente | Fase 8 nº 02: configuração fail-closed de produção HTTPS/TLS/segredo; F7 ADR-026 preservada |
+| Backend/integração/migrações | [CI #45194516204](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45194516204) — success no commit afb04d84 |
+| Browser desktop/mobile | [CI #45194517814](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45194517814) — success no commit afb04d84 |
 | Release/merge/deploy | **Nenhum** |
 | PSP live/Meta live | **Não habilitados nem homologados** |
 | Próximo marco | F8 planejamento/staging; requisitos F7 **ADIADOS, NÃO CONCLUÍDOS** por ADR-026, [lista](pendencias/2026-11-23-f7-adiados.md) |
 
 **Atenção:** commits posteriores podem alterar só documentação e mudar o HEAD; isso não apaga o SHA do último **incremento de código** com CI verde. O próximo agente precisa verificar ambos.
+
+## F8 #02 — baseline de configuração de produção (23/11/2026)
+
+- Startup recusa `APP_ORIGIN` não canônico ou sem HTTPS, origem local/loopback, credenciais/query/path/hash, `DATABASE_SSL` diferente de `require` e SESSION_SECRET com menos de 32 caracteres ou placeholders comuns.
+- Código [afb04d84](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/afb04d84f28e3adbe628b40cc0c2f3b28ce92a27), backend [CI #45194516204](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45194516204), navegador [CI #45194517814](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45194517814), preflight/restore [CI #45194517198](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45194517198) e memória [CI #45194516118](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45194516118) — **success** no mesmo commit.
+- Sem segredo real, prova de CA/TLS externa, staging ou deploy. [Entrega completa](entregas/2026-11-23-f8-02-configuracao-producao.md).
 
 ## Transição por decisão ADR-026 e início F8 #01 (23/11/2026)
 - **F7:** os dez incrementos de código e testes estão preservados; escopo técnico **não adiado** encerrado para continuidade. Pendências de SLA, LGPD, exportações concorrentes, paridade/acessibilidade e governança foram [registradas para análise posterior](pendencias/2026-11-23-f7-adiados.md). **Não são requisitos cumpridos.**

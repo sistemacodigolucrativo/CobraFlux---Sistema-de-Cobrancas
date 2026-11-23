@@ -48,3 +48,13 @@ PSP de checkout da plataforma e preços Starter/Business; hosting e custos; cred
 **Decisão:** preservar a lista imutável de 10 incrementos técnicos validados da F7; tratar o desenvolvimento **não adiado** como encerrado para o escopo aprovado; mover todos os gates não executados para [pendências formalizadas](pendencias/2026-11-23-f7-adiados.md), sem declarar a F7 juridicamente/operacionalmente concluída. Iniciar F8 apenas com preflight e exercícios descartáveis sem serviços externos. A matriz anterior de fechamento é mantida como auditoria histórica, acrescida desta decisão de replanejamento.
 
 **Não foi decidido:** termos de SLA, base legal LGPD, políticas fiscais, garantias de snapshots, preços, serviços de storage, domínio e hospedagem, segredos, PSP/Meta/Resend live, release ou main. **Status de cada requisito: ADIADO — NÃO CONCLUÍDO.**
+
+## ADR-027 — Configuração de produção fail-closed (23/11/2026)
+
+**Contexto:** `APP_ORIGIN.startsWith('https://')` era insuficiente; o pool PostgreSQL podia usar TLS, mas o startup não exigia configuração `DATABASE_SSL=require`.
+
+**Decisão técnica:** em modo produção exigir origem HTTPS canônica, sem credenciais/path/query/hash/loopback, certificado TLS do banco verificado e SESSION_SECRET com tamanho mínimo e sem placeholders conhecidos. Preservar desenvolvimento/CI local. O sistema falha antes de iniciar com configurações inadequadas; não imprime segredos.
+
+**Evidência:** [afb04d84](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/afb04d84f28e3adbe628b40cc0c2f3b28ce92a27), [CI #45194516204](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45194516204), [CI #45194517814](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45194517814), [CI #45194517198](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45194517198) — success. [Detalhamento](entregas/2026-11-23-f8-02-configuracao-producao.md).
+
+**Limites:** não substitui entropia real, domínio aprovado, cadeia SSL homologada nem revisão independente. Não autoriza deploy, merge, live, alteração da main nem encerramento F8.
