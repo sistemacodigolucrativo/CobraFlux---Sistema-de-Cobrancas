@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 1,
+  "purpose": "F8 #03 offline inventory: names only, not values or live approvals",
+  "sourceReviewDate": "2026-11-23",
+  "allowedKinds": [
+    "secret",
+    "restricted",
+    "public-config",
+    "safety-switch",
+    "maintenance",
+    "test-only",
+    "browser-public",
+    "operator",
+    "legacy-example"
+  ],
+  "items": [
+    {
+      "name": "ADMIN_USER_EMAIL",
+      "kind": "operator",
+      "when": "enrollment-only",
+      "storage": "restricted-environment",
+      "handling": "Only used for one-time administrator enrollment"
+    },
+    {
+      "name": "APP_ORIGIN",
+      "kind": "public-config",
+      "when": "staging-required",
+      "storage": "environment",
+      "handling": "Canonical HTTPS browser origin without path or credentials"
+    },
+    {
+      "name": "APP_URL",
+      "kind": "legacy-example",
+      "when": "not-proven-runtime",
+      "storage": "none",
+      "handling": "Legacy AI Studio example; no backend runtime evidence"
+    },
+    {
+      "name": "BACKUP_DIR",
+      "kind": "maintenance",
+      "when": "isolated-drill-only",
+      "storage": "restricted-environment",
+      "handling": "Private backup directory; not encrypted offsite storage"
+    },
+    {
+      "name": "BACKUP_FILE",
+      "kind": "maintenance",
+      "when": "isolated-drill-only",
+      "storage": "restricted-environment",
+      "handling": "Restore drill input; may contain personal and financial data"
+    },
+    {
+      "name": "CF_EXPORT_LOAD_ISOLATED",
+      "kind": "test-only",
+      "when": "ci-only",
+      "storage": "ephemeral-ci",
+      "handling": "Required guard for synthetic load test"
+    },
+    {
+      "name": "CF_EXPORT_LOAD_ROWS",
+      "kind": "test-only",
+      "when": "ci-only",
+      "storage": "ephemeral-ci",
+      "handling": "Size of synthetic load fixture"
+    },
+    {
+      "name": "CF_NO_LISTEN",
+      "kind": "test-only",
+      "when": "ci-only",
+      "storage": "ephemeral-ci",
+      "handling": "Do not bind listener during isolated integration tests"
+    },
+    {
+      "name": "DATABASE_SSL",
+      "kind": "public-config",
+      "when": "staging-required",
+      "storage": "environment",
+      "handling": "Set require; PG certificate chain must verify"
+    },
+    {
+      "name": "DATABASE_URL",
+      "kind": "secret",
+      "when": "staging-required",
+      "storage": "secret-manager",
+      "handling": "PG URL contains database credentials; least privilege required"
+    },
+    {
+      "name": "GEMINI_API_KEY",
+      "kind": "legacy-example",
+      "when": "not-proven-runtime",
+      "storage": "none",
+      "handling": "Legacy AI Studio sample; do not ship to browser"
+    },
+    {
+      "name": "META_APP_SECRET",
+      "kind": "secret",
+      "when": "meta-integration-only",
+      "storage": "secret-manager",
+      "handling": "Webhook HMAC verification key"
+    },
+    {
+      "name": "META_WEBHOOK_VERIFY_TOKEN",
+      "kind": "secret",
+      "when": "meta-integration-only",
+      "storage": "secret-manager",
+      "handling": "Webhook handshake token"
+    },
+    {
+      "name": "MFA_ENCRYPTION_KEY",
+      "kind": "secret",
+      "when": "staging-required",
+      "storage": "secret-manager",
+      "handling": "Hex 32-byte key for encrypted MFA; rotation needs migration"
+    },
+    {
+      "name": "NODE_ENV",
+      "kind": "public-config",
+      "when": "staging-required",
+      "storage": "environment",
+      "handling": "Production turns on startup fail-closed validations"
+    },
+    {
+      "name": "PAYMENT_CREDENTIAL_ENCRYPTION_KEY",
+      "kind": "secret",
+      "when": "asaas-sandbox-only",
+      "storage": "secret-manager",
+      "handling": "Hex 32-byte master for Asaas sandbox tokens; rotation needs re-encryption"
+    },
+    {
+      "name": "PORT",
+      "kind": "public-config",
+      "when": "staging-optional",
+      "storage": "environment",
+      "handling": "Backend listener port behind trusted reverse proxy"
+    },
+    {
+      "name": "PUBLIC_APP_URL",
+      "kind": "public-config",
+      "when": "email-integration-only",
+      "storage": "environment",
+      "handling": "URL for transactional email verification and reset links"
+    },
+    {
+      "name": "RECURRENCE_SCHEDULER_ENABLED",
+      "kind": "safety-switch",
+      "when": "disabled-until-approved",
+      "storage": "environment",
+      "handling": "Scheduler opt-in; drafts only"
+    },
+    {
+      "name": "RESET_EMAIL_FROM",
+      "kind": "public-config",
+      "when": "email-integration-only",
+      "storage": "environment",
+      "handling": "Verified Resend sender address"
+    },
+    {
+      "name": "RESEND_API_KEY",
+      "kind": "secret",
+      "when": "email-integration-only",
+      "storage": "secret-manager",
+      "handling": "Transactional Resend credential"
+    },
+    {
+      "name": "RESTORE_DRILL_DATABASE_URL",
+      "kind": "maintenance",
+      "when": "isolated-drill-only",
+      "storage": "restricted-environment",
+      "handling": "Only for empty destination ending _restore_drill"
+    },
+    {
+      "name": "SAAS_MAINTENANCE_ENABLED",
+      "kind": "safety-switch",
+      "when": "disabled-until-approved",
+      "storage": "environment",
+      "handling": "Manual SaaS maintenance worker opt-in"
+    },
+    {
+      "name": "SANDBOX_RECONCILIATION_ENABLED",
+      "kind": "safety-switch",
+      "when": "disabled-until-approved",
+      "storage": "environment",
+      "handling": "Sandbox-only reconciliation worker opt-in"
+    },
+    {
+      "name": "SESSION_SECRET",
+      "kind": "secret",
+      "when": "staging-required",
+      "storage": "secret-manager",
+      "handling": "Unique high-entropy secret; plan invalidation before rotation"
+    },
+    {
+      "name": "TRUST_PROXY",
+      "kind": "public-config",
+      "when": "staging-conditional",
+      "storage": "environment",
+      "handling": "Only for verified trusted reverse proxy"
+    },
+    {
+      "name": "VITE_APP_MODE",
+      "kind": "browser-public",
+      "when": "build-time-public",
+      "storage": "build-public",
+      "handling": "Public build flag; VITE_ must never hold credentials"
+    },
+    {
+      "name": "WHATSAPP_CREDENTIAL_ENCRYPTION_KEY",
+      "kind": "secret",
+      "when": "meta-integration-only",
+      "storage": "secret-manager",
+      "handling": "Hex 32-byte token encryption key; rotation needs re-encryption"
+    },
+    {
+      "name": "WHATSAPP_ENQUEUE_ENABLED",
+      "kind": "safety-switch",
+      "when": "disabled-until-approved",
+      "storage": "environment",
+      "handling": "Queue scheduler only; no automatic delivery"
+    },
+    {
+      "name": "WHATSAPP_GO_LIVE_APPROVED",
+      "kind": "safety-switch",
+      "when": "disabled-until-approved",
+      "storage": "environment",
+      "handling": "Keep false until separate live launch approval"
+    },
+    {
+      "name": "WHATSAPP_SEND_ENABLED",
+      "kind": "safety-switch",
+      "when": "disabled-until-approved",
+      "storage": "environment",
+      "handling": "Keep false until authorized sandbox delivery"
+    },
+    {
+      "name": "WHATSAPP_SEND_SCOPE",
+      "kind": "safety-switch",
+      "when": "test-allowlist-only",
+      "storage": "environment",
+      "handling": "Restrict QA sends to allowlisted test recipients"
+    },
+    {
+      "name": "WHATSAPP_TEST_RECIPIENT_ALLOWLIST",
+      "kind": "restricted",
+      "when": "meta-integration-only",
+      "storage": "secret-manager",
+      "handling": "Personal phone numbers; restricted access, log redaction"
+    }
+  ]
+}

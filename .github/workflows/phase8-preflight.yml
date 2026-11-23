@@ -7,6 +7,9 @@ on:
       - 'scripts/phase8-readiness.test.mjs'
       - 'server/production-config.ts'
       - 'server/production-config.test.ts'
+      - 'scripts/phase8-secrets-audit.mjs'
+      - 'scripts/phase8-secrets-audit.test.mjs'
+      - 'docs/security/staging-config-inventory.json'
       - 'scripts/backup-db.sh'
       - 'scripts/restore-drill.sh'
       - '.github/workflows/phase8-preflight.yml'
@@ -16,6 +19,9 @@ on:
       - 'scripts/phase8-readiness.test.mjs'
       - 'server/production-config.ts'
       - 'server/production-config.test.ts'
+      - 'scripts/phase8-secrets-audit.mjs'
+      - 'scripts/phase8-secrets-audit.test.mjs'
+      - 'docs/security/staging-config-inventory.json'
       - 'scripts/backup-db.sh'
       - 'scripts/restore-drill.sh'
       - '.github/workflows/phase8-preflight.yml'
@@ -30,6 +36,10 @@ jobs:
         with: {node-version: '22'}
       - name: Run offline readiness unit tests
         run: node --test scripts/phase8-readiness.test.mjs
+      - name: Audit env inventory and guard against missing or browser-exposed secrets
+        run: |
+          node --test scripts/phase8-secrets-audit.test.mjs
+          node scripts/phase8-secrets-audit.mjs --check
       - name: Read-only offline preflight (no credentials or external checks)
         run: node scripts/phase8-readiness.mjs --offline
   isolated-restore:
