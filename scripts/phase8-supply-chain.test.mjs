@@ -21,7 +21,7 @@ test('mutable actions, non-frozen installs and write permissions are rejected',(
   .some(x=>x.includes('write')));
 });
 test('container cannot install outside committed lockfile',()=>{
- const good='FROM node:22-alpine\nCOPY package.json package-lock.json ./\nRUN npm ci --no-audit --no-fund\n';
+ const good='FROM node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a\nCOPY package.json package-lock.json ./\nRUN npm ci --no-audit --no-fund\n';
  assert.deepEqual(validateDocker(good),[]);
  assert.ok(validateDocker(good.replace('npm ci','npm install')).length>0);
 });
