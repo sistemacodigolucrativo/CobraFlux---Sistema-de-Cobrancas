@@ -58,7 +58,9 @@ jobs:
       - name: Install PostgreSQL client and application packages
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y postgresql-client
+          sudo apt-get install -y postgresql-client-16
+          echo "/usr/lib/postgresql/16/bin" >> "$GITHUB_PATH"
+          /usr/lib/postgresql/16/bin/pg_restore --version
           npm install --no-package-lock --no-audit
       - name: Migrate isolated source twice
         run: |
