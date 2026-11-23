@@ -31,3 +31,14 @@ test('all live CI workflows are read-only and pinned; package lock consistent',a
  assert.ok(r.workflows>=6);
  assert.ok(r.packages>100);
 });
+
+test('unreviewed mutable PostgreSQL and Node image references are rejected',()=>{
+ const valid='permissions:\n  contents: read\njobs:\n  t:\n    services:\n      postgres:\n        image: postgres:16@sha256:3950ad7c3148ca2175ef1b6c36c9efbf78957ae8fbe8b3a5d7c35af50500382f\n    steps:\n      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262\n';
+ assert.deepEqual(validateWorkflow(valid,'ci.yml'),[]);
+ assert.ok(validateWorkflow(valid.replace('postgres:16@sha256:3950ad7c3148ca2175ef1b6c36c9efbf78957ae8fbe8b3a5d7c35af50500382f','postgres:16'),'ci.yml')
+  .some(x=>x.includes('reviewed digest')));
+ const docker='FROM node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a\nCOPY package.json package-lock.json ./\nRUN npm ci --no-audit --no-fund\n';
+ assert.deepEqual(validateDocker(docker),[]);
+ assert.ok(validateDocker(docker.replace('node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a','node:22-alpine'))
+  .some(x=>x.includes('reviewed digest')));
+});

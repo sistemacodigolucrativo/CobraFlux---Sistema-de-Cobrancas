@@ -10,6 +10,10 @@ const pinnedActions=new Map([
  ['actions/setup-node','49933ea5288caeca8642d1e84afbd3f7d6820020'],
  ['actions/upload-artifact','ea165f8d65b6e75b540449e92b4886f43607fa02']
 ]);
+const approvedImages={
+ node:'node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a',
+ postgres:'postgres:16@sha256:3950ad7c3148ca2175ef1b6c36c9efbf78957ae8fbe8b3a5d7c35af50500382f'
+};
 const equalDeps=(a,b)=>{
  const keys=new Set([...Object.keys(a||{}),...Object.keys(b||{})]);
  return [...keys].every(k=>a?.[k]===b?.[k]);
@@ -36,6 +40,9 @@ export function validateWorkflow(content,path){
   failures.push(path+': write permission without explicit review');
  if(/\bnpm\s+install\b|\bnpm\s+i\s+--no-package-lock\b/.test(content))
   failures.push(path+': unpinned npm install used instead of npm ci');
+ const imageRefs=[...content.matchAll(/\bpostgres:16(?:@sha256:[a-f0-9]{64})?/g)].map(x=>x[0]);
+ for(const ref of imageRefs)
+  if(ref!==approvedImages.postgres)failures.push(path+': PostgreSQL must use reviewed digest');
  const actionRefs=[...content.matchAll(/^\s*-\s*uses:\s*([^\s#]+)/gm)].map(x=>x[1]);
  if(!actionRefs.length)failures.push(path+': no actions found');
  for(const ref of actionRefs){
@@ -50,6 +57,8 @@ export function validateDocker(content){
  const failures=[];
  if(!/^COPY package\.json package-lock\.json \.\/$/m.test(content))
   failures.push('Dockerfile must copy exact package manifest and lockfile together');
+ if(!content.includes('FROM '+approvedImages.node))
+  failures.push('Dockerfile Node base image must be pinned to reviewed digest');
  if(!/^RUN npm ci --no-audit --no-fund$/m.test(content))
   failures.push('Dockerfile must use npm ci');
  if(/\bnpm\s+install\b/.test(content))failures.push('Dockerfile contains non-frozen install');
