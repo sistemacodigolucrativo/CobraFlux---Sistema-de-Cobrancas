@@ -21,7 +21,8 @@
     "recurring:run": "tsx server/recurrence-cli.ts",
     "whatsapp:run": "tsx server/whatsapp-cli.ts",
     "whatsapp:enqueue": "tsx server/whatsapp-enqueue-cli.ts",
-    "saas:reconcile": "tsx server/saas-cli.ts"
+    "saas:reconcile": "tsx server/saas-cli.ts",
+    "test:export-load": "tsx server/phase7-export-load.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

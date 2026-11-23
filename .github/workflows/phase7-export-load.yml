@@ -1,0 +1,47 @@
+name: CobraFlux F7 synthetic keyset export load
+on:
+  push:
+    branches: [feat/production-foundation]
+    paths:
+      - 'server/phase7-export-load.ts'
+      - 'server/migrations/020_export_keyset_indexes.sql'
+      - '.github/workflows/phase7-export-load.yml'
+      - 'package.json'
+  workflow_dispatch:
+jobs:
+  synthetic-export-load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cobraflux
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: cobraflux_load_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U cobraflux -d cobraflux_load_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://cobraflux:testpass@127.0.0.1:5432/cobraflux_load_test
+      SESSION_SECRET: ci-synthetic-only-not-in-production-123456789
+      APP_ORIGIN: http://localhost:3000
+      NODE_ENV: test
+      CF_EXPORT_LOAD_ISOLATED: 'true'
+      CF_EXPORT_LOAD_ROWS: '100000'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --no-package-lock --no-audit
+      - name: Migrate twice
+        run: |
+          npm run migrate
+          npm run migrate
+      - name: Query-plan evidence for 100k clients and 100k charges
+        run: npm run test:export-load
