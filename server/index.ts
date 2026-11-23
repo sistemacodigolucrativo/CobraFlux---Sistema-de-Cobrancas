@@ -20,6 +20,7 @@ import { SaasQuotaError } from './saas-domain';
 import { registerMetaWebhook } from './whatsapp-webhook';
 import { csrfForSession, getCookie, normalizeEmail, passwordHash, passwordMatches, randomSecret, secureEquals, sha256 } from './security';
 import {validateProductionConfig} from './production-config';
+import {formatApiAccess,formatApiError} from './request-telemetry';
 
 const app = express();
 app.disable('x-powered-by');
@@ -28,6 +29,21 @@ const appSecret = process.env.SESSION_SECRET ?? '';
 if (appSecret.length < 32) throw new Error('SESSION_SECRET must have at least 32 characters.');
 const prod = process.env.NODE_ENV === 'production';
 const {origin}=validateProductionConfig(process.env);
+// First-party tracing: do not trust a client-supplied ID; never log path/body/cookies/IP.
+app.use('/api',(req,res,next)=>{
+  const requestId=randomUUID();
+  res.setHeader('X-CF-Request-Id',requestId);
+  if(prod){
+    const started=process.hrtime.bigint();
+    res.once('finish',()=>{
+      console.info(formatApiAccess({
+        requestId,method:req.method,statusCode:res.statusCode,
+        durationMs:Number(process.hrtime.bigint()-started)/1e6
+      }));
+    });
+  }
+  next();
+});
 app.use(express.json({limit:'256kb',verify:(req,_res,bytes)=>{
   if(req.url?.split('?')[0]==='/api/webhooks/meta-whatsapp'){
     (req as Request & {metaRawBody?:Buffer}).metaRawBody=Buffer.from(bytes);
@@ -125,7 +141,7 @@ async function issueVerification(userId:string,email:string):Promise<boolean>{
   });
   try{return await sendTransactionalEmail(email,'Confirme seu e-mail no CobraFlux',
     'Confirme sua conta pelo link: '+publicLink('verificar',token)+'\nEste link expira em 24 horas.');}
-  catch(e){console.error('verify_email_delivery_failed',e instanceof Error?e.message:'transport_error');return false;}
+  catch(_e){console.error('verify_email_delivery_failed');return false;}
 }
 
 const requireAdmin:RequestHandler=(req,res,next)=>{
@@ -379,7 +395,7 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
       res.status(400).json({error:'invalid_reference_or_date'}); return;
     }
   }
-  console.error('unhandled_api_error', err instanceof Error ? err.message : err);
+  console.error(formatApiError(String(res.getHeader('X-CF-Request-Id')??'unknown')));
   res.status(500).json({error:'server_error'});
 });
 const port=Number(process.env.PORT ?? 8080);

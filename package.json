@@ -11,7 +11,7 @@
     "lint": "tsc --noEmit",
     "server": "tsx server/index.ts",
     "migrate": "tsx server/migrate.ts",
-    "test:server": "tsx --test server/security.test.ts server/production-config.test.ts server/totp.test.ts server/csv.test.ts server/asaas-sandbox.test.ts server/sandbox-reconciliation.test.ts server/recurrence-calendar.test.ts server/whatsapp-cloud.test.ts server/saas-domain.test.ts server/phase7-domain.test.ts",
+    "test:server": "tsx --test server/security.test.ts server/production-config.test.ts server/request-telemetry.test.ts server/totp.test.ts server/csv.test.ts server/asaas-sandbox.test.ts server/sandbox-reconciliation.test.ts server/recurrence-calendar.test.ts server/whatsapp-cloud.test.ts server/saas-domain.test.ts server/phase7-domain.test.ts",
     "test:domain": "tsx --test src/domain/finance.test.ts",
     "test:integration": "tsx --test server/integration.test.ts server/team.integration.test.ts server/sandbox.integration.test.ts server/sandbox-cancellation.integration.test.ts server/recurrence.integration.test.ts server/whatsapp.integration.test.ts server/saas.integration.test.ts server/phase7.integration.test.ts",
     "admin:enroll": "tsx server/enroll-admin.ts",
