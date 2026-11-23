@@ -36,7 +36,7 @@ export function evaluateEvidence(prod,all,sbom){
  const a=parseAudit(all,'full');
  const b=parseSbom(sbom);
  return {schemaVersion:1,source:'npm audit registry snapshot + npm sbom from package-lock',
-  production:p,full:a,sbom:b,requiresSecurityReview:!p.releaseCandidatePass||!a.releaseCandidatePass,
+  production:p,full:a,sbom:b,requiresSecurityReview:Object.values(a.counts).some(n=>n>0)||Object.values(p.counts).some(n=>n>0),
   approvedForProduction:false,externalHomologationCompleted:false};
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
