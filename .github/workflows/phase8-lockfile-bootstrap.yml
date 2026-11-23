@@ -1,0 +1,33 @@
+name: CobraFlux temporary NPM lockfile bootstrap (read-only)
+on:
+  push:
+    branches: [feat/production-foundation]
+    paths: ['.github/workflows/phase8-lockfile-bootstrap.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  generate-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Generate npm lockfile from actual package.json
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Test clean reproducible install
+        run: npm ci --no-audit --no-fund
+      - name: Typecheck and offline tests
+        run: |
+          npm run lint
+          npm run test:server
+          node scripts/phase8-secrets-audit.mjs --check
+      - name: Publish generated lockfile for review and source-controlled commit
+        uses: actions/upload-artifact@v4
+        with:
+          name: f8-npm-lockfile-candidate
+          path: package-lock.json
+          retention-days: 2
+          if-no-files-found: error
