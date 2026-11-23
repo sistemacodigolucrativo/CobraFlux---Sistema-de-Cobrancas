@@ -1,0 +1,62 @@
+name: CobraFlux F8 vulnerability audit and SBOM evidence
+on:
+  push:
+    branches: [feat/production-foundation]
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/phase8-dependency-audit.mjs'
+      - 'scripts/phase8-dependency-audit.test.mjs'
+      - '.github/workflows/phase8-dependency-audit.yml'
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/phase8-dependency-audit.mjs'
+      - 'scripts/phase8-dependency-audit.test.mjs'
+      - '.github/workflows/phase8-dependency-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Unit-test evidence validation
+        run: node --test scripts/phase8-dependency-audit.test.mjs
+      - name: Collect npm advisory reports and CycloneDX SBOM from locked package tree
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          set +e
+          npm audit --json --omit=dev > "$RUNNER_TEMP/prod-audit.json"
+          PROD_STATUS=$?
+          npm audit --json > "$RUNNER_TEMP/full-audit.json"
+          FULL_STATUS=$?
+          set -e
+          if [[ "$PROD_STATUS" -gt 1 || "$FULL_STATUS" -gt 1 ]]; then
+            echo 'npm audit command failed unexpectedly; not treating as clean.' >&2
+            exit 1
+          fi
+          npm sbom --sbom-format=cyclonedx --package-lock-only > "$RUNNER_TEMP/sbom.json"
+          node scripts/phase8-dependency-audit.mjs \
+            --production "$RUNNER_TEMP/prod-audit.json" \
+            --full "$RUNNER_TEMP/full-audit.json" \
+            --sbom "$RUNNER_TEMP/sbom.json" \
+            --output "$RUNNER_TEMP/f8-audit-summary.json"
+          cp "$RUNNER_TEMP/f8-audit-summary.json" f8-audit-summary.json
+          cp "$RUNNER_TEMP/sbom.json" f8-cyclonedx-sbom.json
+      - name: Publish evidence (not release approval)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: f8-audit-sbom-evidence
+          path: |
+            f8-audit-summary.json
+            f8-cyclonedx-sbom.json
+          retention-days: 7
+          if-no-files-found: error
