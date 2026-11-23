@@ -1,7 +1,7 @@
 FROM node:22-alpine
 WORKDIR /app
-COPY package.json ./
-RUN npm install --no-package-lock --no-audit
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
 COPY . .
 ENV VITE_APP_MODE=production
 RUN npm run build
