@@ -1,13 +1,13 @@
 # 08 — Protocolo obrigatório de retomada por outra IA
 
-Esta é a versão persistida, reconciliada com o incremento F7 suportado por CI no commit 4dcbb80. O documento 08 do ZIP original referia-se a HEAD 9c854473 e permanece uma **fotografia histórica**, não autoridade atual.
+Esta é a versão persistida, atualizada em 23/11/2026 com ADR-026 e o início técnico de F8. Último código validado: 309e28ef2ce67e45e2954d465426e84ec0eab359. F7 escopo técnico não adiado encerrado, requisitos remanescentes em pendências/; F8 sem staging/serviços reais. O documento 08 do ZIP original referia-se a HEAD 9c854473 e permanece uma **fotografia histórica**, não autoridade atual.
 
 ## Antes de iniciar
 1. Abrir AGENTS.md, docs/ai-memory/00-LEIA-PRIMEIRO.md, 01-ESTADO-ATUAL.md, estado.json e o diário.
 2. Consultar **GitHub remoto real**, PR #2, Issue #3, branches, último SHA, workflows vinculados ao HEAD. Confirmar main intacta, feature branch autorizada e se houve novas decisões desde o snapshot.
 3. Ler os arquivos atuais relevantes, migrations, tests e docs/FASE_*.md. **Não reconstruir código pelo resumo nem duplicar funcionalidades.**
 4. Validar estado em cada dimensão: decisão, código, teste/CI, homologação externa. Não marcar release como concluído por sucesso em ambiente efêmero.
-5. Escolher item do backlog **APROVADO** para a Fase 7; identificar REQ/BL/ADR e critérios de aceite antes de codar.
+5. Escolher item **aprovado** para a Fase 8, identificando REQ/BL/ADR e critérios; não reativar requisitos F7 adiados sem decisão. Preflight offline e testes sintéticos são permitidos; staging real, pagamentos, serviços externos e deploy dependem de aprovação específica.
 
 ## Segurança e desenvolvimento
 - Atua só em **feat/production-foundation**; sem merge, push main, reset destrutivo, deploy, provisionamento de serviço, exclusão de dados, release nem mudança comercial sem autorização específica.

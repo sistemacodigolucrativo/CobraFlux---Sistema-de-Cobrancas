@@ -1,23 +1,29 @@
 # 01 — Estado atual e ponto exato de retomada
 
-**Atualizado em:** 23/11/2026, após F7 incremento nº 10 validado, com auditoria dos gates de encerramento. **Snapshot documental**, não serviço de telemetria. Os **12 arquivos originais do handoff** já estão preservados com hash exato em [originais/](originais/), sem depender do chat.
+**Atualizado em:** 23/11/2026, após ADR-026 e início técnico de F8 #01. **Snapshot documental**, não serviço de telemetria. Os **12 arquivos originais do handoff** já estão preservados com hash exato em [originais/](originais/), sem depender do chat.
 
 | Item | Última evidência |
 | --- | --- |
 | Repositório | https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas |
 | Branch permitida | feat/production-foundation |
-| **Último commit de código validado** | [1c16c6ad0798b6c77543679738e2a57fb9e831ea](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/1c16c6ad0798b6c77543679738e2a57fb9e831ea) |
+| **Último commit de código validado** | [309e28ef2ce67e45e2954d465426e84ec0eab359](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/309e28ef2ce67e45e2954d465426e84ec0eab359) |
 | Base main verificada | 95aba9c27c363c8b24c2f34c65a28c2f3b011b3b — não alterada por esses incrementos |
 | PR #2 | Aberta, em draft, não mesclada no último exame |
-| Fase atual | **7 — Administração e Relatórios** |
-| Último incremento concluído tecnicamente | Fase 7 nº 10: CSV vinculado a pedido LGPD auditável; incrementos 1–9 preservados |
-| Backend/integração/migrações | [CI #45184992979](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45184992979) — success no commit 1c16c6ad |
-| Browser desktop/mobile | [CI #45184993002](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45184993002) — success no commit 1c16c6ad |
+| Fase atual | **8 — Homologação (preparação técnica iniciada, operação não homologada)** |
+| Último incremento concluído tecnicamente | Fase 8 nº 01: readiness offline e restore sintético isolado; F7 escopo não adiado encerrado por ADR-026 |
+| Backend/integração/migrações | [CI #45190560285](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45190560285) — success no commit 309e28ef |
+| Browser desktop/mobile | [CI #45190560282](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45190560282) — success no commit 309e28ef |
 | Release/merge/deploy | **Nenhum** |
 | PSP live/Meta live | **Não habilitados nem homologados** |
-| Próximo marco | F7 AINDA ABERTA: revisão LGPD, SLA/notificações/anexos, exportação consistente, acessibilidade e homologação; ver matriz de gates |
+| Próximo marco | F8 planejamento/staging; requisitos F7 **ADIADOS, NÃO CONCLUÍDOS** por ADR-026, [lista](pendencias/2026-11-23-f7-adiados.md) |
 
 **Atenção:** commits posteriores podem alterar só documentação e mudar o HEAD; isso não apaga o SHA do último **incremento de código** com CI verde. O próximo agente precisa verificar ambos.
+
+## Transição por decisão ADR-026 e início F8 #01 (23/11/2026)
+- **F7:** os dez incrementos de código e testes estão preservados; escopo técnico **não adiado** encerrado para continuidade. Pendências de SLA, LGPD, exportações concorrentes, paridade/acessibilidade e governança foram [registradas para análise posterior](pendencias/2026-11-23-f7-adiados.md). **Não são requisitos cumpridos.**
+- **F8 iniciada:** readiness offline e teste de backup/restore com PostgreSQL 16 e dados sintéticos efêmeros. Código [309e28ef2ce67e45e2954d465426e84ec0eab359](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/309e28ef2ce67e45e2954d465426e84ec0eab359), preflight/restore [#45190560236](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45190560236), backend [#45190560285](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45190560285), browser [#45190560282](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45190560282), memória [#45190560470](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45190560470) — todos success.
+- **Falhas iniciais corrigidas e preservadas:** CI #45189656787 (fixture SQL sem internal_code), #45189936453 (cliente PostgreSQL incompatível) e #45190199472 (pacote 16 indisponível), corrigidas no commit final com container PG16.
+- **F8 NÃO HOMOLOGADA:** sem staging HTTPS, backup real, PITR, provedores externos, revisão legal e release. Sem merge/deploy. [Documento técnico F8](fases/08-homologacao.md).
 
 ## Novas entregas técnicas F7 #08–10 (23/11/2026)
 - #08: índices compostos e benchmark sintético 100k clientes/100k cobranças, [CI #45183457088](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45183457088) verde; não é medição de produção.
@@ -69,7 +75,7 @@
 
 ## Não esquecer
 - O núcleo da Fase 6 está tecnicamente implementado, mas **não há checkout financeiro live do SaaS**, aprovação comercial, tributação ou cobrança homologada.
-- O núcleo da Fase 7 está **incompleto**, apesar de dez incrementos de código testados.
+- O núcleo de F7 **não adiado** está encerrado por ADR-026, mas os demais requisitos **continuam pendentes**, sem homologação legal ou operacional.
 - Homologação externa foi **adiada para antes do lançamento**, não dispensada; existem dívidas de Fases 0–7.
 - A base de conhecimento não substitui revisões de código, segurança, política legal nem licença para mexer na main.
 

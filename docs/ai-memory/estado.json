@@ -5,7 +5,7 @@
   "source": "GitHub PR #2 / Issue #3 / GitHub Actions / handoff local de 21-11",
   "repository": "sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas",
   "authorizedBranch": "feat/production-foundation",
-  "lastVerifiedCodeCommit": "1c16c6ad0798b6c77543679738e2a57fb9e831ea",
+  "lastVerifiedCodeCommit": "309e28ef2ce67e45e2954d465426e84ec0eab359",
   "mainReferenceCommit": "95aba9c27c363c8b24c2f34c65a28c2f3b011b3b",
   "pullRequest": {
     "number": 2,
@@ -13,34 +13,40 @@
     "merged": false
   },
   "roadmapIssue": 3,
-  "currentPhase": 7,
+  "currentPhase": 8,
   "totalPhases": 10,
-  "phase7Status": "EM DESENVOLVIMENTO — GATES DE FECHAMENTO ABERTOS",
-  "lastCompletedIncrement": "F7 #10: vinculo auditavel do cursor CSV a pedido LGPD do mesmo tenant; nao configura fulfillment legal",
+  "phase7Status": "ESCOPO TECNICO NAO ADIADO ENCERRADO POR DECISAO ADR-026; REQUISITOS ADIADOS CONTINUAM PENDENTES",
+  "lastCompletedIncrement": "F8 #01: inspeção offline de readiness e backup/restore em postgres16 descartável; guards de DB e fixtures sintéticas",
   "lastValidatedCi": [
     {
-      "id": 45184992979,
+      "id": 45190560236,
       "result": "success",
-      "scope": "backend/migrations/integration/builds"
+      "scope": "F8 offline readiness and PG16 backup-restore into isolated synthetic target"
     },
     {
-      "id": 45184993002,
+      "id": 45190560285,
+      "result": "success",
+      "scope": "backend, migration, security, integration and builds"
+    },
+    {
+      "id": 45190560282,
       "result": "success",
       "scope": "Chromium desktop/mobile"
     },
     {
-      "id": 45184992978,
+      "id": 45190560470,
       "result": "success",
-      "scope": "AI memory integrity"
+      "scope": "memory integrity"
     }
   ],
   "productionDeployed": false,
   "financialLiveApproved": false,
   "externalHomologationCompleted": false,
   "nextApprovedScope": [
-    "F7 BL-006/007: decisões legais/canais/anexos e implementação segura",
-    "F7 BL-008/031: snapshot consistente e testes de staging",
-    "F7 BL-012: auditoria visual/acessibilidade e dispositivos físicos"
+    "F8: runbook e automação de preflight sem segredos/serviços externos",
+    "F8: planejar staging HTTPS e retenção/backup com autorização de infraestrutura",
+    "F8: prover evidências externas reais só após autorização",
+    "Revisitar ADR-026 e backlog adiado antes de qualquer lançamento"
   ],
   "sourceArchive": "CobraFlux-Knowledge-Handoff-2026-11-21.zip",
   "sourceArchiveUploadedToRepository": false,
@@ -65,7 +71,7 @@
   "exportCsvKeysetCursorTtlMinutes": 30,
   "exportCsvKeysetNotSnapshot": true,
   "exportCsvLoadTest100kCompleted": true,
-  "phase8Started": false,
+  "phase8Started": true,
   "exportCsvLoadTestSyntheticOnly": true,
   "exportCsvLoadTestProductionCompleted": false,
   "lgpdAppendOnlyReviewHistory": true,
@@ -73,9 +79,18 @@
   "lgpdFulfillmentLegallyApproved": false,
   "phase7ClosureGatesDocument": "docs/ai-memory/fases/07-gates-de-encerramento-2026-11-23.md",
   "phase7RemainingGates": [
-    "SLA comercial, notificações verificadas, anexos seguros",
-    "LGPD completa e revisão legal/identidade/retention",
-    "Exportação consistente durante mutações e carga real",
-    "Paridade/acessibilidade, segurança independente e staging"
-  ]
+    "SLA comercial, notificações verificadas, anexos seguros (ADIADO, NAO CONCLUIDO)",
+    "LGPD completa e revisão legal/identidade/retention (ADIADO, NAO CONCLUIDO)",
+    "Exportação consistente durante mutações e carga real (ADIADO, NAO CONCLUIDO)",
+    "Paridade/acessibilidade, segurança independente e staging (ADIADO, NAO CONCLUIDO)"
+  ],
+  "phase8Status": "EM DESENVOLVIMENTO — preflight e restore sintético CI aprovados, sem staging/homologação real",
+  "phase8OperationallyHomologated": false,
+  "phase8Deployed": false,
+  "phase8LastCompletedIncrement": "F8 #01: inspeção offline de readiness e backup/restore em postgres16 descartável; guards de DB e fixtures sintéticas",
+  "phase7ImplementationScopeClosed": true,
+  "phase7OperationallyHomologated": false,
+  "phase7DeferredRequirementsReviewed": false,
+  "phase7DeferralDecision": "ADR-026",
+  "phase7DeferredRequirementsDocument": "docs/ai-memory/pendencias/2026-11-23-f7-adiados.md"
 }
