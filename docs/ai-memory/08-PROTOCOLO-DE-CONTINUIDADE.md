@@ -1,6 +1,6 @@
 # 08 — Protocolo obrigatório de retomada por outra IA
 
-Esta é a versão persistida, atualizada em 23/11/2026 com ADR-026 e o início técnico de F8. Último código validado: aa155cb880f72c99d972fa58de758a810880b50f. F7 escopo técnico não adiado encerrado, requisitos remanescentes em pendências/; F8 sem staging/serviços reais. O documento 08 do ZIP original referia-se a HEAD 9c854473 e permanece uma **fotografia histórica**, não autoridade atual.
+Esta é a versão persistida, atualizada em 23/11/2026 com ADR-026 e o início técnico de F8. Último código validado: 7208ae2f96e27d7873294d7fe47caa72401ef5a7. F9 #01 Android debug testado; F8 operacional continua não homologada. F7 escopo técnico não adiado encerrado, requisitos remanescentes em pendências/; F8 sem staging/serviços reais. O documento 08 do ZIP original referia-se a HEAD 9c854473 e permanece uma **fotografia histórica**, não autoridade atual.
 
 ## Antes de iniciar
 1. Abrir AGENTS.md, docs/ai-memory/00-LEIA-PRIMEIRO.md, 01-ESTADO-ATUAL.md, estado.json e o diário.

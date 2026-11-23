@@ -5,7 +5,7 @@
   "source": "GitHub PR #2 / Issue #3 / GitHub Actions / handoff local de 21-11",
   "repository": "sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas",
   "authorizedBranch": "feat/production-foundation",
-  "lastVerifiedCodeCommit": "aa155cb880f72c99d972fa58de758a810880b50f",
+  "lastVerifiedCodeCommit": "7208ae2f96e27d7873294d7fe47caa72401ef5a7",
   "mainReferenceCommit": "95aba9c27c363c8b24c2f34c65a28c2f3b011b3b",
   "pullRequest": {
     "number": 2,
@@ -13,43 +13,48 @@
     "merged": false
   },
   "roadmapIssue": 3,
-  "currentPhase": 8,
+  "currentPhase": 9,
   "totalPhases": 10,
   "phase7Status": "ESCOPO TECNICO NAO ADIADO ENCERRADO POR DECISAO ADR-026; REQUISITOS ADIADOS CONTINUAM PENDENTES",
-  "lastCompletedIncrement": "F8 #09: auditoria+SBOM, 12 gates pendentes, smoke HTTPS opt-in, logs sem URL/PII, digests e rollback offline",
+  "lastCompletedIncrement": "F9 #01: Android API36 secure WebView with strict origin policy, JUnit, source guard and CI debug APK, no staging URL",
   "lastValidatedCi": [
     {
-      "id": 45210349937,
+      "id": 45218842168,
       "result": "success",
-      "scope": "backend/migrations/integration/build"
+      "scope": "F9 offline guard, JUnit policy and unsigned-for-release APK debug"
     },
     {
-      "id": 45210349834,
+      "id": 45218842365,
       "result": "success",
-      "scope": "Chromium desktop/mobile"
+      "scope": "Backend/PostgreSQL/integrations/builds"
     },
     {
-      "id": 45210349944,
+      "id": 45218842181,
       "result": "success",
-      "scope": "isolated synthetic PostgreSQL restore"
+      "scope": "Chromium desktop/mobile web"
     },
     {
-      "id": 45210349882,
+      "id": 45218842496,
       "result": "success",
-      "scope": "SHA pinning/digests/npm-ci/Docker build"
+      "scope": "F8 PostgreSQL 16 synthetic isolated restore"
     },
     {
-      "id": 45210350161,
+      "id": 45218842917,
       "result": "success",
-      "scope": "npm audit 4 moderate; CycloneDX 673"
+      "scope": "9 SHA-pinned least-privilege workflows, npm lock and Docker build"
     },
     {
-      "id": 45210350118,
+      "id": 45218842200,
       "result": "success",
-      "scope": "12 pending release gates/rollback and mocked HTTPS"
+      "scope": "F8 SCA/SBOM: four moderate pending"
     },
     {
-      "id": 45210349835,
+      "id": 45218842473,
+      "result": "success",
+      "scope": "F8 12 pending external gates, smoke simulated, rollback offline"
+    },
+    {
+      "id": 45218842739,
       "result": "success",
       "scope": "AI memory integrity"
     }
@@ -58,11 +63,11 @@
   "financialLiveApproved": false,
   "externalHomologationCompleted": false,
   "nextApprovedScope": [
-    "F8: 12 gates externos nao homologados; autorizar infraestrutura/domínio/segredos antes de conexao real",
-    "F8: revisar/corrigir ou aceitar fundamentadamente 4 avisos moderate PWA/Workbox",
-    "F8: homologar backup offsite/PITR, Asaas sandbox/Meta/Resend, monitoramento e piloto somente com evidencias e autorizacao",
-    "F7 ADR-026: direitos LGPD/SLA/exportacoes/acessibilidade adiados nao concluidos; antes de lancamento",
-    "F9 nao iniciar como release aprovado enquanto F8 nao passar gates operacionais"
+    "F9 #02: validar interface de WebView e preparar downloads/upload autenticados protegidos, somente com fixture/staging aprovado",
+    "F9: testes em Android real e OEM/MIUI, notificacoes, back, acessibilidade, e cookies de sessao",
+    "F9: submeter AAB somente apos Play package ID/signing/privacy/Billing aprovados",
+    "F8: 12 gates externos e 4 advisories moderate continuam pendentes; nenhuma publicacao",
+    "F7 ADR-026: requisitos adiados nao concluidos e exigidos antes de go-live"
   ],
   "sourceArchive": "CobraFlux-Knowledge-Handoff-2026-11-21.zip",
   "sourceArchiveUploadedToRepository": false,
@@ -119,7 +124,7 @@
   "phase8NpmLockfileCanonical": true,
   "phase8NpmLockfilePackages": 674,
   "phase8ActionsShaPinned": true,
-  "phase8WorkflowsReadOnly": 6,
+  "phase8WorkflowsReadOnly": 9,
   "phase8SupplyChainPolicyPath": "scripts/phase8-supply-chain.mjs",
   "phase8DockerImageBuiltInCI": true,
   "phase8DockerImagePublished": false,
@@ -151,5 +156,22 @@
   "phase8ExternalMonitoringVerified": false,
   "phase8NodeDigest": "sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a",
   "phase8PostgresDigest": "sha256:3950ad7c3148ca2175ef1b6c36c9efbf78957ae8fbe8b3a5d7c35af50500382f",
-  "phase8RollbackRealDrillCompleted": false
+  "phase8RollbackRealDrillCompleted": false,
+  "phase9Started": true,
+  "phase9Status": "EM DESENVOLVIMENTO: APK DEBUG COMPILADO/TESTADO EM CI, SEM API REAL OU PLAY",
+  "phase9LastCompletedIncrement": "F9 #01: Android API36 secure WebView with strict origin policy, JUnit, source guard and CI debug APK, no staging URL",
+  "phase9AndroidSourceDir": "mobile/android",
+  "phase9DebugApkBuiltInCI": true,
+  "phase9ArtifactRunId": 45218842168,
+  "phase9ApkSha256": "dc0f4085a311514a2b6df0850deeb2ca9a8f23f2cec62929666cff3a6a74270f",
+  "phase9AppIdProvisional": "com.cobraflux.app",
+  "phase9MinSdk": 28,
+  "phase9TargetSdk": 36,
+  "phase9StagingOriginConfigured": false,
+  "phase9BackendRealSessionHomologated": false,
+  "phase9DeviceTestingCompleted": false,
+  "phase9PlayReleaseAabBuilt": false,
+  "phase9PlayStorePublished": false,
+  "phase9PlayBillingIntegrated": false,
+  "phase9UploadDownloadSupported": false
 }
