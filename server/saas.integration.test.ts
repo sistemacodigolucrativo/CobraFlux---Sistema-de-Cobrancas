@@ -160,6 +160,7 @@ test('SaaS separate ledger, fail-closed plan checkout, tenant permissions, quota
   assert.equal(couponUse.rows[0].redeemed_count,0,'no coupon consumption without verified payment');
   // Cancellation at a verified period end never deletes the organization's data.
   await pool.query("UPDATE saas_subscriptions SET plan_code='starter',status='active',"+
+    "current_period_start=(now() AT TIME ZONE 'America/Sao_Paulo')::date-interval '30 days',"+
     "current_period_end=(now() AT TIME ZONE 'America/Sao_Paulo')::date,cancel_at_period_end=true,provider='ci_fixture',"+
     "provider_subscription_id=$2 WHERE organization_id=$1",[b.orgId,'ci-sub-'+randomUUID()]);
   const ended=await reconcileSaasBilling(10,localBillingDate());
