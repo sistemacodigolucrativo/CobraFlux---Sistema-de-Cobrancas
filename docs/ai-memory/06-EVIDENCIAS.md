@@ -1,5 +1,13 @@
 # 06 — Evidências verificáveis e lacunas
 
+## Revisão de 25/11/2026 — handoff/LGPD e estado remoto
+
+- **PR #2 consultada:** branch `feat/production-foundation` no SHA inicial `da401007721c8d98eca7800509c955c4bc07de56`, base `main` `95aba9c27c363c8b24c2f34c65a28c2f3b011b3b`; PR draft/não merged.
+- **Runs consultados do SHA inicial:** 10 execuções retornadas por GitHub Actions e todas `success`. Incluem Android, backend, Chromium, memory, SCA/SBOM, supply chain, gates, backup sintético; executadas anteriormente, **não nesta tarefa documental**.
+- **Árvore remota consultada:** 320 entradas no HEAD inicial, nenhum `*.html` nomeado como LGPD/checklist. Além disso, o usuário relatou repetidas vezes não ter recebido o arquivo; **REQ-122 ainda NÃO entregue**.
+- **Fonte de novo requisito:** conversa do responsável — reduziu pendências a 10 itens em 6 categorias e pediu HTML único com persistência/exportação; não forneceu seleções. [Check-list/brief](docs/ai-memory/pendencias/2026-11-25-lgpd-decisoes-e-html.md) e [handoff atual](docs/ai-memory/11-HANDOFF-ATUAL-2026-11-25.md).
+- **Limite:** este commit edita documentação somente. Não atribuir a ele os testes de código antigos, nem afirmar que F7 está integralmente concluída ou que F8/Android estão homologados.
+
 Este registro separa **evidência do código no GitHub** de homologação externa. O estado de um workflow pertence ao SHA executado; um sucesso antigo não prova que um commit novo passou.
 
 ## F9 #01 — Android debug seguro (23/11/2026)

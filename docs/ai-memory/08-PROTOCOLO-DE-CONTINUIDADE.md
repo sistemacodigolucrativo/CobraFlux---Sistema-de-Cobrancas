@@ -1,13 +1,13 @@
 # 08 — Protocolo obrigatório de retomada por outra IA
 
-Esta é a versão persistida, atualizada em 23/11/2026 com ADR-026 e o início técnico de F8. Último código validado: 7208ae2f96e27d7873294d7fe47caa72401ef5a7. F9 #01 Android debug testado; F8 operacional continua não homologada. F7 escopo técnico não adiado encerrado, requisitos remanescentes em pendências/; F8 sem staging/serviços reais. O documento 08 do ZIP original referia-se a HEAD 9c854473 e permanece uma **fotografia histórica**, não autoridade atual.
+Protocolo de base de 23/11/2026, suplementado em **25/11/2026** pelo [handoff atual](11-HANDOFF-ATUAL-2026-11-25.md) e pelo [checklist LGPD/HTML pendente](pendencias/2026-11-25-lgpd-decisoes-e-html.md). A **fase de código** atual é F9 #01, mas a **prioridade imediata solicitada** é entregar o HTML LGPD ainda não criado. Não confundir fase vigente com o pedido mais recente. Último código validado: 7208ae2f96e27d7873294d7fe47caa72401ef5a7. F9 #01 Android debug testado; F8 operacional continua não homologada. F7 escopo técnico não adiado encerrado, requisitos remanescentes em pendências/; F8 sem staging/serviços reais. O documento 08 do ZIP original referia-se a HEAD 9c854473 e permanece uma **fotografia histórica**, não autoridade atual.
 
 ## Antes de iniciar
 1. Abrir AGENTS.md, docs/ai-memory/00-LEIA-PRIMEIRO.md, 01-ESTADO-ATUAL.md, estado.json e o diário.
 2. Consultar **GitHub remoto real**, PR #2, Issue #3, branches, último SHA, workflows vinculados ao HEAD. Confirmar main intacta, feature branch autorizada e se houve novas decisões desde o snapshot.
 3. Ler os arquivos atuais relevantes, migrations, tests e docs/FASE_*.md. **Não reconstruir código pelo resumo nem duplicar funcionalidades.**
 4. Validar estado em cada dimensão: decisão, código, teste/CI, homologação externa. Não marcar release como concluído por sucesso em ambiente efêmero.
-5. Escolher item **aprovado** para a Fase 8, identificando REQ/BL/ADR e critérios; não reativar requisitos F7 adiados sem decisão. Preflight offline e testes sintéticos são permitidos; staging real, pagamentos, serviços externos e deploy dependem de aprovação específica.
+5. Priorizar **REQ-122**, HTML LGPD **ainda não entregue**, conforme pedido mais recente do usuário, sem decidir em seu lugar; depois atender itens efetivamente aprovados na F7/F8/F9, identificando REQ/BL/ADR. Não reativar automaticamente obrigações de F7, nem concluir F8 sem evidências. Preflight offline e testes sintéticos são permitidos; staging real, pagamentos, serviços externos e deploy dependem de aprovação específica.
 
 ## Segurança e desenvolvimento
 - Atua só em **feat/production-foundation**; sem merge, push main, reset destrutivo, deploy, provisionamento de serviço, exclusão de dados, release nem mudança comercial sem autorização específica.
@@ -32,3 +32,10 @@ Pedir apenas o indispensável para fazer com segurança: pagamento/fornecedor, p
 
 ## Desacordo entre fontes
 Analisar diff temporal, fonte da decisão e job do SHA, preservar histórico divergente. Uma alteração na main por terceiro não autoriza editar main. Para novas informações não verificadas, escrever **HIPÓTESE** em vez de fato.
+
+## Prioridade de retomada adicionada em 25/11/2026
+
+1. Abrir [Handoff atual](11-HANDOFF-ATUAL-2026-11-25.md) e [10 itens LGPD com alternativas e especificação HTML](pendencias/2026-11-25-lgpd-decisoes-e-html.md).
+2. **Não repetir a promessa de entrega:** o HTML ainda não existe como artefato comprovado. Implementar **um único HTML offline responsivo** com 10 itens, persistência e export TXT/HTML com respostas incorporadas/PDF via impressão. Verificar arquivo antes de compartilhar.
+3. **Nenhuma resposta do responsável foi marcada**. A escolha de atendimento/retention/jurídico é dele; avaliar legalidade após receber as decisões.
+4. Após entregar o arquivo, aguardar instruções do responsável e só então priorizar LGPD de código ou F9. Não executar deploy, dinheiro real, Play ou merge por causa de um checklist.

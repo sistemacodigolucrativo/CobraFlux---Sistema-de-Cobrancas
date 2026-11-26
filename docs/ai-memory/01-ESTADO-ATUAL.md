@@ -1,5 +1,14 @@
 # 01 — Estado atual e ponto exato de retomada
 
+## Atualização decisória de 25/11/2026 — prioridade LGPD e HTML PENDENTE
+
+- O repositório foi consultado: a PR #2 continua **draft/não merge** na `feat/production-foundation`; HEAD antes desta documentação: `da401007721c8d98eca7800509c955c4bc07de56`; a `main` permanece em `95aba9c27c363c8b24c2f34c65a28c2f3b011b3b`.
+- A fase de código continua **F9 #01 Android debug** com último código validado `7208ae2f96e27d7873294d7fe47caa72401ef5a7`. O HEAD documental não substitui essa referência.
+- O responsável priorizou **10 pendências LGPD em 6 categorias** para decisão em linguagem simples; **não escolheu alternativas ainda**.
+- Pedido explícito e repetido: **um HTML único, mobile premium, com o checklist integral, escolhas persistentes e exportação TXT/HTML respondido/PDF**. Não foi criado nem entregue no estado remoto observado. [Especificação integral](docs/ai-memory/pendencias/2026-11-25-lgpd-decisoes-e-html.md).
+- [Handoff completo para nova IA](11-HANDOFF-ATUAL-2026-11-25.md). F7 ADR-026 segue em aberto; F8 continua com **12 gates externos** e 4 avisos moderados; nenhum deploy/merge/Play.
+- Esta entrada é **documentação e replanejamento de prioridade**, não uma implementação, teste ou aceitação jurídica. Histórico abaixo preservado.
+
 **Atualizado em:** 23/11/2026, após F9 #01 Android técnico e F8/F7 ainda sem homologação operacional. **Snapshot documental**, não serviço de telemetria. Os **12 arquivos originais do handoff** já estão preservados com hash exato em [originais/](originais/), sem depender do chat.
 
 | Item | Última evidência |

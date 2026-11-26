@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "project": "CobraFlux — Sistema de Cobranças",
-  "snapshotDate": "2026-11-23",
+  "snapshotDate": "2026-11-25",
   "source": "GitHub PR #2 / Issue #3 / GitHub Actions / handoff local de 21-11",
   "repository": "sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas",
   "authorizedBranch": "feat/production-foundation",
@@ -63,11 +63,11 @@
   "financialLiveApproved": false,
   "externalHomologationCompleted": false,
   "nextApprovedScope": [
-    "F9 #02: validar interface de WebView e preparar downloads/upload autenticados protegidos, somente com fixture/staging aprovado",
-    "F9: testes em Android real e OEM/MIUI, notificacoes, back, acessibilidade, e cookies de sessao",
-    "F9: submeter AAB somente apos Play package ID/signing/privacy/Billing aprovados",
-    "F8: 12 gates externos e 4 advisories moderate continuam pendentes; nenhuma publicacao",
-    "F7 ADR-026: requisitos adiados nao concluidos e exigidos antes de go-live"
+    "PRIORIZADO PELO USUARIO: criar/validar/entregar um unico HTML responsivo com os 10 itens LGPD e 6 categorias, auto-salvamento e exportacao TXT/PDF/HTML com respostas embutidas; AINDA NAO ENTREGUE",
+    "AGUARDAR ESCOLHAS REAIS: nao assumir respostas para LGPD, revisao e papel controlador/operador",
+    "F7 ADR-026 LGPD e demais requisitos adiados nao concluidos antes de go-live",
+    "F8 homologacao operacional pendente 12 gates externos e 4 moderate nao tratados; sem staging/deploy nao aprovado",
+    "F9 Android preview ja testado; desenvolvimento posterior sob solicitacao e sem Play antes de homologacao"
   ],
   "sourceArchive": "CobraFlux-Knowledge-Handoff-2026-11-21.zip",
   "sourceArchiveUploadedToRepository": false,
@@ -173,5 +173,19 @@
   "phase9PlayReleaseAabBuilt": false,
   "phase9PlayStorePublished": false,
   "phase9PlayBillingIntegrated": false,
-  "phase9UploadDownloadSupported": false
+  "phase9UploadDownloadSupported": false,
+  "latestVerifiedBranchHeadBeforeDocumentation": "da401007721c8d98eca7800509c955c4bc07de56",
+  "handoffCurrentPath": "docs/ai-memory/11-HANDOFF-ATUAL-2026-11-25.md",
+  "handoffSourceReviewDate": "2026-11-25",
+  "lgpdDecisionChecklistPath": "docs/ai-memory/pendencias/2026-11-25-lgpd-decisoes-e-html.md",
+  "lgpdDecisionChecklistCategories": 6,
+  "lgpdDecisionChecklistItems": 10,
+  "lgpdOwnerSelectionsProvided": false,
+  "lgpdDecisionChecklistStatus": "AWAITING_OWNER_DECISIONS",
+  "lgpdSingleFileHtmlRequested": true,
+  "lgpdSingleFileHtmlCreated": false,
+  "lgpdSingleFileHtmlDelivered": false,
+  "lgpdHtmlAcceptance": "Full 10-item checklist in one offline mobile HTML with auto-save and floating export TXT/HTML-with-embedded-answers/PDF via print",
+  "lgpdHtmlCurrentPriority": true,
+  "latestDocumentationTask": "REQ-123: document verified remote state and handoff; no application changes"
 }

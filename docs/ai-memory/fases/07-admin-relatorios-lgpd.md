@@ -36,3 +36,9 @@ docs/FASE_7_ADMIN_RELATORIOS_LGPD.md
 
 ## Como continuar esta fase
 Antes de marcar qualquer item como completo: conferir branch e SHA no GitHub, revisar implementação presente, estabelecer testes de aceitação, não duplicar funcionalidade, criar registro em **../entregas/**, atualizar esta fase e **estado.json**. Distinguir código testado, homologação externa e publicação.
+
+## Revisão não técnica para decisões LGPD — 25/11/2026
+
+- O responsável solicitou tratar somente **10 pendências em 6 categorias** de direitos, exclusão/retenção, portabilidade, responsabilidades/transparência, anexos/segurança e revisão legal. A lista acessível com opções está em [checklist LGPD](../pendencias/2026-11-25-lgpd-decisoes-e-html.md).
+- Nenhuma resposta foi fornecida, portanto não inferir política de retenção, papéis controlador/operador, modalidade de atendimento, upload, exclusão ou prazo. Os itens técnicos da [ADR-026](../pendencias/2026-11-23-f7-adiados.md) permanecem diferidos/não concluídos.
+- **Novo artefato solicitado (ainda não criado):** HTML único, responsivo, com decisões por item, persistência e export TXT/HTML/PDF. É um instrumento de coleta de decisões, **não execução dos direitos nem declaração de conformidade**.

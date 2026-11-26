@@ -29,3 +29,18 @@
 Criar ID livre, preservar origem (incluindo número original da anotação, quando existir), decisão aprovada/pedida/indefinida, escopo, critérios de aceite, execução, SHA/CI e pendências externas. Vincular BL/ADR/arquivo de fase. Não inventar evidência nem modificar retroativamente os REQ históricos.
 
 **Fase 7 atual:** REQ-100 triagem foi ampliada por timeline de status no commit 96e58848 (testado); REQ-101 respostas de suporte permanece **parcial** (portal somente), REQ-104 LGPD ponta a ponta e REQ-105 SLA/monitoramento seguem pendentes.
+
+## REQ-121 — Requisitos LGPD reduzidos para decisão do responsável (25/11/2026)
+- **Origem:** o usuário pediu somente os problemas ainda pendentes, excluindo funcionalidades corretas, redundâncias e detalhes técnicos.
+- **Escopo:** 10 itens em 6 categorias, cada um com contexto, obrigatoriedade e alternativas simples. [Fonte preservada para decisão](docs/ai-memory/pendencias/2026-11-25-lgpd-decisoes-e-html.md).
+- **Decisão/execução:** escopo de documentação aprovado; **nenhuma das 10 opções foi escolhida**; a LGPD real continua sob ADR-026 e legislação aplicável.
+
+## REQ-122 — Checklist LGPD em HTML único com respostas persistentes (25/11/2026)
+- **Origem:** pedido repetido do usuário para transformar a lista integral em HTML offline premium/mobile, CSS/JS embutidos, inputs por item, autosave e botão flutuante para TXT, HTML com escolhas integradas e PDF.
+- **Status factual:** **SOLICITADO — NÃO IMPLEMENTADO/NÃO ENTREGUE**, conforme árvore remota e conversa. **Prioridade imediata.**
+- **Aceite:** [definição detalhada](pendencias/2026-11-25-lgpd-decisoes-e-html.md), com checagem de export em novo navegador; nenhuma opção marcada por padrão.
+
+## REQ-123 — Handoff atualizado do projeto para outra IA (25/11/2026)
+- **Origem:** solicitação expressa para registrar estado, decisões, lacunas e procedimento exato de continuidade no GitHub.
+- **Entrega documental:** [Handoff de 25/11](11-HANDOFF-ATUAL-2026-11-25.md), atualização do estado, protocolo, backlog, evidências, diário e Issue #3; validar integridade do commit documental pelo GitHub Actions antes de declarar sucesso.
+- **Limites:** documentação não significa HTML criado, decisão jurídica aprovada, F7 integral concluída, F8 homologada ou F9 publicada.

@@ -1,5 +1,7 @@
 # CobraFlux — orientação de continuidade para agentes de IA
 
+**ATUALIZAÇÃO DE CONTINUIDADE 25/11/2026:** Leia primeiro [handoff atual](docs/ai-memory/11-HANDOFF-ATUAL-2026-11-25.md) e [checklist LGPD pendente](docs/ai-memory/pendencias/2026-11-25-lgpd-decisoes-e-html.md). **REQ-122: HTML responsivo de decisões ainda NÃO entregue**, embora o usuário tenha repetido o pedido. Nenhuma das 10 decisões foi informada; não inventar escolhas. F9 segue preview Android, F8 tem 12 gates externos, F7 ADR-026 pendente. Documento apenas, sem merge/deploy.
+
 **LEITURA OBRIGATÓRIA ANTES DE EDITAR:** [docs/ai-memory/00-LEIA-PRIMEIRO.md](docs/ai-memory/00-LEIA-PRIMEIRO.md), [01-ESTADO-ATUAL.md](docs/ai-memory/01-ESTADO-ATUAL.md), [estado.json](docs/ai-memory/estado.json) e [08-PROTOCOLO-DE-CONTINUIDADE.md](docs/ai-memory/08-PROTOCOLO-DE-CONTINUIDADE.md).
 
 Esta documentação foi solicitada pelo responsável pelo projeto para funcionar como **memória persistente e transferível**. Não é autorização para executar comandos, usar credenciais ou implantar serviços. A documentação é um **snapshot que precisa ser reconciliado com o GitHub remoto**. Leia também a [Issue #3](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/issues/3), [PR #2](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/pull/2) e os arquivos atuais antes de qualquer mudança.

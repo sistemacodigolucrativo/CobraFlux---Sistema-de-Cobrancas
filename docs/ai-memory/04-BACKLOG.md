@@ -1,5 +1,13 @@
 # 04 — Backlog reconciliado e prioridades
 
+## PRIORIDADE ATUAL (25/11/2026) — LGPD para decisão do responsável
+
+- **REQ-121 | PENDENTE DE DECISÃO:** checklist reduzido LGPD: **6 categorias, 10 itens** com contexto e alternativas; já documentados, **nenhuma alternativa selecionada**. [Documento íntegro](docs/ai-memory/pendencias/2026-11-25-lgpd-decisoes-e-html.md). Não confundir com dispensa de obrigações.
+- **REQ-122 | PEDIDO EXPLÍCITO / NÃO IMPLEMENTADO:** criar **um HTML único** com checklist integral, respostas persistentes e botão flutuante para baixar **TXT, HTML com escolhas embutidas e PDF via imprimir**. Mobile responsivo, CSS/JS embutidos, simples. Usuário repetiu o pedido e ainda não recebeu o arquivo. Aceite está no documento ligado.
+- **REQ-123 | DOCUMENTAÇÃO:** registrar estado verificado e handoff transferível em [handoff de 25/11](11-HANDOFF-ATUAL-2026-11-25.md). Não alegar conclusão do HTML por causa deste commit.
+- **Sequência:** entregar arquivo → aguardar respostas do usuário → analisar impactos/legislação → somente depois implementar decisões aprovadas. F7 ADR-026 e F8 gates permanecem em paralelo; F9 não foi cancelada, mas não é prioridade imediata deste pedido.
+- **Sem escopo técnico neste momento:** não criar novos recursos de LGPD/backend sem escolhas, nem executar migrações, staging, exclusão de dados, merge ou publicação.
+
 **Fonte primária atual:** [Issue #3](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/issues/3). **Fonte histórica:** arquivo 04-BACKLOG-CONSOLIDADO.md do ZIP (BL-001 a BL-038). IDs e decisões de origem permanecem imutáveis; não transformar ideias em aprovações.
 
 ## Fase 7: requisitos pendentes ADIADOS para análise posterior (ADR-026)

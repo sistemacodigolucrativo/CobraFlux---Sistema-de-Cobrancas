@@ -18,3 +18,5 @@ Cada incremento precisa de um documento individual baseado em [09-MODELO-DE-REGI
 - [2026-11-21 — Implantação da memória persistente](2026-11-21-criacao-memoria.md).
 
 **Ordem confiável:** commit e CI vinculados ao SHA > documento de entrega > diário > resumo de conversa. Nenhum registro cria permissão para deploy, lançamento live ou merge.
+
+- [2026-11-25 — atualização documental de handoff e pendências LGPD](2026-11-25-handoff-revisao-lgpd.md) — **sem implementação do HTML solicitado**.

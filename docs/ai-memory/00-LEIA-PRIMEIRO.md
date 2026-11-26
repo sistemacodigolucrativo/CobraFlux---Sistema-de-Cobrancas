@@ -3,6 +3,8 @@
 **Finalidade:** preservar o estado real, decisões, cronologia, evidências, pendências e instruções de handoff do CobraFlux para que um novo agente continue o projeto sem depender da memória do chat.
 
 ## Comece aqui
+
+**Atualização prioritária de 25/11/2026:** [Handoff atual e plano de retomada](11-HANDOFF-ATUAL-2026-11-25.md) e [10 pendências LGPD com especificação do HTML solicitado](pendencias/2026-11-25-lgpd-decisoes-e-html.md). O HTML **não existe/não foi entregue** nesta atualização documental, e as 10 escolhas do usuário ainda estão em aberto. Leia esse contexto **antes** de continuar F9 ou alegar que F7/F8 foram homologadas.
 1. Leia este índice, **01-ESTADO-ATUAL.md** e **estado.json**.
 2. Confira a branch, HEAD, PR #2, Issue #3 e GitHub Actions **ao vivo**. Nunca adote um SHA de documento como HEAD sem reverificar.
 3. Leia **03-DECISOES.md** e **02-ARQUITETURA-E-SEGURANCA.md**.
