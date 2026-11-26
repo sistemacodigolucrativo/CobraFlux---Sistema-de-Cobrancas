@@ -530,6 +530,39 @@ export function registerPhase7Routes(app:Express,{sessions,csrf,who,route,rateLi
   if('error' in result){res.status(409).json(result);return;}
   res.json(result);
  }));
+ // Manual review evidence: internal only, no document uploads or automatic fulfillment.
+ app.get('/api/admin/privacy/requests/:id/manual-reviews',sessions,route(async(req,res)=>{
+  const p=who(req);if(!requireAdmin(p,res))return;
+  const {id}=identifier.parse(req.params),q=page.parse(req.query);
+  const exists=await pool.query('SELECT id FROM privacy_requests WHERE id=$1',[id]);
+  if(!exists.rowCount){res.status(404).json({error:'privacy_request_not_found'});return;}
+  const rows=await pool.query('SELECT id,actor_id,identity_status,risk,verification_method,due_at,action_note,created_at FROM privacy_manual_reviews WHERE request_id=$1 ORDER BY created_at DESC,id DESC LIMIT $2 OFFSET $3',[id,q.limit+1,q.offset]);
+  res.setHeader('Cache-Control','private, no-store');
+  res.json({items:rows.rows.slice(0,q.limit),hasMore:rows.rows.length>q.limit,manualEvidenceOnly:true});
+ }));
+ app.post('/api/admin/privacy/requests/:id/manual-reviews',sessions,csrf,route(async(req,res)=>{
+  const p=who(req);if(!requireAdmin(p,res))return;
+  const {id}=identifier.parse(req.params);
+  const b=z.object({identityStatus:z.enum(['pending','verified','rejected']),risk:z.enum(['standard','elevated']),
+   verificationMethod:z.enum(['none','authenticated_ownership','additional_secure_check']),
+   dueAt:z.iso.datetime({offset:true}).nullable(),actionNote:z.string().trim().min(15).max(1000)}).strict().parse(req.body);
+  if(b.identityStatus==='verified'&&(b.verificationMethod==='none'||(b.risk==='elevated'&&b.verificationMethod!=='additional_secure_check'))){
+   res.status(400).json({error:'insufficient_identity_verification'});return;
+  }
+  const result=await transaction(async db=>{
+   const old=await db.query('SELECT state,organization_id FROM privacy_requests WHERE id=$1 FOR UPDATE',[id]);
+   if(!old.rowCount)return null;
+   if(old.rows[0].state==='closed_rejected')return {error:'privacy_request_closed'};
+   const reviewId=randomUUID();
+   await db.query('INSERT INTO privacy_manual_reviews(id,request_id,actor_id,identity_status,risk,verification_method,due_at,action_note) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
+    [reviewId,id,p.userId,b.identityStatus,b.risk,b.verificationMethod,b.dueAt,b.actionNote]);
+   await audit(db,p,'PRIVACY_MANUAL_REVIEW_RECORDED','privacy_request',id,{reviewId,identityStatus:b.identityStatus,risk:b.risk},old.rows[0].organization_id);
+   return {id:reviewId,manualEvidenceOnly:true,automaticFulfillment:false};
+  });
+  if(!result){res.status(404).json({error:'privacy_request_not_found'});return;}
+  if('error' in result){res.status(409).json(result);return;}
+  res.setHeader('Cache-Control','private, no-store');res.status(201).json(result);
+ }));
  // Export preview exposes counts only, never client PII; owner role is required on server.
  app.get('/api/reports/exports/:dataset/preview',sessions,route(async(req,res)=>{
   const p=who(req);if(!requireOwner(p,res))return;
