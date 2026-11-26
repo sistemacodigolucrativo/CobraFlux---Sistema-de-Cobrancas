@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "purpose": "F8 staged rollback readiness; NONE of these fields is proof of approval",
+  "targetEnvironment": "staging",
+  "authorizationStatus": "pending",
+  "actualRollbackExecuted": false,
+  "recoveryPlan": {
+    "releaseSha": null,
+    "previousImageDigest": null,
+    "operator": null,
+    "reviewer": null,
+    "backupEvidenceUrl": null,
+    "lastIsolatedRestoreEvidenceUrl": null,
+    "schemaCompatibilityReviewUrl": null,
+    "migrationReversalPolicy": null,
+    "workerDisablementApproved": false,
+    "maintenanceWindowApproved": false,
+    "rpoMinutes": null,
+    "rtoMinutes": null,
+    "postRollbackSmokeEvidenceUrl": null
+  },
+  "documentationOnly": true,
+  "notes": "No real staging, RPO/RTO or rollout authority exists yet. Never execute destructive SQL/git reset based on this file."
+}

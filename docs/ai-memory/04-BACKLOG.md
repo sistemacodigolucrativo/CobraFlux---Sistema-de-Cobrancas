@@ -1,0 +1,65 @@
+# 04 — Backlog reconciliado e prioridades
+
+## PRIORIDADE ATUAL (25/11/2026) — LGPD para decisão do responsável
+
+- **REQ-121 | PENDENTE DE DECISÃO:** checklist reduzido LGPD: **6 categorias, 10 itens** com contexto e alternativas; já documentados, **nenhuma alternativa selecionada**. [Documento íntegro](docs/ai-memory/pendencias/2026-11-25-lgpd-decisoes-e-html.md). Não confundir com dispensa de obrigações.
+- **REQ-122 | PEDIDO EXPLÍCITO / NÃO IMPLEMENTADO:** criar **um HTML único** com checklist integral, respostas persistentes e botão flutuante para baixar **TXT, HTML com escolhas embutidas e PDF via imprimir**. Mobile responsivo, CSS/JS embutidos, simples. Usuário repetiu o pedido e ainda não recebeu o arquivo. Aceite está no documento ligado.
+- **REQ-123 | DOCUMENTAÇÃO:** registrar estado verificado e handoff transferível em [handoff de 25/11](11-HANDOFF-ATUAL-2026-11-25.md). Não alegar conclusão do HTML por causa deste commit.
+- **Sequência:** entregar arquivo → aguardar respostas do usuário → analisar impactos/legislação → somente depois implementar decisões aprovadas. F7 ADR-026 e F8 gates permanecem em paralelo; F9 não foi cancelada, mas não é prioridade imediata deste pedido.
+- **Sem escopo técnico neste momento:** não criar novos recursos de LGPD/backend sem escolhas, nem executar migrações, staging, exclusão de dados, merge ou publicação.
+
+**Fonte primária atual:** [Issue #3](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/issues/3). **Fonte histórica:** arquivo 04-BACKLOG-CONSOLIDADO.md do ZIP (BL-001 a BL-038). IDs e decisões de origem permanecem imutáveis; não transformar ideias em aprovações.
+
+## Fase 7: requisitos pendentes ADIADOS para análise posterior (ADR-026)
+
+**Replanejado em 23/11/2026:** o núcleo técnico F7 (incrementos 1–10) encerra seu escopo de desenvolvimento atualmente autorizado. As linhas seguintes **não foram implementadas nem aceitas**; permanecem registradas em [requisitos adiados](pendencias/2026-11-23-f7-adiados.md). A F8 pode iniciar pela preparação técnica sem deploy, mantendo os gates obrigatórios para homologação.
+| ID histórico | Assunto | Situação em 23/11/2026 | Próximo aceite técnico |
+| --- | --- | --- | --- |
+| BL-006 | Respostas, SLA e suporte | **Parcial:** resposta/histórico no portal TESTADOS em 4dcbb80; timeline interna de status TESTADA em 96e58848; prazo manual TESTADO em 472b0bd; alertas internos em consulta e ciência versionada TESTADOS em 42f7eec; e-mail, SLA comercial automático, anexos e notificações externas ausentes | Definir política aprovada, alertas e entrega verificável sem simulação; manter testes permissão e atraso |
+| BL-007 | Direitos LGPD ponta a ponta | Triagem, eventos LGPD append-only (49d134a) e lotes access/portability auditáveis (1c16c6a) testados; cumprimento LGPD integral **não concluído** | Evidência/revisão, portabilidade integral, retenção sob parecer jurídico |
+| BL-008 | Relatórios/exportações completos | Prévia e paginação por offset testadas em a157e6f; modo keyset por cursor HMAC, tenant+filtro e corte de novas inserções TESTADO em e88ddfe; índices 020 e benchmark sintético 100k clientes+100k cobranças testados (1fbc06a), ainda sem snapshot sob mutações e carga de produção | Avaliar performance e índices, testar carga/concorrência, considerar snapshot export assíncrono somente com autorização, revisar LGPD/PII |
+| BL-012 | Paridade da interface F7 | Primeiro incremento testado | Verificar demo vs operação, papéis, estados de erro, acessibilidade, mobile |
+| BL-003/004/005 | LGPD, concorrência da suspensão, precisão MRR/GPV | Gate de segurança/riscos | Tests de concorrência e revisão de origem financeira antes de live |
+| BL-031/032/033 | Carga de export, MRR e logs/PII | Refinamentos necessários | Benchmark sintético 100k+100k concluído; ainda requer dados concorrentes/reais em staging, validação de MRR e auditoria PII |
+
+## Débitos históricos por fase
+- F0: baseline completo do demo e inventário por componente.
+- F1 (BL-002/017/018/019/024): staging HTTPS, Resend, MFA operacional, backup off-site e restore testado.
+- F2 (BL-010/013/030): site/onboarding real, paridade demo, convite por e-mail real, acessibilidade.
+- F3 (BL-001/015/020): Asaas Sandbox externo, eventos/estornos/webhooks reais de teste, autorização separada para live.
+- F4 (BL-022): scheduler/cron real monitorado.
+- F5 (BL-009/016/021/023): Meta WABA, templates aprovados, consentimento/entrega/opt-out e notificações.
+- F6 (BL-005/014/032): PSP SaaS, preço/comercial, webhook verificado, impostos, cupons após pagamento.
+- F8 (BL-003/018/024/026/027): homologação, backup/PITR, carga, observabilidade, revisão legal, piloto e rollback.
+- F9 (BL-011/025): conectar Android à API real, testes físicos, target API compatível, AAB e Play.
+
+## Ideias não aprovadas
+BL-034 fornecedor/preço checkout SaaS; BL-035 hosting/domínio; BL-036 refatoração IGoldenBillingService; BL-037 PSPs alternativos; BL-038 Universal Build. **Não implementar por conta própria.**
+
+## Próximo incremento recomendado, ainda F7
+Escolher um recorte **já aprovado** de BL-006/007/008/012. Prioridade sugerida: **testes de carga e consistência real de exportações (BL-008/031)**, LGPD jurídica ou paridade visual, preservando a segurança comprovada e testes, sem alegar envio externo. Antes de codar: verificar código e decisões, definir critérios mensuráveis, testar erro/CSRF/MFA/cross-tenant, atualizar docs após CI.
+
+**Status não é binário:** PLANEJADA, EM DESENVOLVIMENTO, IMPLEMENTADA NÃO VALIDADA, IMPLEMENTADA TESTADA, HOMOLOGAÇÃO PENDENTE e OPERACIONAL são dimensões distintas. Não converter esta lista em percentual de conclusão.
+
+## Reprogramação por ADR-026 e F8 iniciada (23/11/2026)
+A lista F7 permanece como **ADIADA — NÃO CONCLUÍDA**; responsável solicitou analisar posteriormente. [Registro detalhado](pendencias/2026-11-23-f7-adiados.md). Somente o escopo de código F7 não adiado foi encerrado; obrigações legais/operacionais não foram liberadas.
+F8 #01 — readiness offline e backup/restore sintético em PostgreSQL 16 com CI aprovado em [#45190560236](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45190560236). Próximos itens: staging/HTTPS com autorização, backup offsite/PITR, observabilidade, QA/segurança, prestadores sandbox, LGPD, piloto, rollback. **Não confundir testes sintéticos com homologação real**.
+
+## F8 #03 — configuração e segurança (23/11/2026)
+**IMPLEMENTADO/TESTADO:** auditoria de nomes 33/33 e classes, três testes novos, modelo STRIDE e runbook. [Actions #45200149826](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45200149826) success. **PENDENTE:** cofre de secrets e revisão independente de vazamentos hardcoded, supply chain/CI, TLS real, dados e contas segregados, backup offsite/PITR, provedores, LGPD e rollback. F7 ADR-026 ainda pendente.
+
+## F8 #04 — cadeia de dependências e CI (23/11/2026)
+
+**IMPLEMENTADO/CI GREEN:** npm `package-lock.json` v3 com 674 entradas, `npm ci` em Docker/workflows, 6 workflows padrão read-only, Actions por SHA, auditoria estática e Docker build local sem publicar ([CI #45205396857](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45205396857)). [4d43aa6c](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/4d43aa6c5cd8623d2ee0fe403ca016bfb51353cc).
+
+**PENDENTES P1/P0 (segurança de lançamento):** auditar CVEs de dependências transitivas (`glob@11.1.0` e `node-domexception@1.0.0` emitiram avisos), corrigir justificadamente, pinagem por digest das bases `node:22-alpine`/`postgres:16`, revisão de scripts pós-instalação e proveniência/SBOM, HTTPS/staging real, providers, backup offsite/PITR e requisitos F7 adiados ADR-026.
+
+## F8 #05–09 — estado de entrega técnica e pendências (23/11/2026)
+**Entregue/testado:** Código [aa155cb8](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/aa155cb880f72c99d972fa58de758a810880b50f): backend [CI #45210349937](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210349937), navegador [CI #45210349834](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210349834), restore sintético [CI #45210349944](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210349944), supply chain/Docker [CI #45210349882](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210349882), npm audit/SBOM [CI #45210350161](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210350161), gates/smoke simulados [CI #45210350118](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210350118), memória [CI #45210349835](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45210349835) — **7 success no mesmo SHA**. Auditoria/SBOM, 12 gates, smoke HTTPS manual, telemetria mínima, pin de imagens e rollback offline.
+**Bloqueado (não homologado):** quatro avisos moderados não corrigidos, 12 gates do [checklist](../security/phase8-acceptance-gates.json): domínio/TLS real, DB isolado, backup offsite/PITR, observabilidade, PSP/Meta/Resend, jurídico/LGPD/F7, acessibilidade física, piloto e rollback real. Não iniciar go-live por CI verde.
+
+## F9 #01 — shell Android técnico (23/11/2026)
+
+**CÓDIGO/CI VALIDADO:** [7208ae2f](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/commit/7208ae2f96e27d7873294d7fe47caa72401ef5a7), [CI #45218842168](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45218842168) — WebView segura e exata, API 36, JUnit e APK debug sem servidor definido. Auditoria da antiga branch de demo confirma que seu código não deve ser portado. [CI #45218842917](https://github.com/sistemacodigolucrativo/CobraFlux---Sistema-de-Cobrancas/actions/runs/45218842917) confirma nove workflows com SHAs fixadas. [Entrega](entregas/2026-11-23-f9-01-android-debug.md).
+
+**PENDENTE F9:** staging HTTPS/produção segura e sessão real, downloads CSV autenticados, anexos, notificações, navegação/deep links, acessibilidade e testes MIUI/dispositivos físicos, definir package ID/Play Billing/políticas, AAB assinado/Play App Signing/internal track. F8 permanece **12 gates e 4 avisos moderate**, F7 ADR-026 adiados obrigatórios antes de lançamento.

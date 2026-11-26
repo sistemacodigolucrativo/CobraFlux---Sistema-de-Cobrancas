@@ -1,0 +1,42 @@
+name: CobraFlux F8 offline release gates and staging probe tests
+on:
+  push:
+    branches: [feat/production-foundation]
+    paths:
+      - 'docs/security/phase8-acceptance-gates.json'
+      - 'scripts/phase8-release-gate.mjs'
+      - 'scripts/phase8-release-gate.test.mjs'
+      - 'scripts/phase8-staging-smoke.mjs'
+      - 'scripts/phase8-staging-smoke.test.mjs'
+      - 'scripts/phase8-rollback-preflight.mjs'
+      - 'scripts/phase8-rollback-preflight.test.mjs'
+      - 'docs/security/phase8-rollback-plan.json'
+      - '.github/workflows/phase8-release-gates.yml'
+  pull_request:
+    paths:
+      - 'docs/security/phase8-acceptance-gates.json'
+      - 'scripts/phase8-release-gate.mjs'
+      - 'scripts/phase8-release-gate.test.mjs'
+      - 'scripts/phase8-staging-smoke.mjs'
+      - 'scripts/phase8-staging-smoke.test.mjs'
+      - 'scripts/phase8-rollback-preflight.mjs'
+      - 'scripts/phase8-rollback-preflight.test.mjs'
+      - 'docs/security/phase8-rollback-plan.json'
+      - '.github/workflows/phase8-release-gates.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with: {node-version: '22'}
+      - name: Test fail-closed release decisions and simulated HTTPS responses (no network)
+        run: |
+          node --test scripts/phase8-release-gate.test.mjs scripts/phase8-staging-smoke.test.mjs scripts/phase8-rollback-preflight.test.mjs
+          node scripts/phase8-rollback-preflight.mjs --check
+          node scripts/phase8-release-gate.mjs --check
+          node scripts/phase8-staging-smoke.mjs

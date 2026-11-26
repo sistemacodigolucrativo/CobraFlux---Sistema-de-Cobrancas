@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "phase": 8,
+  "recordedAt": "2026-11-23",
+  "policy": "External acceptance evidence is required; no CI job can authorize release",
+  "deploymentAllowed": false,
+  "operationalHomologationCompleted": false,
+  "requiredGates": [
+    {
+      "id": "staging_https_dns_proxy",
+      "title": "Staging HTTPS, DNS, reverse proxy and firewall verified independently",
+      "status": "pending",
+      "evidence": null,
+      "approvedBy": null,
+      "verifiedAt": null
+    },
+    {
+      "id": "database_tenant_segregation_tls",
+      "title": "Distinct least-privilege staging DB with valid TLS CA and tenant isolation",
+      "status": "pending",
+      "evidence": null,
+      "approvedBy": null,
+      "verifiedAt": null
+    },
+    {
+      "id": "offsite_backup_restore_pitr",
+      "title": "Encrypted offsite backup, real isolated restore, PITR and approved RTO/RPO",
+      "status": "pending",
+      "evidence": null,
+      "approvedBy": null,
+      "verifiedAt": null
+    },
+    {
+      "id": "monitoring_alerting_incidents",
+      "title": "Live structured logs, PII redaction, monitoring, alerts and incident procedure",
+      "status": "pending",
+      "evidence": null,
+      "approvedBy": null,
+      "verifiedAt": null
+    },
+    {
+      "id": "asaas_sandbox_external",
+      "title": "Asaas sandbox webhooks/refunds/cancellation/reconciliation tested externally",
+      "status": "pending",
+      "evidence": null,
+      "approvedBy": null,
+      "verifiedAt": null
+    },
+    {
+      "id": "meta_test_delivery_consent",
+      "title": "Meta WABA template approval, opt-in/opt-out and allowlisted test delivery",
+      "status": "pending",
+      "evidence": null,
+      "approvedBy": null,
+      "verifiedAt": null
+    },
+    {
+      "id": "resend_test_delivery",
+      "title": "Resend real test delivery, bounce and error handling validated",
+      "status": "pending",
+      "evidence": null,
+      "approvedBy": null,
+      "verifiedAt": null
+    },
+    {
+      "id": "security_review_cve",
+      "title": "Independent security review and SCA findings remediated/approved",
+      "status": "pending",
+      "evidence": null,
+      "approvedBy": null,
+      "verifiedAt": null
+    },
+    {
+      "id": "privacy_fiscal_review",
+      "title": "LGPD privacy review, retention policy and fiscal/legal evaluation",
+      "status": "pending",
+      "evidence": null,
+      "approvedBy": null,
+      "verifiedAt": null
+    },
+    {
+      "id": "phase7_deferred_requirements",
+      "title": "ADR-026 deferred F7 obligations resolved before launch",
+      "status": "pending",
+      "evidence": null,
+      "approvedBy": null,
+      "verifiedAt": null
+    },
+    {
+      "id": "accessibility_real_devices",
+      "title": "Accessibility, roles and Android physical-device QA passed",
+      "status": "pending",
+      "evidence": null,
+      "approvedBy": null,
+      "verifiedAt": null
+    },
+    {
+      "id": "rollback_pilot_release_approval",
+      "title": "Pilot, rollback rehearsal, sign-off by release owner",
+      "status": "pending",
+      "evidence": null,
+      "approvedBy": null,
+      "verifiedAt": null
+    }
+  ]
+}

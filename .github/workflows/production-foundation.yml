@@ -1,0 +1,73 @@
+name: CobraFlux production foundation checks
+on:
+  pull_request:
+    paths:
+      - 'server/**'
+      - 'src/pages/production/**'
+      - 'src/services/productionApi.ts'
+      - 'src/App.tsx'
+      - 'src/context/AppContext.tsx'
+      - 'src/components/ui/Primitives.tsx'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'Dockerfile'
+      - '.github/workflows/production-foundation.yml'
+  push:
+    branches:
+      - feat/production-foundation
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16@sha256:3950ad7c3148ca2175ef1b6c36c9efbf78957ae8fbe8b3a5d7c35af50500382f
+        env:
+          POSTGRES_USER: cobraflux
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: cobraflux_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cobraflux -d cobraflux_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://cobraflux:testpass@127.0.0.1:5432/cobraflux_test
+      SESSION_SECRET: ci-test-secret-change-me-not-production-123456789
+      APP_ORIGIN: http://localhost:3000
+      CF_NO_LISTEN: 'true'
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Typecheck
+        run: npm run lint
+      - name: Domain regression
+        run: npm run test:domain
+      - name: Security tests
+        run: npm run test:server
+      - name: Validate database maintenance scripts
+        run: bash -n scripts/backup-db.sh scripts/restore-drill.sh
+      - name: UI parity and authorization smoke tests
+        run: npm run test:ui
+      - name: Run migrations twice (idempotency)
+        run: |
+          npm run migrate
+          npm run migrate
+      - name: Multi-tenant integration
+        run: npm run test:integration
+      - name: Frontend build (demo)
+        run: npm run build
+      - name: Frontend build (production)
+        run: VITE_APP_MODE=production npm run build

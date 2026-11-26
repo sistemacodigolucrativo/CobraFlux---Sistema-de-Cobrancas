@@ -9,7 +9,7 @@ import {
   X,
   XCircle,
 } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
+import { useApp, useOptionalApp } from '../../context/AppContext';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 
@@ -201,7 +201,7 @@ export const Button: React.FC<ButtonProps> = ({
   onClick,
   ...rest
 }) => {
-  const { playSound } = useApp();
+  const optionalContext = useOptionalApp();
 
   const variants: Record<NonNullable<ButtonProps['variant']>, string> = {
     primary:
@@ -229,7 +229,7 @@ export const Button: React.FC<ButtonProps> = ({
       {...rest}
       disabled={disabled || loading}
       onClick={(e) => {
-        if (variant === 'primary') playSound('tap');
+        if (variant === 'primary') optionalContext?.playSound('tap');
         onClick?.(e);
       }}
       className={`inline-flex items-center justify-center gap-2 whitespace-nowrap shrink-0 transition-all duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E2BE72] disabled:opacity-50 disabled:pointer-events-none cursor-pointer ${variants[variant]} ${sizes[size]} ${className}`}

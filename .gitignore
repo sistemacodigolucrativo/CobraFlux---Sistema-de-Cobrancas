@@ -6,3 +6,7 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Browser test artifacts (CI uploads failures separately)
+playwright-report/
+test-results/

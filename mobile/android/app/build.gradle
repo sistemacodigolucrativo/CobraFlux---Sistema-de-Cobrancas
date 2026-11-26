@@ -1,0 +1,20 @@
+plugins { id 'com.android.application' }
+def stagingOrigin = System.getenv('COBRAFLUX_ANDROID_ORIGIN') ?: ''
+if (stagingOrigin && !(stagingOrigin ==~ /https:\/\/[a-zA-Z0-9.-]+\/?/)) {
+  throw new GradleException('COBRAFLUX_ANDROID_ORIGIN must contain only a canonical HTTPS origin')
+}
+android {
+  namespace 'com.cobraflux.app'
+  compileSdk 36
+  defaultConfig {
+    applicationId 'com.cobraflux.app'
+    minSdk 28
+    targetSdk 36
+    versionCode 1
+    versionName '0.1.0-dev'
+    buildConfigField 'String', 'WEB_ORIGIN', "\"${stagingOrigin}\""
+  }
+  buildFeatures { buildConfig true }
+  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+dependencies { testImplementation 'junit:junit:4.13.2' }
