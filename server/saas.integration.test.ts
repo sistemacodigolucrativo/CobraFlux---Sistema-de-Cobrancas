@@ -147,7 +147,7 @@ test('SaaS separate ledger, fail-closed plan checkout, tenant permissions, quota
   assert.equal((await call('/clients','POST',{name:'Cliente Plano Pago',phone:'+5511999999034'},a)).status,201);
   // Past due after grace must reduce entitlements to Free without deleting existing records.
   await pool.query(
-    "UPDATE saas_subscriptions SET status='past_due',grace_until=current_date - interval '1 day' WHERE organization_id=$1",
+    "UPDATE saas_subscriptions SET status='past_due',grace_until=(now() AT TIME ZONE 'America/Sao_Paulo')::date - interval '1 day' WHERE organization_id=$1",
     [a.orgId]);
   assert.equal((await call('/saas/subscription','GET',undefined,a)).body.effectivePlan,'free');
   assert.equal((await call('/clients','POST',{name:'Cliente Bloqueado',phone:'+5511999999035'},a)).status,409);
@@ -160,7 +160,7 @@ test('SaaS separate ledger, fail-closed plan checkout, tenant permissions, quota
   assert.equal(couponUse.rows[0].redeemed_count,0,'no coupon consumption without verified payment');
   // Cancellation at a verified period end never deletes the organization's data.
   await pool.query("UPDATE saas_subscriptions SET plan_code='starter',status='active',"+
-    "current_period_end=current_date,cancel_at_period_end=true,provider='ci_fixture',"+
+    "current_period_end=(now() AT TIME ZONE 'America/Sao_Paulo')::date,cancel_at_period_end=true,provider='ci_fixture',"+
     "provider_subscription_id=$2 WHERE organization_id=$1",[b.orgId,'ci-sub-'+randomUUID()]);
   const ended=await reconcileSaasBilling(10,localBillingDate());
   assert.ok(ended.cancelled>=1);
@@ -171,14 +171,14 @@ test('SaaS separate ledger, fail-closed plan checkout, tenant permissions, quota
     'paid period expiry must not delete merchant customers');
   // Dunning: a pending SaaS invoice may become past_due and restricted without an external payment event.
   await pool.query("UPDATE saas_subscriptions SET plan_code='starter',status='active',"+
-    "current_period_end=current_date+interval '30 days',cancel_at_period_end=false,"+
+    "current_period_end=(now() AT TIME ZONE 'America/Sao_Paulo')::date+interval '30 days',cancel_at_period_end=false,"+
     "provider='ci_fixture',provider_subscription_id=$2 WHERE organization_id=$1",[b.orgId,'ci-sub-'+randomUUID()]);
   const pendingInvoice=randomUUID();
   await pool.query(
     "INSERT INTO saas_invoices(id,organization_id,plan_code,base_amount_cents,discount_cents,"+
     "period_start,period_end,due_date,status) VALUES($1,$2,'starter',18990,0,"+
-    "current_date-interval '30 days',current_date+interval '30 days',"+
-    "current_date-interval '9 days','pending')",[pendingInvoice,b.orgId]);
+    "(now() AT TIME ZONE 'America/Sao_Paulo')::date-interval '30 days',(now() AT TIME ZONE 'America/Sao_Paulo')::date+interval '30 days',"+
+    "(now() AT TIME ZONE 'America/Sao_Paulo')::date-interval '9 days','pending')",[pendingInvoice,b.orgId]);
   const overdue=await reconcileSaasBilling(10,localBillingDate());
   assert.ok(overdue.overdue>=1,'past-due SaaS invoice should be classified');
   assert.ok(overdue.restricted>=1,'expired seven-day grace requires Free limits');
